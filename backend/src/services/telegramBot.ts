@@ -1474,7 +1474,7 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
             if (reason?.kind !== 'cooldown') return;
             cooldownUntil = Math.max(cooldownUntil, Date.now() + reason.seconds * 1000);
             await setSetting(cooldownKey, String(cooldownUntil));
-        });
+        }, { freshSession: true });
 
         console.log('🤖 Telegram Bot 正在启动...');
         await withTelegramOperationDeadline(client.start({ botAuthToken: botToken }), startupTimeoutMs, 'Telegram Bot 启动超时，请稍后重试');

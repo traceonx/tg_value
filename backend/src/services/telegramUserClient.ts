@@ -68,7 +68,7 @@ function makeClient(session: string, credentials: { apiId: number; apiHash: stri
         appVersion: '1.0.0',
         floodSleepThreshold: 0,
     });
-    installTelegramRequestGate(client);
+    installTelegramRequestGate(client, undefined, undefined, { freshSession: !session });
     return client;
 }
 

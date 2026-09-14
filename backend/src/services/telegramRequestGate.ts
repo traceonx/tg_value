@@ -56,20 +56,34 @@ export function canTelegramRequest(client: object | undefined): boolean {
     catch { return false; }
 }
 export function installTelegramRequestGate(client: TelegramClient, gate = new TelegramRequestGate(),
-    onStop?: (error: unknown) => Promise<void>): TelegramRequestGate {
+    onStop?: (error: unknown) => Promise<void>, options: { freshSession?: boolean } = {}): TelegramRequestGate {
     const existing = installed.get(client);
     if (existing) return existing;
     const invoke = client.invoke.bind(client);
+    let freshSession = options.freshSession === true;
     client.floodSleepThreshold = 0;
     client.invoke = (async (...args: Parameters<TelegramClient['invoke']>) => {
         const request = args[0];
-        return gate.run(async () => {
+        const initialProbe = freshSession && request.className === 'updates.GetState';
+        if (initialProbe) freshSession = false;
+        let unauthenticated: unknown;
+        const result = await gate.run(async () => {
             try { return await invoke(...args); }
             catch (error) {
+                // GramJS start() expects this response from an empty Session, then signs in.
+                const value = error as { errorMessage?: string; message?: string };
+                if (initialProbe && /\bAUTH_KEY_UNREGISTERED\b/.test(value?.errorMessage || value?.message || '')) {
+                    unauthenticated = error;
+                    return undefined;
+                }
                 if (gate.stop(error)) await onStop?.(error).catch(() => undefined);
                 throw error;
             }
         }, !/^upload\./.test(request.className));
+        if (unauthenticated) throw unauthenticated;
+        const resultType = (result as { className?: string } | undefined)?.className;
+        if (resultType === 'auth.Authorization' || resultType === 'auth.LoginTokenSuccess') freshSession = false;
+        return result;
     }) as TelegramClient['invoke'];
     const invokeWithSender = client.invokeWithSender.bind(client);
     client.invokeWithSender = (async (...args: Parameters<TelegramClient['invokeWithSender']>) =>

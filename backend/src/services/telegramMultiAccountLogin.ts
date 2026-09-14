@@ -52,7 +52,7 @@ function makeClient(credentials: TelegramLoginCredentials): TelegramClient {
         appVersion: '1.0.0',
         floodSleepThreshold: 0,
     });
-    installTelegramRequestGate(client);
+    installTelegramRequestGate(client, undefined, undefined, { freshSession: true });
     return client;
 }
 

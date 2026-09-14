@@ -3865,21 +3865,34 @@ function canTelegramRequest(client2) {
     return false;
   }
 }
-function installTelegramRequestGate(client2, gate = new TelegramRequestGate(), onStop) {
+function installTelegramRequestGate(client2, gate = new TelegramRequestGate(), onStop, options = {}) {
   const existing = installed.get(client2);
   if (existing) return existing;
   const invoke = client2.invoke.bind(client2);
+  let freshSession = options.freshSession === true;
   client2.floodSleepThreshold = 0;
   client2.invoke = (async (...args) => {
     const request = args[0];
-    return gate.run(async () => {
+    const initialProbe = freshSession && request.className === "updates.GetState";
+    if (initialProbe) freshSession = false;
+    let unauthenticated;
+    const result = await gate.run(async () => {
       try {
         return await invoke(...args);
       } catch (error) {
+        const value = error;
+        if (initialProbe && /\bAUTH_KEY_UNREGISTERED\b/.test(value?.errorMessage || value?.message || "")) {
+          unauthenticated = error;
+          return void 0;
+        }
         if (gate.stop(error)) await onStop?.(error).catch(() => void 0);
         throw error;
       }
     }, !/^upload\./.test(request.className));
+    if (unauthenticated) throw unauthenticated;
+    const resultType = result?.className;
+    if (resultType === "auth.Authorization" || resultType === "auth.LoginTokenSuccess") freshSession = false;
+    return result;
   });
   const invokeWithSender = client2.invokeWithSender.bind(client2);
   client2.invokeWithSender = (async (...args) => gate.run(async () => {
@@ -8247,7 +8260,7 @@ function makeClient(credentials) {
     appVersion: "1.0.0",
     floodSleepThreshold: 0
   });
-  installTelegramRequestGate(client2);
+  installTelegramRequestGate(client2, void 0, void 0, { freshSession: true });
   return client2;
 }
 var GramJsMultiAccountLoginClient = class {
@@ -9212,7 +9225,7 @@ function makeClient2(session, credentials) {
     appVersion: "1.0.0",
     floodSleepThreshold: 0
   });
-  installTelegramRequestGate(client2);
+  installTelegramRequestGate(client2, void 0, void 0, { freshSession: !session });
   return client2;
 }
 async function initTelegramUserClient(credentials) {
@@ -21356,7 +21369,7 @@ async function initTelegramBot(credentialsOverride) {
       if (reason?.kind !== "cooldown") return;
       cooldownUntil = Math.max(cooldownUntil, Date.now() + reason.seconds * 1e3);
       await setSetting(cooldownKey, String(cooldownUntil));
-    });
+    }, { freshSession: true });
     console.log("\u{1F916} Telegram Bot \u6B63\u5728\u542F\u52A8...");
     await withTelegramOperationDeadline(client.start({ botAuthToken: botToken }), startupTimeoutMs, "Telegram Bot \u542F\u52A8\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
     await withTelegramOperationDeadline(client.getMe(), 1e4, "Telegram Bot \u8EAB\u4EFD\u8BFB\u53D6\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
