@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildHelp, buildFileList } from './telegramMessages.js';
 
-test('Bot help keeps action entry points and explains optional link download folders', () => {
+test('Bot help shows seven entry points instead of advanced command syntax', () => {
     const text = buildHelp();
 
-    assert.match(text, /点击下方按钮选择功能/);
+    assert.match(text, /点击按钮可直接打开对应功能/);
     assert.doesNotMatch(text, /<[^>]+>/);
-    assert.match(text, /消息链接 \[文件夹名\]/);
-    assert.match(text, /按上海时区当天日期建立子文件夹/);
-    assert.match(text, /文件夹后缀只对本次生效，不筛选消息发布日期/);
+    assert.match(text, /\/download/);
+    assert.match(text, /\/files/);
+    assert.match(text, /\/settings/);
     assert.doesNotMatch(text, /\/target once|\/notifications timezone|\/task_cancel/);
     assert.ok(text.length < 1000);
 });

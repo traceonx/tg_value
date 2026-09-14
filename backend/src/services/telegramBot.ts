@@ -46,6 +46,7 @@ import { consumeOrGetTelegramTargetState } from '../utils/telegramTargetStateSto
 import { getTelegramProxy } from './telegramProxy.js';
 import { BOT_COMMANDS, buildBotCommandMenu, normalizeBotCommandText } from '../utils/telegramCommandRegistry.js';
 import { buildCommandHomePage } from './telegramCommandDispatcher.js';
+import { menuPanels, menuLabels, fileMenuNotes } from './telegramMenu.js';
 import { rememberRecentTelegramPathPersistent, buildPathPreviewLine, applyPendingTelegramPathInputPersistent, getPendingTelegramPathInput, clearPendingTelegramPathInput } from '../utils/telegramPathSettings.js';
 import { isTelegramSubscriptionVisibleInManagement } from './telegramSubscriptionVisibility.js';
 import { buildTelegramSubscriptionPage, buildSubscriptionOperations, parseTelegramSubscriptionCallback } from './telegramSubscriptionManagement.js';
@@ -107,18 +108,7 @@ export function scheduleTelegramBotPostStartup(restoreUserAccounts: () => Promis
 }
 
 function buildBotStartKeyboard(locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup {
-    return new Api.ReplyInlineMarkup({
-        rows: [
-            new Api.KeyboardButtonRow({ buttons: [
-                new Api.KeyboardButtonCallback({ text: t(locale, 'keyboard.upload'), data: Buffer.from('home_upload') }),
-                new Api.KeyboardButtonCallback({ text: t(locale, 'keyboard.tasks'), data: Buffer.from('home_tasks') }),
-            ] }),
-            new Api.KeyboardButtonRow({ buttons: [
-                new Api.KeyboardButtonCallback({ text: t(locale, 'keyboard.storage'), data: Buffer.from('home_storage') }),
-                new Api.KeyboardButtonCallback({ text: t(locale, 'keyboard.more'), data: Buffer.from('home_more') }),
-            ] }),
-        ],
-    });
+    return homePageKeyboard(0, locale);
 }
 
 function homePageKeyboard(requestedPage: number, locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup {
@@ -128,9 +118,29 @@ function homePageKeyboard(requestedPage: number, locale: TelegramLocale = DEFAUL
             buttons: row.map(button => {
                 const command = button.data.match(/^home_open_(.+)$/)?.[1];
                 const definition = command ? BOT_COMMANDS.find(item => item.command === command) : undefined;
-                return new Api.KeyboardButtonCallback({ text: definition ? t(locale, `menu.${definition.command}`) : button.text, data: Buffer.from(button.data) });
+                return new Api.KeyboardButtonCallback({ text: definition ? commandLabel(definition.command, locale) : button.text, data: Buffer.from(button.data) });
             }),
         })),
+    });
+}
+
+function commandLabel(command: string, locale: TelegramLocale): string {
+    return (menuLabels[locale] || menuLabels.zh)[command] || t(locale, `menu.${command}`);
+}
+
+async function showMenuPanel(message: Api.Message, panel: string, locale: TelegramLocale): Promise<void> {
+    const rows = menuPanels[panel];
+    if (!rows) {
+        await message.reply({ message: homePageText(0, locale), buttons: homePageKeyboard(0, locale) });
+        return;
+    }
+    await message.reply({
+        message: `${commandLabel(panel, locale)}\n\n${t(locale, 'bot.home.hint')}${panel === 'files' ? `\n\n${fileMenuNotes[locale] || fileMenuNotes['zh-CN']}` : ''}`,
+        buttons: new Api.ReplyInlineMarkup({ rows: [
+            ...rows.map(commands => new Api.KeyboardButtonRow({ buttons: commands.map(command =>
+                new Api.KeyboardButtonCallback({ text: commandLabel(command, locale), data: Buffer.from(`home_open_${command}`) })) })),
+            new Api.KeyboardButtonRow({ buttons: [new Api.KeyboardButtonCallback({ text: '↩️', data: Buffer.from('home_page_0') })] }),
+        ] }),
     });
 }
 
@@ -161,6 +171,12 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
     if (!openMatch) return;
     const command = openMatch[1];
     const message = await currentMessage();
+    if (menuPanels[command]) return showMenuPanel(message, command, locale);
+    if (command === 'start') return showMenuPanel(message, 'home', locale);
+    if (command === 'language') {
+        await message.reply({ message: languagePanel(locale), buttons: languageKeyboard() });
+        return;
+    }
     if (command === 'storage_switch') return handleStorageSwitch(message);
     if (command === 'target') return handleTarget(message, []);
     if (command === 'path_rules') return handlePathRules(message, locale);
@@ -1624,6 +1640,15 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                     } finally {
                         if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
                     }
+                    return;
+                }
+
+                if (menuPanels[text.slice(1)] && text.startsWith('/')) {
+                    if (!(await isAuthenticatedAsync(senderId))) {
+                        await message.reply({ message: MSG.AUTH_REQUIRED });
+                        return;
+                    }
+                    await showMenuPanel(message, text.slice(1), await getTelegramUserLocaleOrDefault(senderId));
                     return;
                 }
 

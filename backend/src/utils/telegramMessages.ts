@@ -10,6 +10,7 @@ import { formatBytes, getTypeEmoji } from './telegramUtils.js';
 export { getProviderDisplayName } from './providerMetadata.js';
 import { getProviderDisplayName } from './providerMetadata.js';
 import { DEFAULT_LOCALE, formatBytes as formatLocalizedBytes, formatDate, t, type TelegramLocale } from '../i18n/telegram.js';
+import { buildBotCommandMenu } from './telegramCommandRegistry.js';
 
 interface TaskSystemPauseView {
     kind: 'disk_pressure' | 'storage_cooldown' | 'telegram_flood_wait';
@@ -182,7 +183,8 @@ export function buildStartPrompt(locale: TelegramLocale = DEFAULT_LOCALE): strin
 
 /** /help 简洁入口 */
 export function buildHelp(locale: TelegramLocale = DEFAULT_LOCALE): string {
-    return `${t(locale, 'help.body')}\n\n${t(locale, 'bot.link.help')}`;
+    return buildBotCommandMenu(locale).map(command => `/${command.command} — ${command.description}`).join('\n')
+        + `\n\n${t(locale, 'bot.home.hint')}`;
 }
 
 /** 2FA 设置 QR 码的 caption */

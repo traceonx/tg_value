@@ -12,7 +12,7 @@ test('Bot command registry is the single source for menu and help', () => {
 });
 
 test('high-frequency commands lead the menu and legacy aliases stay hidden', () => {
-    assert.deepEqual(buildBotCommandMenu().slice(0, 5).map(command => command.command), ['start', 'tasks', 'storage', 'path_rules', 'tg_download']);
+    assert.deepEqual(buildBotCommandMenu().map(command => command.command), ['start', 'download', 'files', 'tasks', 'subscriptions', 'settings', 'help']);
     assert.equal(findBotCommand('/task')?.command, 'tasks');
     assert.equal(findBotCommand('/cleanup')?.command, 'cleanup_settings');
     assert.equal(buildBotCommandMenu().some(command => command.command === 'cleanup'), false);
@@ -24,10 +24,10 @@ test('cleanup command labels name the affected object instead of generic cleanup
 });
 
 test('message link download is discoverable with localized folder examples', () => {
-    assert.equal(findBotCommand('/tg_link')?.menu, true);
-    assert.equal(findBotCommand('/tg_link')?.help, true);
+    assert.equal(findBotCommand('/tg_link')?.menu, false);
+    assert.equal(findBotCommand('/tg_link')?.help, false);
     for (const locale of Object.values(TELEGRAM_LOCALES)) {
-        const entry = buildBotCommandMenu(locale.code).find(command => command.command === 'tg_link');
+        const entry = buildBotCommandMenu(locale.code).find(command => command.command === 'download');
         assert.ok(entry?.description);
         const help = t(locale.code, 'bot.link.help');
         assert.match(help, /https:\/\/t.me\/lspyanxi\/4375/);

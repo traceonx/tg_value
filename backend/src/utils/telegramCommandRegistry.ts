@@ -1,4 +1,5 @@
 import { DEFAULT_LOCALE, t, type TelegramLocale } from '../i18n/telegram.js';
+import { menuLabels } from '../services/telegramMenu.js';
 
 export type BotCommandCategory = 'main' | 'files' | 'channels' | 'settings' | 'security';
 
@@ -52,6 +53,23 @@ export const BOT_COMMANDS: BotCommandDefinition[] = [
     { command: 'tg_unsub', description: '取消频道订阅', helpDescription: '按频道或订阅 ID 请求取消订阅', category: 'channels', aliases: ['tg_unsubscribe'], usage: '<频道|订阅 ID>', help: true },
 ];
 
+export const MAIN_COMMANDS = ['start', 'download', 'files', 'tasks', 'subscriptions', 'settings', 'help'];
+BOT_COMMANDS.push(
+    { command: 'download', description: '下载文件', helpDescription: '链接、日期或标签下载', category: 'main' },
+    { command: 'files', description: '浏览和搜索文件', helpDescription: '浏览、搜索和操作文件', category: 'main' },
+    { command: 'subscriptions', description: '频道订阅', helpDescription: '添加、查看和取消频道订阅', category: 'main' },
+    { command: 'settings', description: '设置', helpDescription: '存储、目录、并发、通知和安全设置', category: 'main' },
+);
+for (const command of BOT_COMMANDS) {
+    command.menu = MAIN_COMMANDS.includes(command.command);
+    command.help = command.menu;
+    if (command.menu) command.category = 'main';
+}
+BOT_COMMANDS.sort((a, b) => {
+    const rank = (name: string) => MAIN_COMMANDS.includes(name) ? MAIN_COMMANDS.indexOf(name) : MAIN_COMMANDS.length;
+    return rank(a.command) - rank(b.command);
+});
+
 const lookup = new Map<string, BotCommandDefinition>();
 for (const definition of BOT_COMMANDS) {
     definition.handlerKey ||= definition.command;
@@ -63,7 +81,7 @@ for (const definition of BOT_COMMANDS) {
 export function buildBotCommandMenu(locale: TelegramLocale = DEFAULT_LOCALE): Array<{ command: string; description: string }> {
     return BOT_COMMANDS.filter(command => command.menu).map(({ command, description }) => ({
         command,
-        description: t(locale, `menu.${command}`, {}, { strict: false }) === `menu.${command}` ? description : t(locale, `menu.${command}`, {}, { strict: false }),
+        description: (menuLabels[locale] || menuLabels.zh)[command] || (t(locale, `menu.${command}`, {}, { strict: false }) === `menu.${command}` ? description : t(locale, `menu.${command}`, {}, { strict: false })),
     }));
 }
 
