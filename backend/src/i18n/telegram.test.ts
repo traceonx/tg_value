@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { menuPanels } from '../services/telegramMenu.js';
 import fs from 'node:fs';
 import test from 'node:test';
 import {
@@ -77,7 +78,9 @@ test('localized command menus preserve command names and order', () => {
     const en = buildBotCommandMenu('en');
     assert.deepEqual(en.map(item => item.command), zh.map(item => item.command));
     assert.notDeepEqual(en.map(item => item.description), zh.map(item => item.description));
-    assert.ok(zh.some(item => item.command === 'language'));
+    assert.deepEqual(zh.map(item => item.command), ['start', 'download', 'files', 'tasks', 'subscriptions', 'settings', 'help']);
+    assert.ok(menuPanels.settings.flat().includes('language'));
+    assert.match(bot, /command === 'language'[\s\S]*languageKeyboard\(\)/);
 });
 
 test('locale preference is durable and existing users remain Chinese', () => {
@@ -114,7 +117,15 @@ test('telegramBot user surfaces use recipient locale and semantic resources', ()
         const end = bot.indexOf('\n}\n', start) + 3;
         const body = bot.slice(start, end);
         assert.match(body, /locale: TelegramLocale/, `${surface} accepts locale`);
-        assert.match(body, /t\(locale,/, `${surface} uses semantic resources`);
+        if (surface === 'homePageKeyboard') {
+            assert.match(body, /commandLabel\(definition.command, locale\)/, 'menu forwards recipient locale');
+            const labelStart = bot.indexOf('function commandLabel');
+            const labelBody = bot.slice(labelStart, bot.indexOf('\n}\n', labelStart));
+            assert.match(labelBody, /menuLabels\[locale\]/);
+            assert.match(labelBody, /t\(locale,/);
+        } else {
+            assert.match(body, /t\(locale,/, `${surface} uses semantic resources`);
+        }
     }
     assert.match(bot, /handleTelegramWizardMessage[\s\S]*getTelegramUserLocaleOrDefault\(senderId\)/);
 });
