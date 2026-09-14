@@ -64,6 +64,7 @@ import { getSignedUrl } from '../middleware/signedUrl.js';
 import { normalizeFolderPath } from '../utils/folderPath.js';
 import { getTelegramUserLocaleOrDefault } from './telegramLocalePreferences.js';
 import { DEFAULT_LOCALE, t, type TelegramLocale } from '../i18n/telegram.js';
+import { listLocalFiles } from './localFileList.js';
 
 // ESM compatibility
 const checkDiskSpace = (checkDiskSpaceModule as any).default || checkDiskSpaceModule;
@@ -1061,6 +1062,17 @@ export async function handleList(message: Api.Message, args: string[], locale?: 
             }
         }
 
+        if (storageManager.getProvider().name === 'local') {
+            const files = await listLocalFiles(UPLOAD_DIR, limit, page, [
+                THUMBNAIL_DIR,
+                process.env.PREVIEW_DIR || './data/previews',
+                process.env.CHUNK_DIR || './data/chunks',
+            ]);
+            await message.reply({ message: files.length
+                ? buildFileList(files, files.length, locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0))
+                : MSG.EMPTY_FILES });
+            return;
+        }
         const scope = await getCurrentStorageScope();
         const offset = (page - 1) * limit;
         const result = await query(`

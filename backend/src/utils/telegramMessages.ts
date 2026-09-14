@@ -242,7 +242,7 @@ export function buildStorageReport(data: StorageReportData, locale: TelegramLoca
 // ─── 文件列表 ────────────────────────────────────────────────
 
 interface FileListItem {
-    id: string;
+    id?: string;
     name: string;
     type: string;
     size: string | number;
@@ -281,11 +281,11 @@ export function buildFileList(files: FileListItem[], total: number, locale: Tele
 
         lines.push(`${index + 1}. ${typeEmoji} **${displayName || t(locale, 'messages.files.unnamed')}**`);
         lines.push(`    ${size} · ${date}${folder ? ` · 📁 ${folder}` : ''}`);
-        lines.push(`    ID: \`${file.id.substring(0, 8)}\``);
+        if (file.id) lines.push(`    ID: \`${file.id.substring(0, 8)}\``);
     });
 
     lines.push('');
-    lines.push(t(locale, 'messages.files.hint'));
+    if (files.some(file => file.id)) lines.push(t(locale, 'messages.files.hint'));
 
     return lines.join('\n');
 }
