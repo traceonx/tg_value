@@ -119,8 +119,9 @@ test('telegramBot user surfaces use recipient locale and semantic resources', ()
         assert.match(body, /locale: TelegramLocale/, `${surface} accepts locale`);
         if (surface === 'homePageKeyboard') {
             assert.match(body, /commandLabel\(definition.command, locale\)/, 'menu forwards recipient locale');
-            const labelStart = bot.indexOf('function commandLabel');
-            const labelBody = bot.slice(labelStart, bot.indexOf('\n}\n', labelStart));
+            const menu = fs.readFileSync(new URL('../services/telegramMenu.ts', import.meta.url), 'utf8');
+            const labelStart = menu.indexOf('function commandLabel');
+            const labelBody = menu.slice(labelStart, menu.indexOf('\n}\n', labelStart));
             assert.match(labelBody, /menuLabels\[locale\]/);
             assert.match(labelBody, /t\(locale,/);
         } else {

@@ -46,7 +46,8 @@ import { consumeOrGetTelegramTargetState } from '../utils/telegramTargetStateSto
 import { getTelegramProxy } from './telegramProxy.js';
 import { BOT_COMMANDS, buildBotCommandMenu, normalizeBotCommandText } from '../utils/telegramCommandRegistry.js';
 import { buildCommandHomePage } from './telegramCommandDispatcher.js';
-import { menuPanels, menuLabels, fileMenuNotes } from './telegramMenu.js';
+import { menuPanels, commandLabel, fileMenuNotes } from './telegramMenu.js';
+import { callbackActorMessage } from './telegramCallbackMessage.js';
 import { rememberRecentTelegramPathPersistent, buildPathPreviewLine, applyPendingTelegramPathInputPersistent, getPendingTelegramPathInput, clearPendingTelegramPathInput } from '../utils/telegramPathSettings.js';
 import { isTelegramSubscriptionVisibleInManagement } from './telegramSubscriptionVisibility.js';
 import { buildTelegramSubscriptionPage, buildSubscriptionOperations, parseTelegramSubscriptionCallback } from './telegramSubscriptionManagement.js';
@@ -124,10 +125,6 @@ function homePageKeyboard(requestedPage: number, locale: TelegramLocale = DEFAUL
     });
 }
 
-function commandLabel(command: string, locale: TelegramLocale): string {
-    return (menuLabels[locale] || menuLabels.zh)[command] || t(locale, `menu.${command}`);
-}
-
 async function showMenuPanel(message: Api.Message, panel: string, locale: TelegramLocale): Promise<void> {
     const rows = menuPanels[panel];
     if (!rows) {
@@ -152,9 +149,14 @@ function homePageText(requestedPage: number, locale: TelegramLocale = DEFAULT_LO
 
 async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: string): Promise<void> {
     const userId = update.userId.toJSNumber();
-    if (!(await isAuthenticatedAsync(userId))) return;
+    if (!(await isAuthenticatedAsync(userId))) {
+        await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+        return;
+    }
+    await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
     const locale = await getTelegramUserLocaleOrDefault(userId);
-    const currentMessage = async () => client!.getMessages(update.peer, { ids: Number(update.msgId) }).then(messages => messages[0] as Api.Message);
+    const currentMessage = async () => client!.getMessages(update.peer, { ids: Number(update.msgId) })
+        .then(messages => callbackActorMessage(messages[0] as Api.Message, update.userId));
     if (data === 'home_tasks' || data === 'home_open_tasks') return handleTasks(await currentMessage(), locale);
     if (data === 'home_storage' || data === 'home_open_storage') return handleStorage(await currentMessage(), locale);
     if (data === 'home_upload') {

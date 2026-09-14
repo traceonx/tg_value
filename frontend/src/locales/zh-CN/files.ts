@@ -1,4 +1,5 @@
 export const files = {
+  unindexedReadOnly: '本地文件（未索引），暂仅支持浏览',
   loadingPage: '正在加载页面',
   loadingFiles: '正在加载文件',
   loadingMore: '正在加载更多文件',

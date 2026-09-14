@@ -1,4 +1,10 @@
 {
+  "menu.tg_subs": "Просмотр подписок на каналы",
+  "menu.download_workers": "Параллельные части файла",
+  "menu.file_concurrency": "Параллельная загрузка файлов",
+  "menu.duplicate_mode": "Обработка дубликатов",
+  "menu.setup_2fa": "Настроить двухфакторную аутентификацию",
+  "menu.logout": "Выйти",
   "bot.wizard.confirmSource": "📌 Канал: {source}",
   "bot.wizard.folder.defaultValue": "Автоматическая организация по умолчанию",
   "bot.wizard.storage.current": "Текущее хранилище",

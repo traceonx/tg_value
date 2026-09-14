@@ -1,6 +1,7 @@
 import type { BatchDeleteResult } from './batchDeleteContract';
 
 export interface FileData {
+    indexed?: boolean;
     id: string;
     name: string;
     stored_name: string;

@@ -1,3 +1,9 @@
+import { t, type TelegramLocale } from '../i18n/telegram.js';
+
+export function commandLabel(command: string, locale: TelegramLocale): string {
+    return (menuLabels[locale] || menuLabels.zh)[command] || t(locale, `menu.${command}`);
+}
+
 export const menuPanels: Record<string, string[][]> = {
     download: [['tg_link'], ['tg_download']],
     files: [['list', 'find']],

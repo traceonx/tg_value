@@ -1,4 +1,5 @@
 export const files = {
+  unindexedReadOnly: 'Local file (not indexed), browsing only',
   loadingPage: 'Loading page',
   loadingFiles: 'Loading files',
   loadingMore: 'Loading more files',

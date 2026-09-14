@@ -3,6 +3,7 @@ import { Fragment, useState, useMemo, useEffect, useCallback, useRef, lazy, Susp
 import { AppLayout } from "./components/layout/AppLayout";
 import { Button } from "./components/ui/Button";
 import { FileCard } from "./components/ui/FileCard";
+import { UnindexedFile } from './components/ui/UnindexedFile';
 import { FolderCard, type FolderData } from "./components/ui/FolderCard";
 import { Search, RefreshCw, ArrowLeft, ChevronDown, ChevronRight, CheckSquare, FolderPlus, Upload } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -1508,7 +1509,7 @@ function App() {
                         <AnimatePresence mode="wait">
                           {renderedFiles.map((file) => (
                             <motion.div key={file.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                              {viewMode === "grid" ? (
+                              {file.indexed === false ? <UnindexedFile file={file} /> : viewMode === "grid" ? (
                                 <FileCard
                                   file={file}
                                   onPreview={() => setSelectedFile(file)}
@@ -1619,7 +1620,7 @@ function App() {
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.15 }}
                               >
-                                {viewMode === "grid" ? (
+                                {file.indexed === false ? <UnindexedFile file={file} /> : viewMode === "grid" ? (
                                   <FileCard
                                     file={file}
                                     onPreview={() => setSelectedFile(file)}

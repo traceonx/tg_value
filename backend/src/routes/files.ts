@@ -21,6 +21,7 @@ import { normalizeFolderPath } from '../utils/folderPath.js';
 import { classifyMediaProxyError } from '../services/mediaProxyError.js';
 import { buildCloudMediaResponse } from '../services/cloudMediaResponse.js';
 import { pipeline } from 'node:stream/promises';
+import { mergeLocalFiles, pageLocalFiles, aggregateLocalFolders } from '../services/localFileQuery.js';
 
 const router = Router();
 
@@ -154,7 +155,7 @@ function mapFileForList(file: any) {
         thumbnailUrl: file.thumbnail_path
             ? getSignedUrl(file.id, 'thumbnail')
             : undefined,
-        previewUrl: getSignedUrl(file.id, 'preview'),
+        previewUrl: file.indexed === false ? '' : getSignedUrl(file.id, 'preview'),
     };
 }
 
@@ -172,6 +173,10 @@ async function queryFilesPage(rawOptions: Record<string, unknown>) {
         throw new Error('invalid cursor');
     }
     const scope = await getFileQueryScope();
+    if (scope.kind === 'local') {
+        const page = pageLocalFiles(await loadLocalBrowseFiles(), options);
+        return { ...page, files: page.files.map(mapFileForList) };
+    }
     const built = buildFilePageQuery(scope, options);
     const result = await query(built.text, built.params);
     const rows = result.rows.slice(0, options.limit);
@@ -182,6 +187,11 @@ async function queryFilesPage(rawOptions: Record<string, unknown>) {
             : null,
         hasMore: result.rows.length > options.limit,
     };
+}
+
+async function loadLocalBrowseFiles() {
+    const result = await query("SELECT * FROM files WHERE source = 'local'");
+    return mergeLocalFiles(UPLOAD_DIR, result.rows, [THUMBNAIL_DIR, PREVIEW_DIR, process.env.CHUNK_DIR || './data/chunks']);
 }
 
 function decodeCursorForOptions(cursor: string, sort: 'date' | 'name', direction: 'asc' | 'desc'): boolean {
@@ -219,6 +229,10 @@ router.get('/folders/aggregation', async (req: Request, res: Response) => {
     try {
         const options = normalizeFileQuery(req.query as Record<string, unknown>);
         const scope = await getFileQueryScope();
+        if (scope.kind === 'local') {
+            const folders = aggregateLocalFolders(await loadLocalBrowseFiles(), options);
+            return res.json({ folders: folders.map(folder => ({ ...folder, coverFile: folder.coverFile ? mapFileForList(folder.coverFile) : null })) });
+        }
         const built = buildFolderAggregationQuery(scope, options);
         const result = await query(built.text, built.params);
         res.json({
