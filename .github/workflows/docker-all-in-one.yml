@@ -87,12 +87,28 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Publish multi-platform tags
+        timeout-minutes: 10
         env:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/tg-vault
           REVISION: ${{ github.sha }}
         run: |
+          set -euo pipefail
+          retry() {
+            local attempt
+            for attempt in 1 2 3 4; do
+              if "$@"; then
+                return 0
+              fi
+              if (( attempt == 4 )); then
+                echo "::error::Docker Hub operation failed after 4 attempts"
+                return 1
+              fi
+              echo "::warning::Docker Hub operation failed; retrying in $((attempt * 10)) seconds"
+              sleep "$((attempt * 10))"
+            done
+          }
           sources=("$IMAGE:$REVISION-amd64" "$IMAGE:$REVISION-arm64")
-          docker buildx imagetools create \
+          retry docker buildx imagetools create \
             -t "$IMAGE:docker-hub" -t "$IMAGE:latest" -t "$IMAGE:$REVISION" \
             "${sources[@]}"
-          docker buildx imagetools inspect "$IMAGE:$REVISION"
+          retry docker buildx imagetools inspect "$IMAGE:$REVISION"
