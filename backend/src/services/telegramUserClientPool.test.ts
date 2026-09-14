@@ -10,7 +10,8 @@ test('restart does not reconnect an account before its persisted cooldown expire
     assert.equal(pool.getDefaultClient(), null);
 });
 
-test('cooldown and expired accounts cannot be selected by default, direct access or leases', async () => {
+test('cooldown and expired accounts cannot be selected by default, direct access or leases', async context => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.now() });
     const rows = [account('a')];
     const pool = createPool(rows, () => ({
         connected: true, async connect() {}, async checkAuthorization() { return true; },
@@ -27,6 +28,8 @@ test('cooldown and expired accounts cannot be selected by default, direct access
     assert.equal(pool.acquireAccount('a'), null);
     assert.equal(await pool.select('@source'), null);
     pool.updateCooldown('a', new Date(Date.now() - 1), null);
+    assert.equal(pool.getDefaultClient(), null, 'a shorter wait must not clear the existing cooldown');
+    context.mock.timers.tick(60_001);
     assert.ok(pool.getDefaultClient());
     await pool.expireAccount('a');
     assert.equal(pool.getDefaultClient(), null);

@@ -37,8 +37,8 @@ export interface TelegramAccountAccessSweepAdapterOptions {
 
 /**
  * Bridges the pure sweep to the current repository/pool. The existing access
- * schema calls channel reads `scan` and discussion reads `metadata`; the public
- * sweep API keeps the more explicit channel/comments vocabulary.
+ * schema calls channel reads `scan`; the public
+ * sweep API keeps the more explicit channel vocabulary.
  */
 export function createTelegramAccountAccessSweepDependencies(
     options: TelegramAccountAccessSweepAdapterOptions,
@@ -61,7 +61,7 @@ export function createTelegramAccountAccessSweepDependencies(
                 sourceId: String(row.id),
                 source: String(row.source),
                 enabled: Boolean(row.enabled),
-                scopes: ['channel', 'comments'] as const,
+                scopes: ['channel'] as const,
             }));
         },
         async getTelegramAccountRuntime(accountId) {
@@ -72,11 +72,8 @@ export function createTelegramAccountAccessSweepDependencies(
         async markTelegramAccountSourceAccess(result: TelegramAccountSourceAccessResult) {
             const state = result.state === 'error' ? 'unknown' : result.state;
             const error = result.errorCode || result.errorMessage || null;
-            const scope = result.scope === 'channel' ? 'scan' : 'metadata';
-            await repository.markSourceAccess(result.accountId, result.source, scope, state, error);
-            if (result.scope === 'channel') {
-                await repository.markSourceAccess(result.accountId, result.source, 'download', state, error);
-            }
+            await repository.markSourceAccess(result.accountId, result.source, 'scan', state, error);
+            await repository.markSourceAccess(result.accountId, result.source, 'download', state, error);
         },
         now: options.now,
         onAccountError: options.onAccountError,

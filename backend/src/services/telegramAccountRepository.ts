@@ -220,7 +220,7 @@ export class TelegramAccountRepository {
     async markCooldown(accountId: string, seconds: number, error: string | null = null): Promise<boolean> {
         const cooldownSeconds = Number.isFinite(seconds) ? Math.max(1, Math.ceil(seconds)) : 60;
         const result = await this.db.query(`
-            UPDATE telegram_user_accounts SET cooldown_until = NOW() + ($2::double precision * INTERVAL '1 second'),
+            UPDATE telegram_user_accounts SET cooldown_until = GREATEST(cooldown_until, NOW() + ($2::double precision * INTERVAL '1 second')),
                 health_state = 'degraded', last_error = $3, last_failure_at = NOW(), updated_at = NOW()
             WHERE id = $1 AND deleted_at IS NULL
         `, [accountId, cooldownSeconds, error]);

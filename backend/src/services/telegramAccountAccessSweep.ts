@@ -1,5 +1,5 @@
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
-export type TelegramAccessScope = 'channel' | 'comments';
+export type TelegramAccessScope = 'channel';
 export type TelegramAccessState = 'allowed' | 'denied' | 'error';
 export type TelegramAccessSweepReason = 'automatic' | 'manual' | 'account_created' | 'subscription_created' | string;
 
@@ -174,11 +174,6 @@ export async function probeTelegramAccountSource(
         const entity = await input.client.getEntity(input.source);
         const [latest] = await input.client.getMessages(entity, { limit: 1 });
         const latestMessageId = typeof latest?.id === 'number' ? latest.id : null;
-        if (input.scope === 'comments' && latestMessageId !== null) {
-            // GramJS's replyTo history lookup accepts the original source;
-            // this mirrors telegramChannelJobs and resolves linked discussions.
-            await input.client.getMessages(input.source, { limit: 1, replyTo: latestMessageId });
-        }
         return {
             accountId: input.accountId,
             sourceId: input.sourceId,
@@ -211,7 +206,7 @@ async function mapWithConcurrency<T>(
 
 function normalizeScopes(source: TelegramAccessSweepSource): TelegramAccessScope[] {
     const requested = source.scopes?.length ? source.scopes : ['channel'];
-    return Array.from(new Set(requested.filter(scope => scope === 'channel' || scope === 'comments')));
+    return Array.from(new Set(requested.filter(scope => scope === 'channel')));
 }
 
 function selected<T extends { accountId?: string; sourceId?: string }>(

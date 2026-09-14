@@ -27,7 +27,6 @@ const NUMBER_SPECS: NumberSpec[] = [
     { name: 'TELEGRAM_PIN_FAIL_WINDOW_MS', fallback: 900_000, min: 60_000, max: 86_400_000 },
     { name: 'TELEGRAM_PIN_FAIL_MAX', fallback: 5, min: 3, max: 100 },
     { name: 'TELEGRAM_PIN_LOCK_MS', fallback: 900_000, min: 60_000, max: 86_400_000 },
-    { name: 'TELEGRAM_COMMENTS_MAX_PER_POST', fallback: 200, min: 1, max: 10_000 },
     { name: 'TELEGRAM_SUBSCRIPTION_INTERVAL_MS', fallback: 300_000, min: 60_000, max: 86_400_000 },
     { name: 'TELEGRAM_SUBSCRIPTION_SCAN_LIMIT', fallback: 100, min: 1, max: 10_000 },
     { name: 'TG_JOB_RECOVERY_DELAY_MS', fallback: 10_000, min: 1_000, max: 3_600_000 },

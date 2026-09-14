@@ -28,7 +28,7 @@ test('repository adapter lists enabled subscriptions, uses account runtimes and 
 
     assert.deepEqual(await dependencies.listTelegramAccounts(), [{ accountId: 'account', enabled: true }]);
     assert.deepEqual(await dependencies.listTelegramChannelSubscriptions(), [{
-        sourceId: 'subscription', source: '@news', enabled: true, scopes: ['channel', 'comments'],
+        sourceId: 'subscription', source: '@news', enabled: true, scopes: ['channel'],
     }]);
     assert.equal((await dependencies.getTelegramAccountRuntime('account'))?.client, client);
     assert.match(queries[0], /telegram_channel_subscriptions[\s\S]*enabled = TRUE/);
@@ -38,13 +38,14 @@ test('repository adapter lists enabled subscriptions, uses account runtimes and 
         state: 'allowed', checkedAt: '2026-08-29T08:00:00.000Z', latestMessageId: null,
     });
     await dependencies.markTelegramAccountSourceAccess({
-        accountId: 'account', sourceId: 'subscription', source: '@news', scope: 'comments',
+        accountId: 'account', sourceId: 'subscription', source: '@news', scope: 'channel',
         state: 'error', checkedAt: '2026-08-29T08:00:00.000Z', latestMessageId: null,
         errorCode: 'TIMEOUT',
     });
     assert.deepEqual(marks, [
         ['account', '@news', 'scan', 'allowed', null],
         ['account', '@news', 'download', 'allowed', null],
-        ['account', '@news', 'metadata', 'unknown', 'TIMEOUT'],
+        ['account', '@news', 'scan', 'unknown', 'TIMEOUT'],
+        ['account', '@news', 'download', 'unknown', 'TIMEOUT'],
     ]);
 });

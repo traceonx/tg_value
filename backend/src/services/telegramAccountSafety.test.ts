@@ -39,7 +39,7 @@ for (const code of ['FLOOD_WAIT_300', 'AUTH_KEY_DUPLICATED', 'USER_DEACTIVATED_B
         const summary = await runTelegramAccountAccessSweep({
             async listTelegramAccounts() { return ['bad', 'good'].map(accountId => ({ accountId, enabled: true })); },
             async listTelegramChannelSubscriptions() {
-                return [1, 2].map(id => ({ sourceId: String(id), source: `@source${id}`, enabled: true, scopes: ['channel', 'comments'] as const }));
+                return [1, 2].map(id => ({ sourceId: String(id), source: `@source${id}`, enabled: true, scopes: ['channel'] as const }));
             },
             async getTelegramAccountRuntime(accountId) {
                 acquired += 1;
@@ -51,7 +51,7 @@ for (const code of ['FLOOD_WAIT_300', 'AUTH_KEY_DUPLICATED', 'USER_DEACTIVATED_B
             async markTelegramAccountSourceAccess() {},
             async onAccountError(id) { stopped.push(id); },
         }, { concurrency: 4 });
-        assert.deepEqual(calls, { bad: 1, good: 4 });
+        assert.deepEqual(calls, { bad: 1, good: 2 });
         assert.deepEqual(stopped, ['bad']);
         assert.equal(acquired, released);
         assert.equal(summary.status, 'failed');

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
+import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { getEffectiveTelegramBotConfig } from './telegramBotConfig.js';
 import { TelegramUserWebLoginFlows, type TelegramUserLoginAccount, type TelegramUserLoginClient } from './telegramUserWebLogin.js';
 import { deleteSettings, getSetting, setSetting, setSettings } from '../utils/settings.js';
@@ -57,7 +58,7 @@ export async function migrateLegacyTelegramUserSession(): Promise<string> {
 }
 
 function makeClient(session: string, credentials: { apiId: number; apiHash: string }): TelegramClient {
-    return new TelegramClient(new StringSession(session), credentials.apiId, credentials.apiHash, {
+    const client = new TelegramClient(new StringSession(session), credentials.apiId, credentials.apiHash, {
         proxy: getTelegramProxy(),
         connectionRetries: 15,
         retryDelay: 2000,
@@ -65,8 +66,10 @@ function makeClient(session: string, credentials: { apiId: number; apiHash: stri
         deviceModel: 'TG Vault User Downloader',
         systemVersion: '1.0.0',
         appVersion: '1.0.0',
-        floodSleepThreshold: 120,
+        floodSleepThreshold: 0,
     });
+    installTelegramRequestGate(client);
+    return client;
 }
 
 export async function initTelegramUserClient(credentials?: { apiId: number; apiHash: string }): Promise<void> {

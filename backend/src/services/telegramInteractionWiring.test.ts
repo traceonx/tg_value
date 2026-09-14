@@ -4,8 +4,8 @@ import test from 'node:test';
 
 const bot = fs.readFileSync(new URL('./telegramBot.ts', import.meta.url), 'utf8');
 
-test('comments keyboard rebinds the wizard to the newly sent message', () => {
-    const start = bot.indexOf("state.step = state.includeComments !== undefined");
+test('date/tag prompt rebinds the wizard to the newly sent message', () => {
+    const start = bot.indexOf("state.step = state.kind === 'tg_tag'");
     const branch = bot.slice(start, bot.indexOf('return true;', start));
     assert.match(branch, /const reply = await message\.reply\(/);
     assert.match(branch, /refreshTelegramWizardState\(senderId, chatKey, state, (?:\(reply as Api\.Message\)|reply)\.id\)/);
@@ -22,7 +22,7 @@ test('Telegram channel wizards use chat-bound expiring interaction state', () =>
 test('wizard callbacks bind actor, chat, origin message and action and fail closed after restart', () => {
     assert.match(bot, /callbackChatKey\(update, userId\)/);
     assert.match(bot, /messageId: Number\(update\.msgId\)/);
-    assert.match(bot, /allowedActions: \['cancel', 'mode_date', 'mode_tag', 'comments_on', 'comments_off'\]/);
+    assert.match(bot, /allowedActions: \['cancel', 'mode_date', 'mode_tag'\]/);
     assert.match(bot, /bot\.wizard\.callbackExpired/);
 });
 

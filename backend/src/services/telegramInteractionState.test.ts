@@ -7,12 +7,12 @@ interface WizardPayload {
     step: string;
 }
 
-test('moving to a new comments message accepts its buttons and rejects the old keyboard', () => {
+test('moving to a new mode message accepts its buttons and rejects the old keyboard', () => {
     const store = new TelegramInteractionStore<WizardPayload>();
     store.set({ userId: 7, chatKey: '7', kind: 'date', step: 'path', originMessageId: 11, value: { kind: 'date', step: 'path' } });
-    store.update(7, '7', { kind: 'date', step: 'comments', originMessageId: 22, value: { kind: 'date', step: 'comments' } });
-    for (const action of ['comments_on', 'comments_off']) {
-        const input = { userId: 7, chatKey: '7', messageId: 22, action, allowedActions: ['comments_on', 'comments_off'] };
+    store.update(7, '7', { kind: 'date', step: 'mode', originMessageId: 22, value: { kind: 'date', step: 'mode' } });
+    for (const action of ['mode_date', 'mode_tag']) {
+        const input = { userId: 7, chatKey: '7', messageId: 22, action, allowedActions: ['mode_date', 'mode_tag'] };
         assert.equal(store.validateCallback(input).ok, true);
         assert.deepEqual(store.validateCallback({ ...input, messageId: 11 }), { ok: false, reason: 'message-mismatch' });
         assert.equal(store.validateCallback({ ...input, userId: 8 }).ok, false);

@@ -53,3 +53,36 @@ export function startTelegramProgressTicker(
         await active;
     };
 }
+
+/** One timer per chat; the last owner removes it after every task releases its reference. */
+export class TelegramProgressRegistry {
+    private entries = new Map<string, { callbacks: Set<() => Promise<void>>; stop: () => Promise<void> }>();
+    constructor(private readonly start = startTelegramProgressTicker) {}
+    acquire(key: string, refresh: () => Promise<void>): () => Promise<void> {
+        let entry = this.entries.get(key);
+        if (!entry) {
+            const callbacks = new Set<() => Promise<void>>();
+            entry = { callbacks, stop: this.start(async () => { await [...callbacks].at(-1)?.(); }) };
+            this.entries.set(key, entry);
+        }
+        entry.callbacks.add(refresh);
+        const owned = entry;
+        let released = false;
+        return async () => {
+            if (released) return;
+            released = true;
+            owned.callbacks.delete(refresh);
+            if (owned.callbacks.size === 0) {
+                this.entries.delete(key);
+                await owned.stop();
+            }
+        };
+    }
+}
+
+const registries = new WeakMap<object, TelegramProgressRegistry>();
+export function startSharedTelegramProgress(client: object, chat: string, refresh: () => Promise<void>) {
+    let registry = registries.get(client);
+    if (!registry) { registry = new TelegramProgressRegistry(); registries.set(client, registry); }
+    return registry.acquire(chat, refresh);
+}

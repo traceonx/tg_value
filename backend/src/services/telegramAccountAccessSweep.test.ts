@@ -52,38 +52,6 @@ test('channel probe resolves the entity and reads exactly one recent message wit
     assert.equal('invoke' in client, false, 'the probe must not join/import an invite');
 });
 
-test('comments probe tests the most recent post discussion and treats an empty source as readable', async () => {
-    const optionsSeen: Array<Record<string, unknown>> = [];
-    const peersSeen: unknown[] = [];
-    const client: TelegramAccessClient = {
-        async getEntity() { return { id: 'peer' }; },
-        async getMessages(peer: any, options: Record<string, unknown>) {
-            peersSeen.push(peer);
-            optionsSeen.push(options);
-            if ('replyTo' in options) return [];
-            return [{ id: 99 }];
-        },
-    };
-
-    const result = await probeTelegramAccountSource({
-        accountId: 'account-1', sourceId: 'subscription-1', source: '@source', scope: 'comments', client,
-    });
-    assert.equal(result.state, 'allowed');
-    assert.equal(result.latestMessageId, 99);
-    assert.deepEqual(optionsSeen, [{ limit: 1 }, { limit: 1, replyTo: 99 }]);
-    assert.deepEqual(peersSeen, [{ id: 'peer' }, '@source']);
-
-    const empty = await probeTelegramAccountSource({
-        accountId: 'account-1', sourceId: 'empty', source: '@empty', scope: 'comments',
-        client: {
-            async getEntity() { return { id: 'empty-peer' }; },
-            async getMessages() { return []; },
-        },
-    });
-    assert.equal(empty.state, 'allowed');
-    assert.equal(empty.latestMessageId, null);
-});
-
 test('probe classifies Telegram permission failures as denied and operational failures as error', async () => {
     for (const code of ['CHANNEL_PRIVATE', 'CHAT_FORBIDDEN', 'USER_NOT_PARTICIPANT', 'PEER_ID_INVALID']) {
         const result = await probeTelegramAccountSource({
@@ -134,7 +102,7 @@ test('sweep probes the enabled account x subscription scopes with bounded concur
         async listTelegramChannelSubscriptions() {
             return [
                 { sourceId: 'channel-only', source: '@one', enabled: true, scopes: ['channel'] },
-                { sourceId: 'with-comments', source: '@two', enabled: true, scopes: ['channel', 'comments'] },
+                { sourceId: 'second-channel', source: '@two', enabled: true, scopes: ['channel'] },
                 { sourceId: 'paused', source: '@three', enabled: false, scopes: ['channel'] },
             ];
         },
@@ -151,15 +119,15 @@ test('sweep probes the enabled account x subscription scopes with bounded concur
     const summary = await runTelegramAccountAccessSweep(dependencies, { concurrency: 2, reason: 'automatic' });
 
     assert.equal(summary.status, 'completed');
-    assert.deepEqual(summary.counts, { accounts: 2, sources: 2, probes: 6, allowed: 6, denied: 0, error: 0 });
+    assert.deepEqual(summary.counts, { accounts: 2, sources: 2, probes: 4, allowed: 4, denied: 0, error: 0 });
     assert.equal(maxActive, 2);
-    assert.deepEqual(runtimeLookups.sort(), ['a', 'a', 'a', 'b', 'b', 'b']);
-    assert.equal(persisted.length, 6);
+    assert.deepEqual(runtimeLookups.sort(), ['a', 'a', 'b', 'b']);
+    assert.equal(persisted.length, 4);
     assert.deepEqual(
         persisted.map(result => `${result.accountId}:${result.sourceId}:${result.scope}`).sort(),
         [
-            'a:channel-only:channel', 'a:with-comments:channel', 'a:with-comments:comments',
-            'b:channel-only:channel', 'b:with-comments:channel', 'b:with-comments:comments',
+            'a:channel-only:channel', 'a:second-channel:channel',
+            'b:channel-only:channel', 'b:second-channel:channel',
         ],
     );
 });
@@ -169,7 +137,7 @@ test('runtime lookup failures become structured per-source errors instead of abo
     const dependencies: TelegramAccountAccessSweepDependencies = {
         async listTelegramAccounts() { return [{ accountId: 'expired', enabled: true }]; },
         async listTelegramChannelSubscriptions() {
-            return [{ sourceId: 'source', source: '@source', enabled: true, scopes: ['channel', 'comments'] }];
+            return [{ sourceId: 'source', source: '@source', enabled: true, scopes: ['channel'] }];
         },
         async getTelegramAccountRuntime() { throw rpcError('AUTH_KEY_UNREGISTERED'); },
         async markTelegramAccountSourceAccess(result) { persisted.push(result); },

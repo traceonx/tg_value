@@ -51,6 +51,14 @@ export class LocalStorageProvider implements IStorageProvider {
         return fs.createReadStream(safePath);
     }
 
+    async getFileSize(storedPath: string): Promise<number> {
+        const safePath = safeJoin(this.uploadDir, path.relative(this.uploadDir, storedPath));
+        if (safePath !== path.resolve(storedPath)) throw new Error('Unsafe local file path');
+        const stat = await fs.promises.stat(safePath);
+        if (!stat.isFile()) throw new Error('Stored path is not a file');
+        return stat.size;
+    }
+
     async getPreviewUrl(storedPath: string): Promise<string> {
         // 本地文件通过现有的 serve-static 或 API 路由提供服务
         // 这里我们返回文件名，让上层路由处理

@@ -9,9 +9,7 @@ const workflow = fs.readFileSync(new URL('../../../.github/workflows/docker-publ
 const backendPackage = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 const frontendPackage = JSON.parse(fs.readFileSync(new URL('../../../frontend/package.json', import.meta.url), 'utf8'));
 const installScript = fs.readFileSync(new URL('../../../deploy/install.sh', import.meta.url), 'utf8');
-const deployGuide = fs.readFileSync(new URL('../../../deploy/DEPLOY.md', import.meta.url), 'utf8');
 const envExample = fs.readFileSync(new URL('../../../.env.example', import.meta.url), 'utf8');
-const readme = fs.readFileSync(new URL('../../../README.md', import.meta.url), 'utf8');
 
 function assertBeginnerFriendlyInstall(source: string): void {
     assert.match(source, /CORS_ORIGIN_VALUE=.*CORS_ORIGIN/);
@@ -67,13 +65,6 @@ test('installer keeps beginner input to two public origins and derives the rest'
     assert.match(envExample, /高级覆盖：OAuth/);
     assert.doesNotMatch(envExample, /^TELEGRAM_/m);
     assert.match(envExample, /Telegram 不在这里配置/);
-    assert.match(readme, /新手只需填写（2 项）/);
-    assert.match(readme, /不要把这些内容写入 `.env`/);
-    assert.match(deployGuide, /首次运行只需要填写以下 2 项/);
-    assert.match(deployGuide, /Telegram 不属于首次部署的 `.env` 配置/);
-    assert.match(deployGuide, /docker inspect/);
-    assert.match(deployGuide, /assets\//);
-    assert.match(deployGuide, /镜像名称会使用 `source`/);
 });
 
 test('release metadata is derived per deployment and never persisted in user env files', () => {

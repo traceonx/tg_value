@@ -51,3 +51,10 @@ export function parseTelegramDateRange(
         requiresLargeRangeConfirmation: dayCount > threshold,
     };
 }
+/** Telegram history offsets are exclusive, so include the final second of the selected day. */
+export function telegramHistoryOffset(endDateIso: string, offsetId: number): { offsetDate?: number } {
+    if (offsetId !== 0) return {};
+    const end = new Date(endDateIso).getTime();
+    if (!Number.isFinite(end)) throw new Error('无效的下载结束日期');
+    return { offsetDate: Math.floor(end / 1000) + 1 };
+}

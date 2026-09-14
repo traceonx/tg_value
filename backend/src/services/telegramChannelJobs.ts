@@ -1,3 +1,4 @@
+import { telegramHistoryOffset } from './telegramDateRange.js';
 import { Api, TelegramClient } from 'telegram';
 import crypto from 'node:crypto';
 import type { PoolClient } from 'pg';
@@ -37,7 +38,6 @@ const TG_JOB_RECOVERY_DELAY_MS = Math.max(1000, parseInt(process.env.TG_JOB_RECO
 const TG_JOB_SCAN_SEGMENT_SIZE = Math.max(20, parseInt(process.env.TG_JOB_SCAN_SEGMENT_SIZE || '100', 10) || 100);
 const TG_JOB_DOWNLOAD_BATCH_SIZE = Math.max(1, parseInt(process.env.TG_JOB_DOWNLOAD_BATCH_SIZE || '20', 10) || 20);
 const TG_JOB_MAX_ATTEMPTS = Math.max(1, parseInt(process.env.TG_JOB_MAX_ATTEMPTS || '3', 10) || 3);
-export const TELEGRAM_COMMENTS_MAX_PER_POST = Math.max(1, parseInt(process.env.TELEGRAM_COMMENTS_MAX_PER_POST || '200', 10) || 200);
 let subscriptionTimer: NodeJS.Timeout | null = null;
 let subscriptionScanRunning = false;
 let recoveryStarted = false;
@@ -211,7 +211,10 @@ async function getMessagesByDateRange(userClient: TelegramClient, source: string
     let offsetId = 0;
 
     while (result.length < maxScan) {
-        const batch = await userClient.getMessages(source as any, { limit: Math.min(100, maxScan - result.length), offsetId });
+        const batch = await userClient.getMessages(source as any, {
+            limit: Math.min(100, maxScan - result.length), offsetId,
+            ...telegramHistoryOffset(endDate.toISOString(), offsetId),
+        });
         if (!batch.length) break;
 
         let reachedOlder = false;
@@ -306,17 +309,11 @@ interface TelegramDownloadScanSummary {
     mode: 'date' | 'tag';
     channelMessagesScanned: number;
     channelMediaFound: number;
-    commentMessagesScanned: number;
-    commentMediaFound: number;
     totalMediaFound: number;
-    commentsEnabled: boolean;
-    commentsMaxPerPost: number;
 }
 
-interface TelegramCommentScanOptions {
+interface TelegramScanOptions {
     locale?: TelegramLocale;
-    includeComments?: boolean;
-    commentsMaxPerPost?: number;
     onScanComplete?: (summary: TelegramDownloadScanSummary) => Promise<void> | void;
     onProgress?: (summary: TelegramJobProgressSummary) => Promise<void> | void;
     onRefDiscovered?: (ref: TelegramDownloadMessageRef) => Promise<void> | void;
@@ -370,8 +367,6 @@ export interface TelegramJobProgressSummary {
     downloadStatus: string;
     channelMessagesScanned: number;
     channelMediaFound: number;
-    commentMessagesScanned: number;
-    commentMediaFound: number;
     totalMediaFound: number;
     completed: number;
     pending: number;
@@ -386,79 +381,6 @@ interface TelegramDownloadScanResult {
     messages: Api.Message[];
     refs: TelegramDownloadMessageRef[];
     channelMediaFound: number;
-    commentMessagesScanned: number;
-    commentMediaFound: number;
-}
-
-async function getDiscussionMediaRefs(
-    userClient: TelegramClient,
-    source: string,
-    postMessages: Api.Message[],
-    options: TelegramCommentScanOptions & { tag?: string; startDate?: Date; endDate?: Date } = {},
-): Promise<{ refs: TelegramDownloadMessageRef[]; scanned: number; mediaFound: number }> {
-    if (!options.includeComments || postMessages.length === 0) {
-        return { refs: [], scanned: 0, mediaFound: 0 };
-    }
-
-    const maxPerPost = Math.max(1, Math.floor(options.commentsMaxPerPost || TELEGRAM_COMMENTS_MAX_PER_POST));
-    const refs: TelegramDownloadMessageRef[] = [];
-    let scanned = 0;
-    let mediaFound = 0;
-    const seen = new Set<string>();
-
-    for (const post of postMessages) {
-        const declaredReplies = Number((post as any).replies?.replies || 0);
-        if (declaredReplies <= 0) continue;
-
-        let offsetId = 0;
-        let scannedForPost = 0;
-        while (scannedForPost < maxPerPost) {
-            const batch = await userClient.getMessages(source as any, {
-                limit: Math.min(100, maxPerPost - scannedForPost),
-                offsetId,
-                replyTo: post.id,
-            });
-            if (!batch.length) break;
-
-            for (const comment of batch) {
-                if (!comment) continue;
-                scanned += 1;
-                scannedForPost += 1;
-                offsetId = comment.id;
-
-                if (options.startDate || options.endDate) {
-                    const commentDate = new Date((comment.date || 0) * 1000);
-                    if (options.startDate && commentDate < options.startDate) continue;
-                    if (options.endDate && commentDate > options.endDate) continue;
-                }
-                if (options.tag && !messageMatchesHashtag(comment, options.tag)) continue;
-
-                const fileInfo = extractFileInfo(comment);
-                if (!fileInfo) continue;
-
-                const sourceKey = `${comment.chatId?.toString() || source}:${comment.id}`;
-                if (seen.has(sourceKey)) continue;
-                seen.add(sourceKey);
-                mediaFound += 1;
-                const ref: TelegramDownloadMessageRef = {
-                    id: comment.id,
-                    source: comment.chatId || source,
-                    origin: 'comment',
-                    channelPostId: post.id,
-                    fileInfo,
-                    totalSize: getEstimatedFileSize(comment),
-                    message: comment,
-                    groupedId: messageGroupId(comment),
-                };
-                refs.push(ref);
-                await options.onRefDiscovered?.(ref);
-            }
-
-            if (batch.length === 0 || scannedForPost >= maxPerPost) break;
-        }
-    }
-
-    return { refs, scanned, mediaFound };
 }
 
 async function shouldSkipTelegramPhotosInBatch(): Promise<boolean> {
@@ -512,19 +434,13 @@ async function buildDownloadScanResult(
     userClient: TelegramClient,
     source: string,
     messages: Api.Message[],
-    options: TelegramCommentScanOptions & { tag?: string; startDate?: Date; endDate?: Date } = {},
+    options: TelegramScanOptions & { tag?: string; startDate?: Date; endDate?: Date } = {},
 ): Promise<TelegramDownloadScanResult> {
     const skipTelegramPhotos = await shouldSkipTelegramPhotosInBatch();
     const filteredMessages = filterTelegramBatchMessages(messages, skipTelegramPhotos);
     const refs = filteredMessages
         .map(message => toChannelDownloadRef(source, message))
         .filter((ref): ref is TelegramDownloadMessageRef => Boolean(ref));
-    const commentScan = await getDiscussionMediaRefs(userClient, source, messages, options);
-    if (skipTelegramPhotos) {
-        commentScan.refs = commentScan.refs.filter(ref => !ref.message || filterTelegramBatchMessages([ref.message], true).length > 0);
-        commentScan.mediaFound = commentScan.refs.length;
-    }
-    refs.push(...commentScan.refs);
     propagateTelegramDownloadGroupContext(refs);
     for (const ref of refs) {
         await options.onRefDiscovered?.(ref);
@@ -533,14 +449,12 @@ async function buildDownloadScanResult(
         messages,
         refs,
         channelMediaFound: refs.length,
-        commentMessagesScanned: commentScan.scanned,
-        commentMediaFound: commentScan.mediaFound,
     };
 }
 
 async function markDownloadRefsDownloading(jobId: string, refs: TelegramDownloadMessageRef[]) {
     for (const ref of refs) {
-        const sourcePeer = sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel');
+        const sourcePeer = sourcePeerKey(ref.source, 'channel');
         await query(
             `UPDATE telegram_download_items
              SET status = 'downloading', locked_at = NOW(), updated_at = NOW()
@@ -573,7 +487,7 @@ interface TelegramTransactionPool {
 const telegramLeaseFinalizing = new Set<string>();
 
 function telegramLeaseKey(jobId: string, ref: TelegramDownloadMessageRef): string {
-    return `${jobId}:${sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel')}:${ref.id}:${ref.leaseToken || ''}`;
+    return `${jobId}:${sourcePeerKey(ref.source, 'channel')}:${ref.id}:${ref.leaseToken || ''}`;
 }
 
 export async function withTelegramDownloadRefLease<T>(
@@ -594,7 +508,7 @@ export async function withTelegramDownloadRefLease<T>(
              WHERE i.job_id = $1 AND i.source_peer = $2 AND i.message_id = $3
                AND i.status = 'downloading' AND i.lease_token = $4::uuid
              FOR UPDATE`,
-            [jobId, sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel'), ref.id, ref.leaseToken],
+            [jobId, sourcePeerKey(ref.source, 'channel'), ref.id, ref.leaseToken],
         );
         if ((owned.rowCount || 0) !== 1) throw new TelegramDownloadLeaseLostError(jobId, ref);
         const result = await operation();
@@ -621,7 +535,7 @@ export async function settleTelegramDownloadRefWithQuery(
     status: 'success' | 'failed' | 'skipped',
     error?: string,
 ): Promise<TelegramDownloadSettlementResult> {
-    const sourcePeer = sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel');
+    const sourcePeer = sourcePeerKey(ref.source, 'channel');
     const leaseToken = ref.leaseToken || null;
     const result = await runQuery(
         `UPDATE telegram_download_items i
@@ -1062,8 +976,6 @@ async function getJobProgress(jobId: string): Promise<TelegramJobProgressSummary
         downloadStatus: job.download_status || 'pending',
         channelMessagesScanned: Number(cursor.channelMessagesScanned || 0),
         channelMediaFound: Number(cursor.channelMediaFound || 0),
-        commentMessagesScanned: Number(cursor.commentMessagesScanned || 0),
-        commentMediaFound: Number(cursor.commentMediaFound || 0),
         totalMediaFound: Number(job.total_count || 0),
         completed: Number(stats.success || 0),
         pending: Number(stats.pending || 0),
@@ -1074,7 +986,7 @@ async function getJobProgress(jobId: string): Promise<TelegramJobProgressSummary
     };
 }
 
-async function notifyProgress(jobId: string, options: TelegramCommentScanOptions) {
+async function notifyProgress(jobId: string, options: TelegramScanOptions) {
     const progress = await getJobProgress(jobId);
     if (progress) await options.onProgress?.(progress);
 }
@@ -1156,7 +1068,7 @@ async function ensureJobCanRun(jobId: string): Promise<TelegramJobControlState> 
     return 'run';
 }
 
-async function waitUntilRunnable(jobId: string, options: TelegramCommentScanOptions): Promise<boolean> {
+async function waitUntilRunnable(jobId: string, options: TelegramScanOptions): Promise<boolean> {
     while (true) {
         const state = await ensureJobCanRun(jobId);
         if (state === 'run') return true;
@@ -1191,6 +1103,7 @@ async function claimPendingDownloadRefs(jobId: string, limit = TG_JOB_DOWNLOAD_B
              FROM telegram_download_items i
              JOIN locked_job j ON j.id = i.job_id
              WHERE i.job_id = $1
+               AND i.origin = 'channel'
                AND i.status = 'pending'
                AND i.attempts < $2
                AND i.file_name IS NOT NULL
@@ -1225,7 +1138,7 @@ async function claimPendingDownloadRefs(jobId: string, limit = TG_JOB_DOWNLOAD_B
             id: Number(row.message_id),
             itemId: String(row.id),
             source: row.source_peer || row.source,
-            origin: row.origin === 'comment' ? 'comment' : 'channel',
+            origin: 'channel',
             channelPostId: row.channel_post_id || undefined,
             fileInfo: persistedTelegramFileInfo(row),
             totalSize: Number(row.total_size || 0),
@@ -1257,7 +1170,7 @@ export async function restoreTelegramDownloadRefsWithQuery(
              updated_at = NOW()
          WHERE job_id = $1 AND source_peer = $2 AND message_id = $3 AND status = 'downloading'
            AND lease_token = $5::uuid`,
-        [jobId, sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel'), ref.id, status, ref.leaseToken || null, reason || (status === 'skipped' ? '任务已取消' : null)]
+        [jobId, sourcePeerKey(ref.source, 'channel'), ref.id, status, ref.leaseToken || null, reason || (status === 'skipped' ? '任务已取消' : null)]
     )));
     return results.every(result => (result.rowCount || 0) === 1);
 }
@@ -1287,7 +1200,7 @@ export async function heartbeatTelegramDownloadRefsWithQuery(runQuery: TelegramJ
          SET locked_at = NOW(), lease_expires_at = NOW() + INTERVAL '10 minutes', updated_at = NOW()
          WHERE job_id = $1 AND source_peer = $2 AND message_id = $3
            AND status = 'downloading' AND lease_token = $4::uuid`,
-        [jobId, sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel'), ref.id, ref.leaseToken],
+        [jobId, sourcePeerKey(ref.source, 'channel'), ref.id, ref.leaseToken],
     )));
     const lost: TelegramDownloadMessageRef[] = [];
     for (let index = 0; index < results.length; index += 1) {
@@ -1297,7 +1210,7 @@ export async function heartbeatTelegramDownloadRefsWithQuery(runQuery: TelegramJ
             `SELECT status, lease_token
              FROM telegram_download_items
              WHERE job_id = $1 AND source_peer = $2 AND message_id = $3`,
-            [jobId, sourcePeerKey(ref.source, ref.origin === 'comment' ? 'comment' : 'channel'), ref.id],
+            [jobId, sourcePeerKey(ref.source, 'channel'), ref.id],
         );
         const row = current.rows[0];
         if (row && ['success', 'failed', 'skipped'].includes(String(row.status))) {
@@ -1326,7 +1239,7 @@ function startClaimHeartbeat(jobId: string, refs: TelegramDownloadMessageRef[]):
     return () => clearInterval(timer);
 }
 
-async function downloadClaimedRefs(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, refs: TelegramDownloadMessageRef[], folderOverride: string | null | undefined, options: TelegramCommentScanOptions) {
+async function downloadClaimedRefs(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, refs: TelegramDownloadMessageRef[], folderOverride: string | null | undefined, options: TelegramScanOptions) {
     if (refs.length === 0) return {
         found: 0,
         skipped: 0,
@@ -1437,7 +1350,7 @@ async function downloadClaimedRefs(botClient: TelegramClient, requestMessage: Ap
     }
 }
 
-async function downloadPendingForJob(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, folderOverride: string | null | undefined, options: TelegramCommentScanOptions, drain = false) {
+async function downloadPendingForJob(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, folderOverride: string | null | undefined, options: TelegramScanOptions, drain = false) {
     let aggregate = {
         found: 0,
         skipped: 0,
@@ -1473,7 +1386,7 @@ async function compactTelegramDownloadHistorySafely(jobId: string): Promise<void
     });
 }
 
-async function finalizeTelegramJob(jobId: string, options: TelegramCommentScanOptions) {
+async function finalizeTelegramJob(jobId: string, options: TelegramScanOptions) {
     const job = await getJob(jobId);
     if (!job || job.cancelled_at || job.status === 'cancelled') return;
     if (job.paused_at || job.status === 'paused') {
@@ -1514,12 +1427,13 @@ async function finalizeTelegramJob(jobId: string, options: TelegramCommentScanOp
     }
 }
 
-async function scanChannelSegment(userClient: TelegramClient, jobId: string, source: string, params: any, cursor: any, options: TelegramCommentScanOptions): Promise<{ messages: Api.Message[]; done: boolean; nextOffsetId: number }> {
+async function scanChannelSegment(userClient: TelegramClient, jobId: string, source: string, params: any, cursor: any, options: TelegramScanOptions): Promise<{ messages: Api.Message[]; done: boolean; nextOffsetId: number }> {
     const mode = params.mode as 'date' | 'tag';
     const offsetId = Number(cursor.offsetId || 0);
     const batch = await userClient.getMessages(source as any, {
         limit: TG_JOB_SCAN_SEGMENT_SIZE,
         offsetId,
+        ...(mode === 'date' ? telegramHistoryOffset(params.endDateIso, offsetId) : {}),
         ...(mode === 'tag' ? { search: params.tag } : {}),
     });
     if (!batch.length) return { messages: [], done: true, nextOffsetId: offsetId };
@@ -1543,7 +1457,7 @@ async function scanChannelSegment(userClient: TelegramClient, jobId: string, sou
     return { messages: expanded, done: done || batch.length < TG_JOB_SCAN_SEGMENT_SIZE, nextOffsetId };
 }
 
-async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, folderOverride: string | null | undefined, options: TelegramCommentScanOptions) {
+async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage: Api.Message, jobId: string, source: string, folderOverride: string | null | undefined, options: TelegramScanOptions) {
     const userClient = requireUserClient();
     const job = await getJob(jobId);
     const params = job?.params || {};
@@ -1552,11 +1466,11 @@ async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage
     let totals = { found: 0, skipped: 0, failed: 0, successful: 0 };
     const initialState = await ensureJobCanRun(jobId);
     if (initialState === 'cancelled') {
-        return { jobId, cancelled: true, ...totals, requested: 0, commentMessagesScanned: 0, commentMediaFound: 0 };
+        return { jobId, cancelled: true, ...totals, requested: 0 };
     }
     if (initialState !== 'run') {
         const runnable = await waitUntilRunnable(jobId, options);
-        if (!runnable) return { jobId, cancelled: true, ...totals, requested: 0, commentMessagesScanned: 0, commentMediaFound: 0 };
+        if (!runnable) return { jobId, cancelled: true, ...totals, requested: 0 };
     }
     const started = await query(
         `UPDATE telegram_background_jobs
@@ -1573,12 +1487,12 @@ async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage
     );
     if ((started.rowCount || 0) === 0) {
         const state = await ensureJobCanRun(jobId);
-        if (state === 'cancelled') return { jobId, cancelled: true, ...totals, requested: 0, commentMessagesScanned: 0, commentMediaFound: 0 };
+        if (state === 'cancelled') return { jobId, cancelled: true, ...totals, requested: 0 };
         if (state !== 'run') {
             const runnable = await waitUntilRunnable(jobId, options);
-            if (!runnable) return { jobId, cancelled: true, ...totals, requested: 0, commentMessagesScanned: 0, commentMediaFound: 0 };
+            if (!runnable) return { jobId, cancelled: true, ...totals, requested: 0 };
         }
-        return { jobId, deferred: true, ...totals, requested: 0, commentMessagesScanned: 0, commentMediaFound: 0 };
+        return { jobId, deferred: true, ...totals, requested: 0 };
     }
 
     while (await waitUntilRunnable(jobId, options)) {
@@ -1606,8 +1520,6 @@ async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage
                 offsetId: segment.nextOffsetId,
                 channelMessagesScanned: Number(cursor.channelMessagesScanned || 0) + segment.messages.length,
                 channelMediaFound: Number(cursor.channelMediaFound || 0) + scan.channelMediaFound,
-                commentMessagesScanned: Number(cursor.commentMessagesScanned || 0) + scan.commentMessagesScanned,
-                commentMediaFound: Number(cursor.commentMediaFound || 0) + scan.commentMediaFound,
             };
             const stats = await getJobItemStats(jobId);
             await updateJob(jobId, { scan_cursor: JSON.stringify(cursor), total_count: Number(stats.pending || 0) + Number(stats.downloading || 0) + Number(stats.success || 0) + Number(stats.failed || 0) + Number(stats.skipped || 0), scan_status: segment.done ? 'done' : 'scanning' });
@@ -1626,16 +1538,16 @@ async function runSegmentedTelegramJob(botClient: TelegramClient, requestMessage
     const runnable = await waitUntilRunnable(jobId, options);
     if (!runnable) {
         await updateJob(jobId, { status: 'cancelled', scan_status: 'cancelled', download_status: 'cancelled', finished_at: new Date() });
-        return { jobId, cancelled: true, ...totals, requested: 0, commentMessagesScanned: Number(cursor.commentMessagesScanned || 0), commentMediaFound: Number(cursor.commentMediaFound || 0) };
+        return { jobId, cancelled: true, ...totals, requested: 0 };
     }
     await updateJob(jobId, { scan_status: 'done' });
     const drained = await downloadPendingForJob(botClient, requestMessage, jobId, source, folderOverride, options, true);
     totals = { found: totals.found + drained.found, skipped: totals.skipped + drained.skipped, failed: totals.failed + drained.failed, successful: totals.successful + drained.successful };
     await finalizeTelegramJob(jobId, options);
-    return { jobId, ...totals, requested: totals.found + totals.skipped, commentMessagesScanned: Number(cursor.commentMessagesScanned || 0), commentMediaFound: Number(cursor.commentMediaFound || 0) };
+    return { jobId, ...totals, requested: totals.found + totals.skipped };
 }
 
-export async function enqueueTelegramDateDownload(botClient: TelegramClient, requestMessage: Api.Message, userId: number, sourceInput: string, startDateText: string, endDateText: string, folderOverride?: string | null, options: TelegramCommentScanOptions = {}) {
+export async function enqueueTelegramDateDownload(botClient: TelegramClient, requestMessage: Api.Message, userId: number, sourceInput: string, startDateText: string, endDateText: string, folderOverride?: string | null, options: TelegramScanOptions = {}) {
     const locale = options.locale || DEFAULT_LOCALE;
     const userClient = requireUserClient(locale);
     const resolved = await resolveTelegramSource(userClient, sourceInput, locale);
@@ -1660,8 +1572,6 @@ export async function enqueueTelegramDateDownload(botClient: TelegramClient, req
             dayCount: range.dayCount,
             largeRange: range.requiresLargeRangeConfirmation,
             folderOverride: folderOverride || null,
-            includeComments: Boolean(options.includeComments),
-            commentsMaxPerPost: options.commentsMaxPerPost || TELEGRAM_COMMENTS_MAX_PER_POST,
         },
     });
     return runSegmentedTelegramJob(botClient, requestMessage, jobId, source, folderOverride, options);
@@ -1691,7 +1601,7 @@ async function getMessagesByHashtag(userClient: TelegramClient, source: string, 
     return result.sort((a, b) => a.id - b.id);
 }
 
-export async function enqueueTelegramTagDownload(botClient: TelegramClient, requestMessage: Api.Message, userId: number, sourceInput: string, tagInput: string, folderOverride?: string | null, options: TelegramCommentScanOptions = {}) {
+export async function enqueueTelegramTagDownload(botClient: TelegramClient, requestMessage: Api.Message, userId: number, sourceInput: string, tagInput: string, folderOverride?: string | null, options: TelegramScanOptions = {}) {
     const locale = options.locale || DEFAULT_LOCALE;
     const userClient = requireUserClient(locale);
     const resolved = await resolveTelegramSource(userClient, sourceInput, locale);
@@ -1710,8 +1620,6 @@ export async function enqueueTelegramTagDownload(botClient: TelegramClient, requ
             mode: 'tag',
             tag,
             folderOverride: folderOverride || null,
-            includeComments: Boolean(options.includeComments),
-            commentsMaxPerPost: options.commentsMaxPerPost || TELEGRAM_COMMENTS_MAX_PER_POST,
         },
     });
     const result = await runSegmentedTelegramJob(botClient, requestMessage, jobId, source, folderOverride, options);

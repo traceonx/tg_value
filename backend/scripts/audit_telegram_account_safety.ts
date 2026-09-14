@@ -48,7 +48,7 @@ for (const code of ['FLOOD_WAIT_300', 'AUTH_KEY_DUPLICATED', 'USER_DEACTIVATED_B
         async listTelegramChannelSubscriptions() {
             return [1, 2, 3].map(id => ({
                 sourceId: String(id), source: `@offline${id}`, enabled: true,
-                scopes: ['channel', 'comments'] as const,
+                scopes: ['channel'] as const,
             }));
         },
         async getTelegramAccountRuntime() { return { client: {

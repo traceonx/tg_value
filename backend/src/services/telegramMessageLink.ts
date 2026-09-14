@@ -1,4 +1,7 @@
 import { joinFolderPath, normalizeFolderName } from '../utils/folderPath.js';
+import { TelegramSingleFlight } from './telegramSingleFlight.js';
+
+const downloads = new TelegramSingleFlight<{ successful: number; failed: number }>();
 
 export interface TelegramMessageLink {
     source: string;
@@ -40,6 +43,8 @@ export async function runTelegramMessageLinkDownload<T>(
         assertSourceAllowed: (source: string) => Promise<void>;
         getTarget: () => Promise<T>;
         getBaseFolder: () => Promise<string | null>;
+        scopeKey?: string;
+        targetKey?: (target: T) => string;
         download: (source: string, ids: number[], target: T, folder: string) => Promise<{ successful: number; failed: number }>;
     },
     now = new Date(),
@@ -48,5 +53,8 @@ export async function runTelegramMessageLinkDownload<T>(
     await dependencies.assertSourceAllowed(link.source);
     const folder = joinFolderPath(await dependencies.getBaseFolder(), folderName);
     const target = await dependencies.getTarget();
-    return dependencies.download(link.source, [link.messageId], target, folder);
+    const download = () => dependencies.download(link.source, [link.messageId], target, folder);
+    if (!dependencies.scopeKey || !dependencies.targetKey) return download();
+    const key = JSON.stringify([dependencies.scopeKey, link.source.toLowerCase(), link.messageId, dependencies.targetKey(target), folder]);
+    return downloads.run(key, download);
 }

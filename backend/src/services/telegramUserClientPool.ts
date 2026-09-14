@@ -7,6 +7,7 @@ import type {
 import { telegramAccountRepository } from './telegramAccountRepository.js';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
+import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { decryptCredential } from '../utils/credentialCrypto.js';
 import { getTelegramProxy } from './telegramProxy.js';
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
@@ -229,7 +230,15 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
 
     updateCooldown(accountId: string, cooldownUntil: Date, error: string | null): void {
         const entry = this.entries.get(accountId);
-        if (entry) entry.account = { ...entry.account, cooldownUntil, healthState: 'degraded', lastError: error };
+        if (entry?.account.healthState === 'session_expired') return;
+        if (entry) entry.account = { ...entry.account,
+            cooldownUntil: new Date(Math.max(new Date(entry.account.cooldownUntil || 0).getTime(), cooldownUntil.getTime())),
+            healthState: 'degraded', lastError: error };
+    }
+
+    markExpired(accountId: string): void {
+        const entry = this.entries.get(accountId);
+        if (entry) entry.account = { ...entry.account, healthState: 'session_expired' };
     }
 
     updateSourceAccess(_accountId: string, _sourceKey: string, _scope: TelegramAccountSourceScope, _state: TelegramSourceAccessState): void {
@@ -271,13 +280,28 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
 export const telegramUserClientPool = new TelegramUserClientPool<TelegramClient>({
     repository: telegramAccountRepository,
     decryptSession: decryptCredential,
-    createClient: (session, credentials) => new TelegramClient(
+    createClient: (session, credentials, accountId) => {
+        const client = new TelegramClient(
         new StringSession(session), credentials.apiId, credentials.apiHash, {
             proxy: getTelegramProxy(),
             connectionRetries: 15, retryDelay: 2000, useWSS: false,
             deviceModel: 'TG Vault User Downloader', systemVersion: '1.0.0', appVersion: '1.0.0', floodSleepThreshold: 0,
         },
-    ),
+        );
+        installTelegramRequestGate(client, undefined, async error => {
+            const reason = telegramAccountStopReason(error);
+            if (!reason) return;
+            const message = error instanceof Error ? error.message : String(error);
+            if (reason.kind === 'cooldown') {
+                telegramUserClientPool.updateCooldown(accountId, new Date(Date.now() + reason.seconds * 1000), message);
+                await telegramAccountRepository.markCooldown(accountId, reason.seconds, message);
+            } else {
+                telegramUserClientPool.markExpired(accountId);
+                await telegramAccountRepository.markSessionExpired(accountId, message);
+            }
+        });
+        return client;
+    },
     saveSession: client => client.session.save() as unknown as string,
 });
 

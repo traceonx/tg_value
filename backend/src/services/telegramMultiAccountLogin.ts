@@ -1,5 +1,6 @@
 import { Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
+import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { Raw } from 'telegram/events/index.js';
 import { getEffectiveTelegramBotConfig } from './telegramBotConfig.js';
 import { getTelegramProxy } from './telegramProxy.js';
@@ -41,7 +42,7 @@ async function getCredentials(): Promise<TelegramLoginCredentials | null> {
 }
 
 function makeClient(credentials: TelegramLoginCredentials): TelegramClient {
-    return new TelegramClient(new StringSession(''), credentials.apiId, credentials.apiHash, {
+    const client = new TelegramClient(new StringSession(''), credentials.apiId, credentials.apiHash, {
         proxy: getTelegramProxy(),
         connectionRetries: 15,
         retryDelay: 2000,
@@ -49,8 +50,10 @@ function makeClient(credentials: TelegramLoginCredentials): TelegramClient {
         deviceModel: 'TG Vault Multi-Account Login',
         systemVersion: '1.0.0',
         appVersion: '1.0.0',
-        floodSleepThreshold: 120,
+        floodSleepThreshold: 0,
     });
+    installTelegramRequestGate(client);
+    return client;
 }
 
 class GramJsMultiAccountLoginClient implements TelegramMultiAccountLoginClient {
