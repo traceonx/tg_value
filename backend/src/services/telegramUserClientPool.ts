@@ -126,7 +126,10 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
     }
 
     private async connectAccount(account: TelegramUserAccountRecord): Promise<void> {
-        if (!this.credentials || !account.enabled || account.healthState === 'session_expired') return;
+        // Older releases synthesized this exact error from the lossy boolean
+        // authorization probe. Revalidate the saved session, never reset it.
+        const legacyUnverifiedExpiry = account.lastError === 'SESSION_EXPIRED';
+        if (!this.credentials || !account.enabled || (account.healthState === 'session_expired' && !legacyUnverifiedExpiry)) return;
         // A restart or explicit enable must not bypass a server-mandated wait.
         if (account.cooldownUntil && new Date(account.cooldownUntil).getTime() > Date.now()) return;
         let client: C | null = null;
@@ -134,7 +137,9 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
             const session = this.deps.decryptSession(account.session);
             client = this.deps.createClient(session, this.credentials, account.id);
             await client.connect();
-            if (!(await client.checkAuthorization())) throw new Error('SESSION_EXPIRED');
+            // GramJS checkAuthorization converts every RPC/network error to false.
+            // getMe preserves the real error so a restart during an outage cannot
+            // permanently disable an otherwise valid persisted authorization.
             await client.getMe();
             const saved = this.deps.saveSession?.(client) || session;
             if (saved && saved !== session) await this.deps.repository.updateSession(account.id, saved);

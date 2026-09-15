@@ -12,7 +12,10 @@ test('direct links are handled before pending path and tag wizard inputs', () =>
     const branch = bot.slice(link, bot.indexOf("if (!text.startsWith('/'))", link));
     assert.match(branch, /telegramWizardStates.delete/);
     assert.match(branch, /isAuthenticatedAsync/);
-    assert.match(branch, /getBaseFolder:.*resolveTelegramStorageFolderPersistent/);
+    assert.match(branch, /downloadMessageLink\(message, senderId, messageLink, locale\)/);
+    const handler = bot.slice(bot.indexOf('async function downloadMessageLink'), bot.indexOf('async function handleLinkFolderChoice'));
+    assert.match(handler, /getBaseFolder:.*resolveTelegramStorageFolderPersistent/);
+    assert.match(branch, /linkFolderChoices.prepare/);
 });
 
 test('active link progress shows bytes and the actual destination folder', async () => {

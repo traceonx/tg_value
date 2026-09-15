@@ -2,6 +2,31 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TelegramRequestGate } from './telegramRequestGate.js';
 
+test('short file-read flood waits resume the same operation without restarting the file', async () => {
+    let now = 0;
+    let calls = 0;
+    const gate = new TelegramRequestGate(0, () => now, async ms => { now += ms; });
+    const value = await gate.runFileRead(async () => {
+        calls++;
+        if (calls === 1) throw { errorMessage: 'FLOOD', seconds: 2 };
+        assert.ok(now >= 2000);
+        return 'same-offset-chunk';
+    });
+    assert.equal(value, 'same-offset-chunk');
+    assert.equal(calls, 2);
+});
+
+test('another file waits for shared cooldown, while long waits and revoked sessions propagate', async () => {
+    let now = 0;
+    const gate = new TelegramRequestGate(0, () => now, async ms => { now += ms; });
+    gate.stop({ errorMessage: 'FLOOD', seconds: 1 });
+    assert.equal(await gate.runFileRead(async () => { assert.ok(now >= 1000); return 1; }), 1);
+    gate.stop({ errorMessage: 'FLOOD', seconds: 120 });
+    await assert.rejects(gate.runFileRead(async () => assert.fail('read during long wait')));
+    gate.stop(new Error('SESSION_REVOKED'));
+    await assert.rejects(gate.runFileRead(async () => assert.fail('read revoked session')), /expired/);
+});
+
 test('flood blocks reads, media and fallback sends on one identity only', async () => {
     let now = 0;
     const user = new TelegramRequestGate(0, () => now);

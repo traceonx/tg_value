@@ -2,6 +2,8 @@ import { TelegramClient, Api } from 'telegram';
 import { installTelegramRequestGate, TelegramRequestGate } from './telegramRequestGate.js';
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
 import { parseTelegramMessageLink, runTelegramMessageLinkDownload } from './telegramMessageLink.js';
+import type { TelegramMessageLink } from './telegramMessageLink.js';
+import { TelegramLinkFolderChoices } from './telegramLinkFolderChoice.js';
 import { resolveTelegramStorageFolderPersistent } from '../utils/telegramPathSettings.js';
 import { downloadTelegramChannelRange } from './telegramUpload.js';
 import { assertTelegramSourceAllowed } from './telegramChannelJobs.js';
@@ -235,6 +237,47 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
 
 // GramJS Client
 let client: TelegramClient | null = null;
+const linkFolderChoices = new TelegramLinkFolderChoices<Api.Message>();
+
+async function downloadMessageLink(message: Api.Message, senderId: number, link: TelegramMessageLink, locale: TelegramLocale) {
+    try {
+        const chatId = message.chatId!;
+        const result = await runTelegramMessageLinkDownload(link, {
+            scopeKey: `${chatId}:${senderId}`,
+            targetKey: target => JSON.stringify([target.providerKey, target.accountId]),
+            assertSourceAllowed: source => assertTelegramSourceAllowed(source, [], locale),
+            getBaseFolder: () => resolveTelegramStorageFolderPersistent(chatId.toString(), null),
+            getTarget: async () => {
+                const selected = await consumeOrGetTelegramTargetState(chatId.toString());
+                return selected ? storageManager.getTarget(selected.provider, selected.accountId) : storageManager.getActiveTarget();
+            },
+            download: (source, ids, target, folder) => downloadTelegramChannelRange(
+                client!, message, source, ids[0], 1, 'older', ids,
+                folder, undefined, undefined, undefined, undefined, undefined, senderId, target,
+            ),
+        });
+        if (!result.successful && !result.failed) await message.reply({ message: t(locale, 'bot.link.empty') });
+    } catch (error) {
+        await message.reply({ message: t(locale, 'bot.link.failed', { error: error instanceof Error ? error.message : String(error) }), parseMode: false });
+    }
+}
+
+async function handleLinkFolderChoice(update: Api.UpdateBotCallbackQuery, data: string) {
+    const senderId = update.userId.toJSNumber();
+    if (!(await isAuthenticatedAsync(senderId))) {
+        await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+        return;
+    }
+    const locale = await getTelegramUserLocaleOrDefault(senderId);
+    const match = /^linkfolder_([a-f0-9]{32})_(yes|no)$/.exec(data);
+    const messages = await client!.getMessages(update.peer, { ids: Number(update.msgId) });
+    const menu = messages[0] as Api.Message | undefined;
+    const choice = match && menu?.chatId ? linkFolderChoices.consume(match[1], `${menu.chatId}:${senderId}`, match[2] === 'yes') : null;
+    await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...(choice ? {} : { message: t(locale, 'bot.link.folderExpired'), alert: true }) }));
+    if (!choice) return;
+    await client!.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, 'bot.link.folderSelected', { folder: choice.link.folderName }), parseMode: false, buttons: new Api.ReplyInlineMarkup({ rows: [] }) });
+    await downloadMessageLink(choice.context, senderId, choice.link, locale);
+}
 let digestTimer: NodeJS.Timeout | null = null;
 let botLifecycle: Promise<void> = Promise.resolve();
 
@@ -1736,23 +1779,17 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                     clearPendingTelegramPathInput(chatId.toString(), senderId);
                     const locale = await getTelegramUserLocaleOrDefault(senderId);
                     try {
-                        const result = await runTelegramMessageLinkDownload(messageLink, {
-                            scopeKey: `${chatId}:${senderId}`,
-                            targetKey: target => JSON.stringify([target.providerKey, target.accountId]),
-                            assertSourceAllowed: source => assertTelegramSourceAllowed(source, [], locale),
-                            getBaseFolder: () => resolveTelegramStorageFolderPersistent(chatId.toString(), null),
-                            getTarget: async () => {
-                                const selected = await consumeOrGetTelegramTargetState(chatId.toString());
-                                return selected ? storageManager.getTarget(selected.provider, selected.accountId) : storageManager.getActiveTarget();
-                            },
-                            download: (source, ids, target, folder) => downloadTelegramChannelRange(
-                                client!, message, source, ids[0], 1, 'older', ids,
-                                folder, undefined, undefined, undefined, undefined, undefined, senderId, target,
-                            ),
-                        });
-                        if (!result.successful && !result.failed) {
-                            await message.reply({ message: t(locale, 'bot.link.empty') });
+                        const choice = linkFolderChoices.prepare(`${chatId}:${senderId}`, messageLink, message);
+                        if (choice) {
+                            await message.reply({ message: t(locale, 'bot.link.reuseFolder', { folder: choice.folder, date: choice.dateFolder }), parseMode: false,
+                                buttons: new Api.ReplyInlineMarkup({ rows: [new Api.KeyboardButtonRow({ buttons: [
+                                    new Api.KeyboardButtonCallback({ text: t(locale, 'bot.link.folderYes'), data: Buffer.from(`linkfolder_${choice.token}_yes`) }),
+                                    new Api.KeyboardButtonCallback({ text: t(locale, 'bot.link.folderNo'), data: Buffer.from(`linkfolder_${choice.token}_no`) }),
+                                ] })] }),
+                            });
+                            return;
                         }
+                        await downloadMessageLink(message, senderId, messageLink, locale);
                     } catch (error) {
                         await message.reply({ message: t(locale, 'bot.link.failed', { error: error instanceof Error ? error.message : String(error) }), parseMode: false });
                     }
@@ -2181,6 +2218,11 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                 const activeClient = client;
                 const callbackUpdate = update as Api.UpdateBotCallbackQuery;
                 const data = Buffer.from(callbackUpdate.data || []).toString('utf-8');
+
+                if (data.startsWith('linkfolder_')) {
+                    await handleLinkFolderChoice(callbackUpdate, data);
+                    return;
+                }
 
                 if (data.startsWith('lang_')) {
                     await handleLanguageSelection(callbackUpdate, data);

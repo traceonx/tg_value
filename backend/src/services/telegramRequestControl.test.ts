@@ -13,12 +13,32 @@ import { saveAndIndexWithCompensation } from './storageWrite.js';
 import { telegramHistoryOffset } from './telegramDateRange.js';
 import { runTelegramMessageLinkDownload } from './telegramMessageLink.js';
 
-test('actual invoke and media entry points share cooling and do not call fallback send', async () => {
+test('installed media hook retries a short wait at the original offset and persists cooling once', async () => {
+    let now = 0;
+    const offsets: number[] = [];
+    let persisted = 0;
+    const client = {
+        async invoke() { return true; },
+        async invokeWithSender(request: { offset: number }) {
+            offsets.push(request.offset);
+            if (offsets.length === 1) throw Object.assign(new Error('FLOOD_WAIT_2'), { seconds: 2 });
+            assert.ok(now >= 2000);
+            return Buffer.from('chunk');
+        },
+    } as unknown as TelegramClient;
+    installTelegramRequestGate(client, new TelegramRequestGate(0, () => now, async ms => { now += ms; }), async () => { persisted++; });
+    const chunk = await client.invokeWithSender({ className: 'upload.GetFile', offset: 524288 } as never, {} as never);
+    assert.deepEqual(chunk, Buffer.from('chunk'));
+    assert.deepEqual(offsets, [524288, 524288]);
+    assert.equal(persisted, 1);
+});
+
+test('actual invoke and media entry points share long cooling and do not call fallback send', async () => {
     const calls: string[] = [];
     const client = {
         async invoke(request: { className: string }) { calls.push(request.className); return true; },
         async invokeWithSender(request: { className: string }) {
-            calls.push(request.className); throw Object.assign(new Error('FLOOD_WAIT_60'), { seconds: 60 });
+            calls.push(request.className); throw Object.assign(new Error('FLOOD_WAIT_120'), { seconds: 120 });
         },
     } as unknown as TelegramClient;
     let persisted = 0;

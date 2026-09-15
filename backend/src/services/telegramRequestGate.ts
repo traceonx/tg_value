@@ -1,5 +1,6 @@
 import type { TelegramClient } from 'telegram';
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
+import { installTelegramSenderConnectionGuard } from './telegramSenderConnection.js';
 
 export class TelegramRequestGate {
     private until = 0;
@@ -48,6 +49,23 @@ export class TelegramRequestGate {
         try { return await operation(); }
         catch (error) { this.stop(error); throw error; }
     }
+
+    // Retry only idempotent file reads, at the same offset. Short server waits
+    // pause every reader on this account instead of failing all active files.
+    async runFileRead<T>(operation: () => Promise<T>): Promise<T> {
+        const deadline = this.now() + 60_000;
+        for (let attempt = 0; ; attempt++) {
+            try { return await this.run(operation, attempt > 0); }
+            catch (error) {
+                const reason = telegramAccountStopReason(error);
+                if (reason?.kind !== 'cooldown' || this.expired || attempt >= 10 || this.until > deadline) throw error;
+                while (this.until > this.now()) {
+                    if (this.expired || this.until > deadline) throw error;
+                    await this.sleep(Math.min(1000, this.until - this.now()));
+                }
+            }
+        }
+    }
 }
 
 const installed = new WeakMap<object, TelegramRequestGate>();
@@ -59,6 +77,7 @@ export function installTelegramRequestGate(client: TelegramClient, gate = new Te
     onStop?: (error: unknown) => Promise<void>, options: { freshSession?: boolean } = {}): TelegramRequestGate {
     const existing = installed.get(client);
     if (existing) return existing;
+    if (typeof (client as any)._connectSender === 'function') installTelegramSenderConnectionGuard(client as any);
     const invoke = client.invoke.bind(client);
     let freshSession = options.freshSession === true;
     client.floodSleepThreshold = 0;
@@ -86,14 +105,18 @@ export function installTelegramRequestGate(client: TelegramClient, gate = new Te
         return result;
     }) as TelegramClient['invoke'];
     const invokeWithSender = client.invokeWithSender.bind(client);
-    client.invokeWithSender = (async (...args: Parameters<TelegramClient['invokeWithSender']>) =>
-        gate.run(async () => {
+    client.invokeWithSender = (async (...args: Parameters<TelegramClient['invokeWithSender']>) => {
+        const operation = async () => {
             try { return await invokeWithSender(...args); }
             catch (error) {
                 if (gate.stop(error)) await onStop?.(error).catch(() => undefined);
                 throw error;
             }
-        }, !/^upload\./.test(args[0].className))) as TelegramClient['invokeWithSender'];
+        };
+        return args[0].className === 'upload.GetFile'
+            ? gate.runFileRead(operation)
+            : gate.run(operation, !/^upload\./.test(args[0].className));
+    }) as TelegramClient['invokeWithSender'];
     installed.set(client, gate);
     return gate;
 }

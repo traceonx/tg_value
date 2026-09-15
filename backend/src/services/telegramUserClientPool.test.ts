@@ -66,6 +66,50 @@ function createPool(rows: any[], createClient: (session: string, credentials: an
     });
 }
 
+test('restart during network failure retains persisted account and reconnects on the next initialization', async () => {
+    let offline = true;
+    const rows = [account('persisted')];
+    const failures: string[] = [];
+    const sessions: string[] = [];
+    const pool = createPool(rows, session => {
+        sessions.push(session);
+        return {
+            connected: true, async connect() {},
+            async checkAuthorization() { assert.fail('boolean probe masks network failures'); },
+            async getMe() { if (offline) throw new Error('Not connected'); return { id: 'persisted' }; },
+            async disconnect() {}, async destroy() {},
+        };
+    }, {
+        markSessionExpired: async () => assert.fail('network failure must not expire account'),
+        recordFailure: async (_id: string, message: string) => failures.push(message),
+    });
+    await pool.initialize({ apiId: 1, apiHash: 'hash' });
+    assert.equal(pool.getDefaultClient(), null);
+    assert.deepEqual(failures, ['Not connected']);
+    offline = false;
+    await pool.initialize({ apiId: 1, apiHash: 'hash' });
+    assert.ok(pool.getDefaultClient());
+    assert.deepEqual(sessions, ['session-persisted', 'session-persisted']);
+    assert.equal(rows[0].enabled, true);
+});
+
+test('old ambiguous expiry is revalidated but a known revoked or disabled account stays stopped', async () => {
+    const rows = [
+        account('ambiguous', { healthState: 'session_expired', lastError: 'SESSION_EXPIRED' }),
+        account('revoked', { healthState: 'session_expired', lastError: 'SESSION_REVOKED' }),
+        account('disabled', { enabled: false, healthState: 'session_expired', lastError: 'SESSION_EXPIRED' }),
+    ];
+    const validated: string[] = [];
+    const pool = createPool(rows, (_session, _credentials, accountId) => ({
+        connected: true, async connect() {}, async checkAuthorization() { return false; },
+        async getMe() { validated.push(accountId); return { id: accountId }; },
+        async disconnect() {}, async destroy() {},
+    }));
+    await pool.initialize({ apiId: 1, apiHash: 'hash' });
+    assert.deepEqual(validated, ['ambiguous']);
+    assert.deepEqual(pool.getReadyAccountIds(), ['ambiguous']);
+});
+
 test('pool lazily connects eligible accounts, schedules by source permission and releases connection load', async () => {
     const rows = [account('a'), account('b')];
     const access = [{ accountId: 'b', sourceKey: '@news', scope: 'download' as const, accessState: 'allowed' as const, lastError: null, checkedAt: null }];
@@ -168,7 +212,10 @@ test('pool records authorization expiry per account and continues with healthy a
         connected: false,
         async connect() { this.connected = true; },
         async checkAuthorization() { return accountId !== 'expired'; },
-        async getMe() { return { id: accountId }; },
+        async getMe() {
+            if (accountId === 'expired') throw new Error('AUTH_KEY_UNREGISTERED');
+            return { id: accountId };
+        },
         async disconnect() { this.connected = false; },
         async destroy() {},
     }), { markSessionExpired: async (id: string) => { expiredMarks.push(id); return true; } });

@@ -104,11 +104,10 @@ export async function initTelegramUserClient(credentials?: { apiId: number; apiH
     const client = makeClient(sessionString, resolved);
     try {
         await client.connect();
-        if (!(await client.checkAuthorization())) throw new Error('SESSION_EXPIRED');
+        const me = await client.getMe();
         userClient = client;
         const saved = client.session.save() as unknown as string;
         if (saved !== sessionString) await setSetting(TELEGRAM_USER_SESSION_SETTING, saved);
-        const me = await client.getMe();
         recordTelegramUserClientReady({ userId: String((me as any)?.id || ''), username: (me as any)?.username || null });
         const legacyPath = getSessionFilePath();
         if (fs.existsSync(legacyPath)) fs.rmSync(legacyPath, { force: true });

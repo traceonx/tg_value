@@ -65,6 +65,7 @@ import { normalizeFolderPath } from '../utils/folderPath.js';
 import { getTelegramUserLocaleOrDefault } from './telegramLocalePreferences.js';
 import { DEFAULT_LOCALE, t, type TelegramLocale } from '../i18n/telegram.js';
 import { listLocalFiles } from './localFileList.js';
+import { buildTelegramFileCopyKeyboard } from './telegramFileCopyKeyboard.js';
 
 // ESM compatibility
 const checkDiskSpace = (checkDiskSpaceModule as any).default || checkDiskSpaceModule;
@@ -130,22 +131,14 @@ const destructiveConfirmations = new DestructiveConfirmationStore();
 
 function buildFileActionKeyboard(file: any, locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup {
     return new Api.ReplyInlineMarkup({
-        rows: buildTelegramFileActionRows(file, locale).map(row => new Api.KeyboardButtonRow({
+        rows: [...(buildTelegramFileCopyKeyboard([{ name: String(file.name) }], locale)?.rows || []), ...buildTelegramFileActionRows(file, locale).map(row => new Api.KeyboardButtonRow({
             buttons: row.map(button => new Api.KeyboardButtonCallback({ text: button.text, data: Buffer.from(button.data) })),
-        })),
+        }))],
     });
 }
 
-function buildFileSearchKeyboard(files: any[]): Api.ReplyInlineMarkup | undefined {
-    if (files.length === 0) return undefined;
-    return new Api.ReplyInlineMarkup({
-        rows: files.slice(0, 8).map(file => new Api.KeyboardButtonRow({
-            buttons: [new Api.KeyboardButtonCallback({
-                text: `${file.is_favorite ? '⭐ ' : ''}${String(file.name).slice(0, 38)}`,
-                data: Buffer.from(encodeTelegramFileCallback('detail', String(file.id))),
-            })],
-        })),
-    });
+function buildFileSearchKeyboard(files: any[], locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup | undefined {
+    return buildTelegramFileCopyKeyboard(files.slice(0, 8), locale);
 }
 
 function buildDeleteConfirmKeyboard(confirmId: string, locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup {
@@ -1038,7 +1031,7 @@ export async function handleFind(message: Api.Message, args: string[] = [], loca
         const page = await queryTelegramFiles(rawOptions);
         await message.reply({
             message: buildTelegramFileBrowserText(page, rawOptions.q || '', resolvedLocale),
-            buttons: buildFileSearchKeyboard(page.files),
+            buttons: buildFileSearchKeyboard(page.files, resolvedLocale),
         });
     } catch (error) {
         await message.reply({ message: t(resolvedLocale, 'commands.fileSearchFailed', { error: (error as Error).message }) });
@@ -1070,7 +1063,7 @@ export async function handleList(message: Api.Message, args: string[], locale?: 
             ]);
             await message.reply({ message: files.length
                 ? buildFileList(files, files.length, locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0))
-                : MSG.EMPTY_FILES });
+                : MSG.EMPTY_FILES, buttons: buildTelegramFileCopyKeyboard(files, locale) });
             return;
         }
         const scope = await getCurrentStorageScope();
@@ -1089,7 +1082,7 @@ export async function handleList(message: Api.Message, args: string[], locale?: 
         }
 
         const reply = buildFileList(result.rows, result.rows.length, locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0));
-        await message.reply({ message: reply });
+        await message.reply({ message: reply, buttons: buildTelegramFileCopyKeyboard(result.rows, locale) });
     } catch (error) {
         console.error('🤖 获取文件列表失败:', error);
         await message.reply({ message: MSG.ERR_FILE_LIST });

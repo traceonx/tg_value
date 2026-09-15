@@ -15,6 +15,7 @@ import { TaskAbortRegistry } from './taskAbortRegistry.js';
 import { assertStorageTargetWritable, formatStorageCooldownNotice } from './storageCooldownGuard.js';
 import { markStorageAccountCooldown } from './storageCooldown.js';
 import { getTelegramUserClient, isTelegramUserClientReady } from './telegramUserClient.js';
+import { runTelegramDownloadWorkers } from './telegramDownloadWorkers.js';
 import { getSetting } from '../utils/settings.js';
 import { getTelegramProgressIntervalMs, startSharedTelegramProgress } from './telegramProgressSettings.js';
 import { isAuthenticatedAsync } from './telegramState.js';
@@ -183,7 +184,7 @@ async function getFirstUserVisibleMediaMessage(
 
 async function resolveDownloadSource(botClient: TelegramClient, message: Api.Message, forwardedSourceCache?: ForwardedSourceMessageCache): Promise<{ client: TelegramClient; message: Api.Message }> {
     const activeUserClient = getTelegramUserClient();
-    if (activeUserClient && botClient === activeUserClient) {
+    if ((botClient as any).__tgVaultAccountId || (activeUserClient && botClient === activeUserClient)) {
         return { client: botClient, message };
     }
 
@@ -1468,7 +1469,7 @@ async function downloadAndSaveFile(
             try {
                 await fileHandle.truncate(totalSize);
 
-                await Promise.all(Array.from({ length: workers }, async (_, workerIndex) => {
+                await runTelegramDownloadWorkers(workers, async (workerIndex, workerSignal) => {
                     let writeOffset = workerIndex * TELEGRAM_DOWNLOAD_PART_SIZE;
                     for await (const chunk of client.iterDownload({
                         file: media,
@@ -1478,7 +1479,7 @@ async function downloadAndSaveFile(
                         requestSize: TELEGRAM_DOWNLOAD_PART_SIZE,
                         fileSize: bigInt(totalSize),
                     })) {
-                        if (signal?.aborted) throw new Error('下载任务已停止');
+                        if (workerSignal.aborted) throw new Error('下载任务已停止');
                         if (writeOffset >= totalSize) break;
                         const bytesToWrite = Math.min(chunk.length, totalSize - writeOffset);
                         if (bytesToWrite > 0) {
@@ -1490,7 +1491,7 @@ async function downloadAndSaveFile(
                         }
                         writeOffset += TELEGRAM_DOWNLOAD_PART_SIZE * workers;
                     }
-                }));
+                }, signal);
             } finally {
                 await fileHandle.close();
             }
@@ -1528,7 +1529,7 @@ async function downloadAndSaveFile(
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
-        return null;
+        throw error;
     }
 }
 
