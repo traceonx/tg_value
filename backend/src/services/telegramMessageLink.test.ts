@@ -21,6 +21,22 @@ test('comment links retain the comment id and destination and reject malformed i
     });
 });
 
+test('nested comment destinations use every directory and the final filename', async () => {
+    const url = 'https://t.me/dmlfse/7788?comment=4913';
+    const link = parseTelegramMessageLink(`[${url}](${url}) 文件夹A/文件夹B/1`)!;
+    assert.equal(link.folderName, '文件夹A/文件夹B');
+    assert.equal(link.fileName, '1');
+    assert.equal(telegramDownloadFileName(link.fileName, 'video.mp4'), '1.mp4');
+    await runTelegramMessageLinkDownload(link, {
+        assertSourceAllowed: async () => {}, getBaseFolder: async () => 'telegram', getTarget: async () => 'local',
+        download: async (_source, ids, _target, folder, name, commentId) => {
+            assert.equal(folder, 'telegram/文件夹A/文件夹B');
+            assert.equal(name, '1'); assert.equal(commentId, 4913); assert.deepEqual(ids, [7788]);
+            return { successful: 1, failed: 0 };
+        },
+    });
+});
+
 test('folder slash filename syntax preserves extension and forwards requested name', async () => {
     const link = parseTelegramMessageLink('https://t.me/lifan223/2389 Dark Blue/01')!;
     assert.deepEqual(link, { source: '@lifan223', messageId: 2389, folderName: 'Dark Blue', fileName: '01' });
@@ -93,7 +109,7 @@ test('default date changes at Shanghai midnight, independent of server timezone'
 
 test('appends explicit suffixes to the base folder and resolves settings only once', async () => {
     for (const base of ['telegram', null]) {
-        for (const folderName of ['视频1', '2026-09-09']) {
+        for (const folderName of ['视频1', '2026-09-09', '文件夹A/文件夹B']) {
             let reads = 0;
             await runTelegramMessageLinkDownload({ source: '@channel', messageId: 1, folderName }, {
                 assertSourceAllowed: async () => {},
@@ -110,7 +126,7 @@ test('appends explicit suffixes to the base folder and resolves settings only on
 });
 
 test('unsafe suffixes fail before consuming settings or downloading', async () => {
-    for (const folderName of ['..', '.', '../other', '/absolute', 'a/b', 'a\\b', 'C:\\data', 'bad:name', 'line\nbreak', 'x'.repeat(256)]) {
+    for (const folderName of ['..', '.', '../other', '/absolute', 'a/../b', 'a//b', 'a/', 'a\\b', 'C:\\data', 'bad:name', 'line\nbreak', 'x'.repeat(256)]) {
         let sourceAccessed = false;
         await assert.rejects(runTelegramMessageLinkDownload({ source: '@channel', messageId: 1, folderName }, {
             assertSourceAllowed: async () => { sourceAccessed = true; },

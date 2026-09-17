@@ -1,4 +1,4 @@
-import { joinFolderPath, normalizeFolderName } from '../utils/folderPath.js';
+import { joinFolderPath, normalizeFolderName, normalizeFolderPath } from '../utils/folderPath.js';
 import { TelegramSingleFlight } from './telegramSingleFlight.js';
 import path from 'node:path';
 
@@ -12,7 +12,7 @@ export interface TelegramMessageLink {
     fileName?: string;
 }
 
-/** Accept a leading message link and an optional child folder name. */
+/** Accept a leading message link and an optional folder path / filename suffix. */
 export function parseTelegramMessageLink(input: string): TelegramMessageLink | null {
     const trimmed = input.trim().replace(/^\/tg_link(?:@\w+)?(?:\s+|$)/i, '');
     const markdown = trimmed.match(/^\[[^\]]*\]\((https?:\/\/[^\s)]+)\)(?:\s+([\s\S]*))?$/i);
@@ -48,9 +48,9 @@ export function telegramDownloadFileName(requested: string | undefined, original
 
 export function telegramMessageLinkFolderName(link: TelegramMessageLink, now = new Date()): string {
     if (link.folderName) {
-        // A suffix names one child directory, never an absolute or nested path.
-        if (/[\/\\]/.test(link.folderName)) throw new Error('文件夹名称不能包含路径分隔符');
-        return normalizeFolderName(link.folderName);
+        // Nested directories remain relative to the configured download base.
+        if (link.folderName.startsWith('/') || link.folderName.endsWith('/')) throw new Error('文件夹路径必须是相对目录且不能包含空目录');
+        return normalizeFolderPath(link.folderName);
     }
     const parts = new Intl.DateTimeFormat('en', {
         timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',

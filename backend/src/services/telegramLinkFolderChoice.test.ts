@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TelegramLinkFolderChoices } from './telegramLinkFolderChoice.js';
 
+test('reusing a nested destination keeps the complete directory without reusing the filename', () => {
+    const choices = new TelegramLinkFolderChoices<string>();
+    choices.prepare('chat:user', { source: '@channel', messageId: 1, folderName: '文件夹A/文件夹B', fileName: '1' }, 'first');
+    const next = { source: '@channel', messageId: 2, commentId: 4913 };
+    const choice = choices.prepare('chat:user', next, 'second')!;
+    assert.deepEqual(choices.consume(choice.token, 'chat:user', true)?.link, { ...next, folderName: '文件夹A/文件夹B' });
+});
+
 test('folder choice is isolated, single use, and expires after ten minutes', () => {
     let now = Date.parse('2026-09-15T15:59:59Z');
     const choices = new TelegramLinkFolderChoices<string>(() => now);

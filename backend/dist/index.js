@@ -4027,8 +4027,8 @@ function telegramDownloadFileName(requested, original) {
 }
 function telegramMessageLinkFolderName(link, now = /* @__PURE__ */ new Date()) {
   if (link.folderName) {
-    if (/[\/\\]/.test(link.folderName)) throw new Error("\u6587\u4EF6\u5939\u540D\u79F0\u4E0D\u80FD\u5305\u542B\u8DEF\u5F84\u5206\u9694\u7B26");
-    return normalizeFolderName(link.folderName);
+    if (link.folderName.startsWith("/") || link.folderName.endsWith("/")) throw new Error("\u6587\u4EF6\u5939\u8DEF\u5F84\u5FC5\u987B\u662F\u76F8\u5BF9\u76EE\u5F55\u4E14\u4E0D\u80FD\u5305\u542B\u7A7A\u76EE\u5F55");
+    return normalizeFolderPath(link.folderName);
   }
   const parts = new Intl.DateTimeFormat("en", {
     timeZone: "Asia/Shanghai",
@@ -4242,7 +4242,7 @@ var telegramRussian_default = {
   "folderBrowser.parent": "\u21A9\uFE0F \u041D\u0430 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0432\u044B\u0448\u0435",
   "folderBrowser.empty": "\u042D\u0442\u0430 \u043F\u0430\u043F\u043A\u0430 \u043F\u0443\u0441\u0442\u0430.",
   "folderBrowser.expired": "\u041A\u043D\u043E\u043F\u043A\u0430 \u0443\u0441\u0442\u0430\u0440\u0435\u043B\u0430, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u043E\u0441\u044C \u0438\u043B\u0438 \u043F\u0440\u0438\u043D\u0430\u0434\u043B\u0435\u0436\u0438\u0442 \u0434\u0440\u0443\u0433\u043E\u043C\u0443 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044E. \u041E\u0442\u043F\u0440\u0430\u0432\u044C\u0442\u0435 /files \u0441\u043D\u043E\u0432\u0430.",
-  "bot.link.renameHelp": "\u041F\u0440\u0438\u043C\u0435\u0440: https://t.me/lifan223/2389 Dark Blue/01\n\u2192 \u041F\u0430\u043F\u043A\u0430 Dark Blue, \u0438\u043C\u044F \u0444\u0430\u0439\u043B\u0430 01 (\u0441 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435\u043C, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 01.mp4).",
+  "bot.link.renameHelp": "\u041F\u0440\u0438\u043C\u0435\u0440: https://t.me/lifan223/2389 Dark Blue/01\n\u2192 \u041F\u0430\u043F\u043A\u0430 Dark Blue, \u0438\u043C\u044F \u0444\u0430\u0439\u043B\u0430 01 (\u0441 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u043C \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435\u043C, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 01.mp4).\n\u0412\u043B\u043E\u0436\u0435\u043D\u043D\u044B\u0435 \u043F\u0430\u043F\u043A\u0438: \u0441\u0441\u044B\u043B\u043A\u0430 \u041F\u0430\u043F\u043A\u0430A/\u041F\u0430\u043F\u043A\u0430B/1 \u2192 \u0444\u0430\u0439\u043B 1.mp4 \u0432 \u041F\u0430\u043F\u043A\u0430A/\u041F\u0430\u043F\u043A\u0430B.",
   "bot.link.reuseFolder": "\u0417\u0430 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 10 \u043C\u0438\u043D\u0443\u0442 \u0432\u044B \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043B\u0438 \u043F\u0430\u043F\u043A\u0443 \xAB{folder}\xBB. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0435\u0451 \u0441\u043D\u043E\u0432\u0430?\n\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \xAB\u041D\u0435\u0442\xBB, \u0447\u0442\u043E\u0431\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0432 \u043F\u0430\u043F\u043A\u0443 \u0441 \u0434\u0430\u0442\u043E\u0439 \xAB{date}\xBB.",
   "bot.link.folderYes": "\u0414\u0430, \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043F\u0430\u043F\u043A\u0443",
   "bot.link.folderNo": "\u041D\u0435\u0442, \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u0434\u0430\u0442\u0443",
@@ -5614,7 +5614,7 @@ var resources = {
     "folderBrowser.parent": "\u21A9\uFE0F \u4E0A\u4E00\u7EA7",
     "folderBrowser.empty": "\u6B64\u6587\u4EF6\u5939\u4E3A\u7A7A\u3002",
     "folderBrowser.expired": "\u76EE\u5F55\u6309\u94AE\u5DF2\u8FC7\u671F\u3001\u5B58\u50A8\u5DF2\u5207\u6362\u6216\u4E0D\u5C5E\u4E8E\u4F60\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001 /files\u3002",
-    "bot.link.renameHelp": "\u547D\u540D\u793A\u4F8B\uFF1Ahttps://t.me/lifan223/2389 Dark Blue/01\n\u2192 \u6587\u4EF6\u5939 Dark Blue\uFF0C\u6587\u4EF6\u540D 01\uFF08\u4FDD\u7559\u539F\u6269\u5C55\u540D\uFF0C\u4F8B\u5982 01.mp4\uFF09\u3002",
+    "bot.link.renameHelp": "\u547D\u540D\u793A\u4F8B\uFF1Ahttps://t.me/lifan223/2389 Dark Blue/01\n\u2192 \u6587\u4EF6\u5939 Dark Blue\uFF0C\u6587\u4EF6\u540D 01\uFF08\u4FDD\u7559\u539F\u6269\u5C55\u540D\uFF0C\u4F8B\u5982 01.mp4\uFF09\u3002\n\u652F\u6301\u5D4C\u5957\u76EE\u5F55\uFF1A\u94FE\u63A5 \u6587\u4EF6\u5939A/\u6587\u4EF6\u5939B/1 \u2192 \u6587\u4EF6\u5939A/\u6587\u4EF6\u5939B \u4E0B\u7684 1.mp4\u3002",
     "menu.language": "\u66F4\u6539 Bot \u754C\u9762\u8BED\u8A00",
     "menu.tg_subs": "\u67E5\u770B\u9891\u9053\u8BA2\u9605",
     "menu.download_workers": "\u5355\u6587\u4EF6\u5206\u7247\u5E76\u53D1",
@@ -6556,7 +6556,7 @@ var resources = {
     "folderBrowser.parent": "\u21A9\uFE0F Parent folder",
     "folderBrowser.empty": "This folder is empty.",
     "folderBrowser.expired": "This button expired, storage changed, or it belongs to another user. Send /files again.",
-    "bot.link.renameHelp": "Naming example: https://t.me/lifan223/2389 Dark Blue/01\n\u2192 Folder Dark Blue, filename 01 (original extension retained, e.g. 01.mp4).",
+    "bot.link.renameHelp": "Naming example: https://t.me/lifan223/2389 Dark Blue/01\n\u2192 Folder Dark Blue, filename 01 (original extension retained, e.g. 01.mp4).\nNested folders: link FolderA/FolderB/1 \u2192 1.mp4 inside FolderA/FolderB.",
     "menu.language": "Change Bot interface language",
     "menu.tg_subs": "View channel subscriptions",
     "menu.download_workers": "Per-file chunk concurrency",
