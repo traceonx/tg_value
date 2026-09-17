@@ -63,6 +63,8 @@ export function pageLocalFiles(files: LocalBrowseFile[], options: NormalizedFile
 export function aggregateLocalFolders(files: LocalBrowseFile[], options: NormalizedFileQuery) {
     const groups = new Map<string | null, LocalBrowseFile[]>();
     for (const file of filterLocalFiles(files, options, false)) {
+        // Root files belong in the loose-file list, not the folder aggregation.
+        if (!file.folder) continue;
         const folder = file.folder || null;
         const group = groups.get(folder);
         if (group) group.push(file);

@@ -456,7 +456,7 @@ export interface FileQueryOptions {
 }
 
 export interface FolderAggregation {
-    name: string;
+    name: string | null;
     fileCount: number;
     totalSizeBytes: number;
     latestDate: string;

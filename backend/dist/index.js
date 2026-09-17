@@ -7327,12 +7327,15 @@ function buildSilentAllTasksComplete(totalCount, failedCount, taskId, singleFile
   }
   return [`\u2705 **\u540E\u53F0\u4EFB\u52A1\u5168\u90E8\u5B8C\u6210**`, ``, ...taskId ? [`\u{1F194} \u4EFB\u52A1\uFF1A\`${taskId}\``] : [], `\u{1F4CA} \u603B\u8BA1: ${totalCount} \u4E2A\u6587\u4EF6`, ...detailLines].join("\n");
 }
+function isConsolidatedBatchDone(batch) {
+  return batch.totalFiles > 0 && batch.completed >= batch.totalFiles && batch.successful + batch.failed >= batch.totalFiles;
+}
 async function buildConsolidatedStatus(singleFiles, batches) {
   const totalSingle = singleFiles.length;
   const totalBatches = batches.length;
   const totalTasks = totalSingle + totalBatches;
   const singleCompleted = singleFiles.filter((f) => f.phase === "success" || f.phase === "failed").length;
-  const batchCompleted = batches.filter((b) => b.completed === b.totalFiles).length;
+  const batchCompleted = batches.filter(isConsolidatedBatchDone).length;
   const allCompleted = singleCompleted + batchCompleted === totalTasks;
   let statusIcon = "\u{1F4E6}";
   let statusText = `\u6B63\u5728\u5904\u7406 ${totalTasks} \u4E2A\u4EFB\u52A1...`;
@@ -7402,8 +7405,8 @@ async function buildConsolidatedStatus(singleFiles, batches) {
   const activeSingles = singleFiles.filter((f) => f.phase === "downloading" || f.phase === "saving" || f.phase === "retrying");
   const queuedSingles = singleFiles.filter((f) => f.phase === "queued");
   const doneSingles = singleFiles.filter((f) => f.phase === "success" || f.phase === "failed");
-  const activeBatches = batches.filter((b) => b.completed < b.totalFiles);
-  const doneBatches = batches.filter((b) => b.completed === b.totalFiles);
+  const activeBatches = batches.filter((b) => !isConsolidatedBatchDone(b));
+  const doneBatches = batches.filter(isConsolidatedBatchDone);
   if (activeSingles.length > 0) {
     activeSingles.forEach((file) => {
       let icon;
@@ -7451,7 +7454,7 @@ async function buildConsolidatedStatus(singleFiles, batches) {
   if ((activeBatches.length > 0 || doneBatches.length > 0) && !allCompleted) {
     if (activeSingles.length > 0) lines.push("");
     [...activeBatches, ...doneBatches].forEach((batch) => {
-      const isDone = batch.completed === batch.totalFiles;
+      const isDone = isConsolidatedBatchDone(batch);
       const icon = isDone ? batch.failed === 0 ? "\u2705" : "\u26A0\uFE0F" : "\u{1F4C2}";
       lines.push(`${icon} \u{1F4C1} ${batch.folderName}`);
       if (!isDone) {
@@ -12493,7 +12496,7 @@ function getBackgroundFileCount(chatIdStr) {
   const files = getConsolidatedFiles(chatIdStr);
   const activeFilesCount = files.filter((f) => f.phase !== "success" && f.phase !== "failed").length;
   const batches = getConsolidatedBatches(chatIdStr);
-  const activeBatchFiles = batches.filter((b) => b.completed < b.totalFiles).reduce((sum, b) => sum + (b.totalFiles - b.completed), 0);
+  const activeBatchFiles = batches.filter((b) => !isConsolidatedBatchDone(b)).reduce((sum, b) => sum + Math.max(1, b.totalFiles - b.successful - b.failed), 0);
   const count = activeFilesCount + activeBatchFiles;
   const logLine = `[TG][silent][${Date.now()}] fileCount chat=${chatIdStr}: activeFiles=${activeFilesCount} activeBatchFiles=${activeBatchFiles} => total=${count}
 `;
@@ -12683,14 +12686,14 @@ function isAllConsolidatedTasksDone(chatId) {
   const batches = getConsolidatedBatches(chatId);
   if (files.length === 0 && batches.length === 0) return true;
   const filesDone = files.every((f) => f.phase === "success" || f.phase === "failed");
-  const batchesDone = batches.every((b) => b.completed === b.totalFiles);
+  const batchesDone = batches.every(isConsolidatedBatchDone);
   return filesDone && batchesDone;
 }
 function getOutstandingTaskCount(chatIdStr) {
   const files = getConsolidatedFiles(chatIdStr);
   const batches = getConsolidatedBatches(chatIdStr);
   const outstandingFiles = files.filter((f) => f.phase !== "success" && f.phase !== "failed").length;
-  const outstandingBatches = batches.filter((b) => b.completed < b.totalFiles).length;
+  const outstandingBatches = batches.filter((b) => !isConsolidatedBatchDone(b)).length;
   return outstandingFiles + outstandingBatches;
 }
 function syncSilentSessionTotals(chatIdStr) {
@@ -18213,6 +18216,7 @@ function pageLocalFiles(files, options) {
 function aggregateLocalFolders(files, options) {
   const groups = /* @__PURE__ */ new Map();
   for (const file of filterLocalFiles(files, options, false)) {
+    if (!file.folder) continue;
     const folder = file.folder || null;
     const group = groups.get(folder);
     if (group) group.push(file);

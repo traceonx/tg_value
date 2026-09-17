@@ -635,6 +635,11 @@ export interface ConsolidatedBatchEntry {
 /**
  * 合并显示所有活跃任务（单文件 + 批量）到一条消息
  */
+export function isConsolidatedBatchDone(batch: ConsolidatedBatchEntry): boolean {
+    return batch.totalFiles > 0 && batch.completed >= batch.totalFiles
+        && batch.successful + batch.failed >= batch.totalFiles;
+}
+
 export async function buildConsolidatedStatus(
     singleFiles: ConsolidatedUploadFile[],
     batches: ConsolidatedBatchEntry[]
@@ -645,7 +650,7 @@ export async function buildConsolidatedStatus(
 
     // 计算总体状态 for icon
     const singleCompleted = singleFiles.filter(f => f.phase === 'success' || f.phase === 'failed').length;
-    const batchCompleted = batches.filter(b => b.completed === b.totalFiles).length;
+    const batchCompleted = batches.filter(isConsolidatedBatchDone).length;
     const allCompleted = (singleCompleted + batchCompleted) === totalTasks;
 
     let statusIcon = '📦';
@@ -738,8 +743,8 @@ export async function buildConsolidatedStatus(
     const queuedSingles = singleFiles.filter(f => f.phase === 'queued');
     const doneSingles = singleFiles.filter(f => f.phase === 'success' || f.phase === 'failed');
 
-    const activeBatches = batches.filter(b => b.completed < b.totalFiles);
-    const doneBatches = batches.filter(b => b.completed === b.totalFiles);
+    const activeBatches = batches.filter(b => !isConsolidatedBatchDone(b));
+    const doneBatches = batches.filter(isConsolidatedBatchDone);
 
     // 1. 渲染正在进行的单文件任务
     if (activeSingles.length > 0) {
@@ -786,7 +791,7 @@ export async function buildConsolidatedStatus(
         if (activeSingles.length > 0) lines.push('');
 
         [...activeBatches, ...doneBatches].forEach(batch => {
-            const isDone = batch.completed === batch.totalFiles;
+            const isDone = isConsolidatedBatchDone(batch);
             const icon = isDone ? (batch.failed === 0 ? '✅' : '⚠️') : '📂';
             lines.push(`${icon} 📁 ${batch.folderName}`);
             if (!isDone) {

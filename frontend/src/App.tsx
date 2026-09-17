@@ -585,7 +585,7 @@ function App() {
             : file
         ));
         setFolderAggregations(prev => prev.map(folder =>
-          folder.name === folderName || folder.name.startsWith(`${folderName}/`)
+          folder.name === folderName || folder.name?.startsWith(`${folderName}/`)
             ? { ...folder, isFavorite: result.isFavorite }
             : folder
         ));
@@ -1032,6 +1032,7 @@ function App() {
     const grouped = new Map<string, FolderData>();
 
     for (const aggregation of folderAggregations) {
+      if (!aggregation.name) continue;
       if (currentFolder && aggregation.name === currentFolder) continue;
       if (prefix && !aggregation.name.startsWith(prefix)) continue;
       const relative = prefix ? aggregation.name.slice(prefix.length) : aggregation.name;
@@ -1120,6 +1121,7 @@ function App() {
   const allFolderNames = useMemo(() => {
     const names = new Set<string>();
     folderAggregations.forEach(folder => {
+      if (!folder.name) return;
       const segments = folder.name.split('/');
       for (let index = 1; index <= segments.length; index++) {
         names.add(segments.slice(0, index).join('/'));

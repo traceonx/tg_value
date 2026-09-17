@@ -37,6 +37,7 @@ import {
     buildTaskControlButtons,
     buildBatchStatus,
     buildConsolidatedStatus,
+    isConsolidatedBatchDone,
     type BatchFile,
     type ConsolidatedUploadFile,
     type ConsolidatedBatchEntry,
@@ -726,8 +727,8 @@ function getBackgroundFileCount(chatIdStr: string): number {
     // 2. 只统计当前聊天中“未完成”的批量任务中的剩余文件
     const batches = getConsolidatedBatches(chatIdStr);
     const activeBatchFiles = batches
-        .filter(b => b.completed < b.totalFiles)
-        .reduce((sum, b) => sum + (b.totalFiles - b.completed), 0);
+        .filter(b => !isConsolidatedBatchDone(b))
+        .reduce((sum, b) => sum + Math.max(1, b.totalFiles - b.successful - b.failed), 0);
 
     const count = activeFilesCount + activeBatchFiles;
 
@@ -988,7 +989,7 @@ function isAllConsolidatedTasksDone(chatId: string): boolean {
     const batches = getConsolidatedBatches(chatId);
     if (files.length === 0 && batches.length === 0) return true;
     const filesDone = files.every(f => f.phase === 'success' || f.phase === 'failed');
-    const batchesDone = batches.every(b => b.completed === b.totalFiles);
+    const batchesDone = batches.every(isConsolidatedBatchDone);
     return filesDone && batchesDone;
 }
 
@@ -997,7 +998,7 @@ function getOutstandingTaskCount(chatIdStr: string): number {
     const batches = getConsolidatedBatches(chatIdStr);
 
     const outstandingFiles = files.filter(f => f.phase !== 'success' && f.phase !== 'failed').length;
-    const outstandingBatches = batches.filter(b => b.completed < b.totalFiles).length;
+    const outstandingBatches = batches.filter(b => !isConsolidatedBatchDone(b)).length;
     return outstandingFiles + outstandingBatches;
 }
 

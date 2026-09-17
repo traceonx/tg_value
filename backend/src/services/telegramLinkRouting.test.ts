@@ -28,3 +28,15 @@ test('active link progress shows bytes and the actual destination folder', async
     assert.match(text, /telegram\/戏精女王/);
     assert.match(text, /video.mp4/);
 });
+
+test('empty or interrupted batches cannot announce successful completion', async () => {
+    for (const [totalFiles, completed, successful, failed] of [[0, 0, 0, 0], [1, 1, 0, 0], [2, 2, 1, 0]]) {
+        const text = await buildConsolidatedStatus([], [{ id: 'one', folderName: 'folder', totalFiles, completed, successful, failed }]);
+        assert.doesNotMatch(text, /任务全部完成|完成摘要/);
+    }
+    const success = await buildConsolidatedStatus([], [{ id: 'one', folderName: 'folder', totalFiles: 1, completed: 1, successful: 1, failed: 0 }]);
+    assert.match(success, /任务全部完成/);
+    const failure = await buildConsolidatedStatus([], [{ id: 'one', folderName: 'folder', totalFiles: 1, completed: 1, successful: 0, failed: 1 }]);
+    assert.doesNotMatch(failure, /任务全部完成/);
+    assert.match(failure, /1 个失败/);
+});

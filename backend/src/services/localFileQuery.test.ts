@@ -33,6 +33,7 @@ test('local browser merges disk files without duplicates and preserves indexed m
         assert.equal(pageLocalFiles(rows, normalizeFileQuery({ q: 'manual', type: 'document' })).files.length, 1);
         assert.equal(pageLocalFiles(rows, normalizeFileQuery({ folder: '' })).files.length, 1);
         const folder = aggregateLocalFolders(rows, query).find(folder => folder.name === '频道')!;
+        assert.ok(aggregateLocalFolders(rows, query).every(folder => Boolean(folder.name)));
         assert.equal(folder.fileCount, 2);
         assert.equal(folder.totalSizeBytes, 8);
         assert.equal(folder.isFavorite, false);
