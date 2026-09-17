@@ -2,6 +2,17 @@ import { randomUUID } from 'node:crypto';
 import { Api, type TelegramClient } from 'telegram';
 import { extractFileInfo, getEstimatedFileSize } from '../utils/telegramMedia.js';
 import { t, formatBytes, type TelegramLocale } from '../i18n/telegram.js';
+import { messageChatKey, callbackChatKey } from '../bot/context.js';
+import type { TelegramMessageLink } from './telegramMessageLink.js';
+import path from 'node:path';
+
+export function commentMessageScope(message: Api.Message, userId: number): string {
+    return `${messageChatKey(message, userId)}:${userId}`;
+}
+export function commentCallbackScope(update: Api.UpdateBotCallbackQuery): string {
+    const userId = update.userId.toJSNumber();
+    return `${callbackChatKey(update, userId)}:${userId}`;
+}
 
 export const COMMENT_SCAN_PAGE_SIZE = 30;
 export interface CommentVideoPage {
@@ -9,6 +20,32 @@ export interface CommentVideoPage {
     scanned: number;
     nextOffset?: number;
     hasPostFile: boolean;
+}
+
+export async function collectAllCommentVideos(readPage: (offset: number) => Promise<CommentVideoPage | null>) {
+    const videos = new Map<number, CommentVideoPage['videos'][number]>();
+    let offset = 0;
+    for (;;) {
+        const page = await readPage(offset);
+        if (!page) {
+            if (offset) throw new Error('评论区在扫描期间已不可访问，请重新发送链接');
+            break;
+        }
+        for (const video of page.videos) if (!videos.has(video.id)) videos.set(video.id, video);
+        if (page.nextOffset === undefined) break;
+        if (page.nextOffset <= 0 || (offset && page.nextOffset >= offset)) throw new Error('评论分页未向前推进，请重新发送链接');
+        offset = page.nextOffset;
+    }
+    return [...videos.values()];
+}
+
+export function commentDownloadLink(link: TelegramMessageLink, commentId: number, multiple: boolean): TelegramMessageLink {
+    let fileName = link.fileName;
+    if (fileName !== undefined && multiple) {
+        const extension = path.extname(fileName);
+        fileName = `${extension ? fileName.slice(0, -extension.length) : fileName}-${commentId}${extension}`;
+    }
+    return { ...link, commentId, ...(fileName === undefined ? {} : { fileName }) };
 }
 
 /** Read one bounded page of this post's discussion; never start a download. */
@@ -58,6 +95,7 @@ export class CommentVideoChoices<T> {
         const row = this.entries.get(token);
         if (!row || row.scope !== scope || row.expires <= this.now()) return null;
         const allowed = action === 'cancel' || (action === 'next' && row.page.nextOffset !== undefined)
+            || (action === 'all' && (row.page.videos.length > 0 || row.page.nextOffset !== undefined))
             || (action === 'post' && row.page.hasPostFile) || row.page.videos.some(video => String(video.id) === action);
         if (!allowed) return null;
         this.entries.delete(token);
@@ -74,6 +112,7 @@ export function commentVideoMenu(page: CommentVideoPage, token: string, locale: 
         rows.push(button(t(locale, 'bot.comments.download', { number: index + 1 }), String(video.id)));
     });
     if (!page.videos.length) lines.push(t(locale, 'bot.comments.empty'));
+    if (page.videos.length || page.nextOffset !== undefined) rows.push(button(t(locale, 'bot.comments.all'), 'all'));
     if (page.nextOffset !== undefined) rows.push(button(t(locale, 'bot.comments.next'), 'next'));
     if (page.hasPostFile) rows.push(button(t(locale, 'bot.comments.post'), 'post'));
     rows.push(button(t(locale, 'common.cancel'), 'cancel'));
