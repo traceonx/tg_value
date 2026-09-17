@@ -1,7 +1,9 @@
 import { TelegramClient, Api } from 'telegram';
 import { installTelegramRequestGate, TelegramRequestGate } from './telegramRequestGate.js';
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
-import { parseTelegramMessageLink, runTelegramMessageLinkDownload } from './telegramMessageLink.js';
+import { parseTelegramMessageLink, runTelegramMessageLinkDownload, telegramMessageLinkFolderName, telegramDownloadFileName } from './telegramMessageLink.js';
+import { scanCommentVideos, CommentVideoChoices, commentVideoMenu } from './telegramCommentVideos.js';
+import { selectTelegramDownloadAccount, stopTelegramAccountForError } from './telegramMultiAccountRuntime.js';
 import type { TelegramMessageLink } from './telegramMessageLink.js';
 import { TelegramLinkFolderChoices } from './telegramLinkFolderChoice.js';
 import { handleTelegramFolderCallback } from './telegramCommands.js';
@@ -241,9 +243,56 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
 // GramJS Client
 let client: TelegramClient | null = null;
 const linkFolderChoices = new TelegramLinkFolderChoices<Api.Message>();
+const commentVideoChoices = new CommentVideoChoices<{ message: Api.Message; link: TelegramMessageLink }>();
 
-async function downloadMessageLink(message: Api.Message, senderId: number, link: TelegramMessageLink, locale: TelegramLocale) {
+async function showCommentVideos(message: Api.Message, senderId: number, link: TelegramMessageLink, locale: TelegramLocale, offsetId = 0): Promise<boolean> {
+    await assertTelegramSourceAllowed(link.source, [], locale);
+    const folderName = telegramMessageLinkFolderName(link);
+    if (link.fileName !== undefined) telegramDownloadFileName(link.fileName, '');
+    const selected = await selectTelegramDownloadAccount(link.source);
+    if (!selected) throw new Error('Telegram 用户账号下载器未就绪');
     try {
+        const page = await scanCommentVideos(selected.client, link.source, link.messageId, offsetId);
+        if (!page) return false;
+        const token = commentVideoChoices.create(`${message.chatId}:${senderId}`, { message, link: { ...link, folderName } }, page);
+        await message.reply(commentVideoMenu(page, token, locale));
+        return true;
+    } catch (error) {
+        await stopTelegramAccountForError(selected.accountId, error).catch(() => undefined);
+        throw error;
+    } finally { selected.release(); }
+}
+
+async function handleCommentVideoChoice(update: Api.UpdateBotCallbackQuery, data: string) {
+    const senderId = update.userId.toJSNumber();
+    if (!(await isAuthenticatedAsync(senderId))) {
+        await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+        return;
+    }
+    const locale = await getTelegramUserLocaleOrDefault(senderId);
+    const match = /^cv_([a-f0-9]{32})_(next|post|cancel|[1-9]\d*)$/.exec(data);
+    const menu = (await client!.getMessages(update.peer, { ids: Number(update.msgId) }))[0];
+    const choice = match && menu?.chatId ? commentVideoChoices.consume(match[1], `${menu.chatId}:${senderId}`, match[2]) : null;
+    await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...(choice ? {} : { message: t(locale, 'bot.comments.expired'), alert: true }) }));
+    if (!choice || !match) return;
+    const action = match[2];
+    await client!.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, action === 'cancel' ? 'bot.comments.cancelled' : action === 'next' ? 'bot.comments.loading' : 'bot.comments.selected'), parseMode: false, buttons: new Api.ReplyInlineMarkup({ rows: [] }) });
+    if (action === 'cancel') return;
+    const { message, link } = choice.context;
+    if (action === 'next') {
+        try {
+            if (!(await showCommentVideos(message, senderId, link, locale, choice.page.nextOffset))) await message.reply({ message: t(locale, 'bot.comments.empty') });
+        } catch (error) {
+            await message.reply({ message: t(locale, 'bot.link.failed', { error: error instanceof Error ? error.message : String(error) }), parseMode: false });
+        }
+        return;
+    }
+    await downloadMessageLink(message, senderId, action === 'post' ? link : { ...link, commentId: Number(action) }, locale, false);
+}
+
+async function downloadMessageLink(message: Api.Message, senderId: number, link: TelegramMessageLink, locale: TelegramLocale, inspectDiscussion = true) {
+    try {
+        if (inspectDiscussion && link.commentId === undefined && await showCommentVideos(message, senderId, link, locale)) return;
         const chatId = message.chatId!;
         const result = await runTelegramMessageLinkDownload(link, {
             scopeKey: `${chatId}:${senderId}`,
@@ -2228,6 +2277,11 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                 const activeClient = client;
                 const callbackUpdate = update as Api.UpdateBotCallbackQuery;
                 const data = Buffer.from(callbackUpdate.data || []).toString('utf-8');
+
+                if (data.startsWith('cv_')) {
+                    await handleCommentVideoChoice(callbackUpdate, data);
+                    return;
+                }
 
                 if (data.startsWith('folders_')) {
                     await handleTelegramFolderCallback(activeClient, callbackUpdate, data);
