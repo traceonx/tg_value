@@ -11,7 +11,6 @@ import {
     buildWelcomeBack,
     buildHelp,
     buildStorageReport,
-    buildFileList,
     buildDeleteSuccess,
     getProviderDisplayName,
 } from '../utils/telegramMessages.js';
@@ -64,7 +63,8 @@ import { getSignedUrl } from '../middleware/signedUrl.js';
 import { normalizeFolderPath } from '../utils/folderPath.js';
 import { getTelegramUserLocaleOrDefault } from './telegramLocalePreferences.js';
 import { DEFAULT_LOCALE, t, type TelegramLocale } from '../i18n/telegram.js';
-import { listLocalFiles } from './localFileList.js';
+import { mergeLocalFiles } from './localFileQuery.js';
+import { TelegramFolderBrowser } from './telegramFolderBrowser.js';
 import { buildTelegramFileCopyKeyboard } from './telegramFileCopyKeyboard.js';
 
 // ESM compatibility
@@ -131,7 +131,7 @@ const destructiveConfirmations = new DestructiveConfirmationStore();
 
 function buildFileActionKeyboard(file: any, locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup {
     return new Api.ReplyInlineMarkup({
-        rows: [...(buildTelegramFileCopyKeyboard([{ name: String(file.name) }], locale)?.rows || []), ...buildTelegramFileActionRows(file, locale).map(row => new Api.KeyboardButtonRow({
+        rows: [...(buildTelegramFileCopyKeyboard([{ name: String(file.name), folder: file.folder }], locale)?.rows || []), ...buildTelegramFileActionRows(file, locale).map(row => new Api.KeyboardButtonRow({
             buttons: row.map(button => new Api.KeyboardButtonCallback({ text: button.text, data: Buffer.from(button.data) })),
         }))],
     });
@@ -1038,54 +1038,47 @@ export async function handleFind(message: Api.Message, args: string[] = [], loca
     }
 }
 
-export async function handleList(message: Api.Message, args: string[], locale?: TelegramLocale): Promise<void> {
+const folderBrowser = new TelegramFolderBrowser();
+function folderBrowseScope(chatId: string, userId: number): string {
+    return JSON.stringify([chatId, userId, storageManager.getProvider().name, storageManager.getActiveAccountId()]);
+}
+async function loadFolderBrowseFiles() {
+    const scope = await getCurrentStorageScope();
+    const result = await query(`SELECT * FROM files WHERE ${scope.clause}`, scope.params);
+    if (storageManager.getProvider().name !== 'local') return result.rows;
+    return mergeLocalFiles(UPLOAD_DIR, result.rows, [THUMBNAIL_DIR, process.env.PREVIEW_DIR || './data/previews', process.env.CHUNK_DIR || './data/chunks'], true);
+}
+
+export async function handleList(message: Api.Message, _args: string[], locale?: TelegramLocale): Promise<void> {
     try {
-        let limit = 10;
-        let page = 1;
-        if (args.length > 0) {
-            const parsed = parseInt(args[0]);
-            if (!isNaN(parsed) && parsed > 0) {
-                limit = Math.min(parsed, 12);
-            }
-        }
-        if (args.length > 1) {
-            const parsedPage = parseInt(args[1]);
-            if (!isNaN(parsedPage) && parsedPage > 0) {
-                page = parsedPage;
-            }
-        }
-
-        if (storageManager.getProvider().name === 'local') {
-            const files = await listLocalFiles(UPLOAD_DIR, limit, page, [
-                THUMBNAIL_DIR,
-                process.env.PREVIEW_DIR || './data/previews',
-                process.env.CHUNK_DIR || './data/chunks',
-            ]);
-            await message.reply({ message: files.length
-                ? buildFileList(files, files.length, locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0))
-                : MSG.EMPTY_FILES, buttons: buildTelegramFileCopyKeyboard(files, locale) });
-            return;
-        }
-        const scope = await getCurrentStorageScope();
-        const offset = (page - 1) * limit;
-        const result = await query(`
-            SELECT id, name, type, size, folder, created_at
-            FROM files
-            WHERE ${scope.clause}
-            ORDER BY created_at DESC
-            LIMIT ${nextParam(scope, 1)} OFFSET ${nextParam(scope, 2)}
-        `, [...scope.params, limit, offset]);
-
-        if (result.rows.length === 0) {
-            await message.reply({ message: MSG.EMPTY_FILES });
-            return;
-        }
-
-        const reply = buildFileList(result.rows, result.rows.length, locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0));
-        await message.reply({ message: reply, buttons: buildTelegramFileCopyKeyboard(result.rows, locale) });
+        const userId = message.senderId?.toJSNumber() || 0;
+        if (!(await isAuthenticatedAsync(userId))) { await message.reply({ message: MSG.AUTH_REQUIRED }); return; }
+        const resolvedLocale = locale || await getTelegramUserLocaleOrDefault(userId);
+        const scope = folderBrowseScope(message.chatId!.toString(), userId);
+        await message.reply(folderBrowser.render(await loadFolderBrowseFiles(), scope, resolvedLocale));
     } catch (error) {
         console.error('🤖 获取文件列表失败:', error);
         await message.reply({ message: MSG.ERR_FILE_LIST });
+    }
+}
+
+export async function handleTelegramFolderCallback(client: TelegramClient, update: Api.UpdateBotCallbackQuery, data: string): Promise<void> {
+    const userId = update.userId.toJSNumber();
+    if (!(await isAuthenticatedAsync(userId))) {
+        await client.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+        return;
+    }
+    const locale = await getTelegramUserLocaleOrDefault(userId);
+    const scope = folderBrowseScope(getCallbackChatKey(update), userId);
+    const state = folderBrowser.resolve(data.slice('folders_'.length), scope);
+    await client.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...(state ? {} : { message: t(locale, 'folderBrowser.expired'), alert: true }) }));
+    if (!state) return;
+    try {
+        const view = folderBrowser.render(await loadFolderBrowseFiles(), scope, locale, state.folder, state.page);
+        await client.editMessage(update.peer, { message: Number(update.msgId), text: view.message, parseMode: false, buttons: view.buttons });
+    } catch (error) {
+        console.error('Telegram folder browse failed:', error);
+        await client.sendMessage(update.peer, { message: MSG.ERR_FILE_LIST });
     }
 }
 

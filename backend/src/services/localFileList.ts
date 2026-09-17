@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export async function listLocalFiles(root: string, limit: number, page: number, reserved: string[] = []) {
+export async function listLocalFiles(root: string, limit: number, page: number, reserved: string[] = [], includeFolders = false) {
     const base = path.resolve(root);
     const excluded = reserved.map(dir => path.resolve(dir));
     const files: Array<{ name: string; folder: string; type: string; size: number; created_at: string }> = [];
@@ -14,7 +14,10 @@ export async function listLocalFiles(root: string, limit: number, page: number, 
             try {
                 const stat = await fs.lstat(full);
                 if (stat.isSymbolicLink()) continue;
-                if (stat.isDirectory()) await scan(full);
+                if (stat.isDirectory()) {
+                    if (includeFolders) files.push({ name: '.folder', folder: path.relative(base, full).split(path.sep).join('/'), type: 'other', size: 0, created_at: stat.mtime.toISOString() });
+                    await scan(full);
+                }
                 else if (stat.isFile()) {
                     const ext = path.extname(entry.name).toLowerCase();
                     const type = /\.(mp4|mkv|mov|avi|webm|ts|m4v)$/.test(ext) ? 'video'

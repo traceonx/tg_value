@@ -25,6 +25,8 @@ test('local list discovers manual files, reflects deletion and pages without mod
         assert.equal((await listLocalFiles(root, 12, 1, reserved)).length, 2);
         await fs.unlink(path.join(root, '频道', 'video.mp4'));
         assert.deepEqual((await listLocalFiles(root, 12, 1, reserved)).map(file => file.name), ['old.mp4']);
+        const folders = await listLocalFiles(root, 12, 1, reserved, true);
+        assert.deepEqual(folders.filter(file => file.name === '.folder').map(file => file.folder), ['频道']);
         assert.equal(await fs.readFile(path.join(root, 'unfinished.part'), 'utf8'), 'partial');
     } finally { await fs.rm(root, { recursive: true, force: true }); }
 });

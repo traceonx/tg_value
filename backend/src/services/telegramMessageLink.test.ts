@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseTelegramMessageLink, runTelegramMessageLinkDownload, telegramMessageLinkFolderName } from './telegramMessageLink.js';
+import { parseTelegramMessageLink, runTelegramMessageLinkDownload, telegramMessageLinkFolderName, telegramDownloadFileName } from './telegramMessageLink.js';
+
+test('folder slash filename syntax preserves extension and forwards requested name', async () => {
+    const link = parseTelegramMessageLink('https://t.me/lifan223/2389 Dark Blue/01')!;
+    assert.deepEqual(link, { source: '@lifan223', messageId: 2389, folderName: 'Dark Blue', fileName: '01' });
+    assert.equal(telegramDownloadFileName(link.fileName, 'original.mp4'), '01.mp4');
+    assert.equal(telegramDownloadFileName('01.mp4', 'original.mp4'), '01.mp4');
+    for (const invalid of ['', '..', '../01', 'a/b', 'a\\b']) assert.throws(() => telegramDownloadFileName(invalid, 'original.mp4'));
+    await runTelegramMessageLinkDownload(link, {
+        assertSourceAllowed: async () => {}, getTarget: async () => 'local', getBaseFolder: async () => 'telegram',
+        download: async (_source, _ids, _target, folder, name) => {
+            assert.equal(folder, 'telegram/Dark Blue');
+            assert.equal(name, '01');
+            return { successful: 1, failed: 0 };
+        },
+    });
+});
 
 test('parses a single public post, including Markdown and web previews', () => {
     for (const link of ['https://t.me/lspyanxi/4375', '[视频](https://t.me/lspyanxi/4375)', ' t.me/lspyanxi/4375 ', 'https://t.me/s/lspyanxi/4375?single', 'https://telegram.me/lspyanxi/4375']) {

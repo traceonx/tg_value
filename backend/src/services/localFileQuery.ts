@@ -16,8 +16,8 @@ export interface LocalBrowseFile extends Record<string, unknown> {
 
 // Read-only overlay: browsing must not register temporary downloads or change
 // retention/deletion semantics for files copied onto disk outside the app.
-export async function mergeLocalFiles(root: string, indexed: Record<string, any>[], reserved: string[]): Promise<LocalBrowseFile[]> {
-    const disk = await listLocalFiles(root, Number.MAX_SAFE_INTEGER, 1, reserved);
+export async function mergeLocalFiles(root: string, indexed: Record<string, any>[], reserved: string[], includeFolders = false): Promise<LocalBrowseFile[]> {
+    const disk = await listLocalFiles(root, Number.MAX_SAFE_INTEGER, 1, reserved, includeFolders);
     const byPath = new Map(indexed.filter(file => file.name !== '.folder').map(file => [
         path.resolve(file.path || path.join(root, file.stored_name)), file,
     ]));
@@ -30,7 +30,7 @@ export async function mergeLocalFiles(root: string, indexed: Record<string, any>
         return { ...file, id, folder: file.folder || null, stored_name: file.name, source: 'local', is_favorite: false, indexed: false };
     });
     // Explicit empty folders have no visible disk file because .folder is hidden.
-    rows.push(...indexed.filter(file => file.name === '.folder').map(file => ({ ...file, created_at: new Date(file.created_at).toISOString(), indexed: true }) as LocalBrowseFile));
+    rows.push(...indexed.filter(file => file.name === '.folder' && !rows.some(row => row.name === '.folder' && row.folder === file.folder)).map(file => ({ ...file, created_at: new Date(file.created_at).toISOString(), indexed: true }) as LocalBrowseFile));
     return rows;
 }
 

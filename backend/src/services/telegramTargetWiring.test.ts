@@ -24,7 +24,7 @@ test('chat target state is durable, account-bound and deletion-safe', () => {
 test('/target supports next, session, clear and never switches global active account', () => {
     assert.match(bot, /text === '\/target'/);
     assert.match(bot, /handleTarget\(message/);
-    const commands = fs.readFileSync(new URL('./telegramCommands.ts', import.meta.url), 'utf8');
+    const commands = fs.readFileSync(new URL('./telegramCommands.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
     assert.match(commands, /setTelegramTargetState/);
     assert.match(commands, /clearTelegramTargetState/);
     assert.doesNotMatch(commands.match(/export async function handleTarget[\s\S]*?\n}\n/)?.[0] || '', /switchAccount/);

@@ -4,6 +4,8 @@ import { telegramAccountStopReason } from './telegramAccountSafety.js';
 import { parseTelegramMessageLink, runTelegramMessageLinkDownload } from './telegramMessageLink.js';
 import type { TelegramMessageLink } from './telegramMessageLink.js';
 import { TelegramLinkFolderChoices } from './telegramLinkFolderChoice.js';
+import { handleTelegramFolderCallback } from './telegramCommands.js';
+import { installTelegramPromptCopy } from './telegramPromptCopy.js';
 import { resolveTelegramStorageFolderPersistent } from '../utils/telegramPathSettings.js';
 import { downloadTelegramChannelRange } from './telegramUpload.js';
 import { assertTelegramSourceAllowed } from './telegramChannelJobs.js';
@@ -175,6 +177,7 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
     if (!openMatch) return;
     const command = openMatch[1];
     const message = await currentMessage();
+    if (command === 'files') return handleList(message, [], locale);
     if (menuPanels[command]) return showMenuPanel(message, command, locale);
     if (command === 'start') return showMenuPanel(message, 'home', locale);
     if (command === 'language') {
@@ -186,7 +189,7 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
     if (command === 'path_rules') return handlePathRules(message, locale);
     if (command === 'tg_download') return startTelegramWizard(message, userId, 'tg_download');
     if (command === 'tg_link') {
-        await message.reply({ message: t(locale, 'bot.link.help'), parseMode: false });
+        await message.reply({ message: `${t(locale, 'bot.link.help')}\n\n${t(locale, 'bot.link.renameHelp')}`, parseMode: false });
         return;
     }
     if (command === 'ps') return handlePathSession(message, [], userId);
@@ -251,9 +254,9 @@ async function downloadMessageLink(message: Api.Message, senderId: number, link:
                 const selected = await consumeOrGetTelegramTargetState(chatId.toString());
                 return selected ? storageManager.getTarget(selected.provider, selected.accountId) : storageManager.getActiveTarget();
             },
-            download: (source, ids, target, folder) => downloadTelegramChannelRange(
+            download: (source, ids, target, folder, fileName) => downloadTelegramChannelRange(
                 client!, message, source, ids[0], 1, 'older', ids,
-                folder, undefined, undefined, undefined, undefined, undefined, senderId, target,
+                folder, undefined, undefined, undefined, undefined, undefined, senderId, target, undefined, fileName,
             ),
         });
         if (!result.successful && !result.failed) await message.reply({ message: t(locale, 'bot.link.empty') });
@@ -456,7 +459,7 @@ function consumeTelegramRateLimit(userId: number, text: string): { limited: bool
 }
 
 function isCancelInput(text: string): boolean {
-    return /^(取消|cancel|退出|stop)$/i.test(text.trim());
+    return /^(取消|cancel|退出|stop|отмена)$/i.test(text.trim());
 }
 
 function buildTelegramWizardPrompt(state: TelegramWizardState, locale: TelegramLocale = DEFAULT_LOCALE): string {
@@ -1526,6 +1529,7 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
             floodSleepThreshold: 0,
         });
 
+        installTelegramPromptCopy(client);
         const cooldownKey = `telegram_bot_cooldown_${crypto.createHash('sha256').update(botToken).digest('hex').slice(0, 24)}`;
         let cooldownUntil = Number(await getSetting(cooldownKey, '0')) || 0;
         const requestGate = new TelegramRequestGate();
@@ -1693,7 +1697,8 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                         await message.reply({ message: MSG.AUTH_REQUIRED });
                         return;
                     }
-                    await showMenuPanel(message, text.slice(1), await getTelegramUserLocaleOrDefault(senderId));
+                    if (text === '/files') await handleList(message, [], await getTelegramUserLocaleOrDefault(senderId));
+                    else await showMenuPanel(message, text.slice(1), await getTelegramUserLocaleOrDefault(senderId));
                     return;
                 }
 
@@ -1737,7 +1742,7 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                         return;
                     }
                     const locale = await getTelegramUserLocaleOrDefault(senderId);
-                    await message.reply({ message: t(locale, 'bot.link.help'), parseMode: false });
+                    await message.reply({ message: `${t(locale, 'bot.link.help')}\n\n${t(locale, 'bot.link.renameHelp')}`, parseMode: false });
                     return;
                 }
 
@@ -2218,6 +2223,11 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                 const activeClient = client;
                 const callbackUpdate = update as Api.UpdateBotCallbackQuery;
                 const data = Buffer.from(callbackUpdate.data || []).toString('utf-8');
+
+                if (data.startsWith('folders_')) {
+                    await handleTelegramFolderCallback(activeClient, callbackUpdate, data);
+                    return;
+                }
 
                 if (data.startsWith('linkfolder_')) {
                     await handleLinkFolderChoice(callbackUpdate, data);

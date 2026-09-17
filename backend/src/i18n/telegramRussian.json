@@ -1,4 +1,11 @@
 {
+  "folderBrowser.title": "📁 Папка: {folder}",
+  "folderBrowser.page": "Страница {page} / {total} · Откройте папку или скопируйте её имя",
+  "folderBrowser.copy": "📋 Копировать имя папки",
+  "folderBrowser.parent": "↩️ На уровень выше",
+  "folderBrowser.empty": "Эта папка пуста.",
+  "folderBrowser.expired": "Кнопка устарела, хранилище изменилось или принадлежит другому пользователю. Отправьте /files снова.",
+  "bot.link.renameHelp": "Пример: https://t.me/lifan223/2389 Dark Blue/01\n→ Папка Dark Blue, имя файла 01 (с исходным расширением, например 01.mp4).",
   "bot.link.reuseFolder": "За последние 10 минут вы использовали папку «{folder}». Использовать её снова?\nВыберите «Нет», чтобы сохранить в папку с датой «{date}».",
   "bot.link.folderYes": "Да, использовать папку",
   "bot.link.folderNo": "Нет, использовать дату",

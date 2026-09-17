@@ -16,6 +16,7 @@ import { assertStorageTargetWritable, formatStorageCooldownNotice } from './stor
 import { markStorageAccountCooldown } from './storageCooldown.js';
 import { getTelegramUserClient, isTelegramUserClientReady } from './telegramUserClient.js';
 import { runTelegramDownloadWorkers } from './telegramDownloadWorkers.js';
+import { telegramDownloadFileName } from './telegramMessageLink.js';
 import { getSetting } from '../utils/settings.js';
 import { getTelegramProgressIntervalMs, startSharedTelegramProgress } from './telegramProgressSettings.js';
 import { isAuthenticatedAsync } from './telegramState.js';
@@ -2258,6 +2259,7 @@ export async function downloadTelegramChannelRange(
     ownerUserId?: number,
     storageTarget: StorageTargetSnapshot = storageManager.getActiveTarget(),
     withItemLease?: <T>(ref: TelegramDownloadMessageRef, operation: () => Promise<T>) => Promise<T>,
+    fileNameOverride?: string,
 ): Promise<{ requested: number; found: number; skipped: number; failed: number; successful: number; successfulMessageIds: number[]; failedMessageIds: number[]; skippedMessageIds: number[]; firstId: number; lastId: number }> {
     const selectedDownloadAccount = await selectTelegramDownloadAccount(String(source));
     if (selectedDownloadAccount) (selectedDownloadAccount.client as any).__tgVaultAccountId = selectedDownloadAccount.accountId;
@@ -2507,7 +2509,8 @@ export async function downloadTelegramChannelRange(
                     return;
                 }
             }
-            const { fileName, mimeType } = item.fileInfo;
+            const { mimeType } = item.fileInfo;
+            const fileName = telegramDownloadFileName(fileNameOverride, item.fileInfo.fileName);
             const message = segmentMessagesBySource.get(item.sourceKey)?.get(item.id);
             if (!message) {
                 skipped += 1;
@@ -2521,7 +2524,7 @@ export async function downloadTelegramChannelRange(
             const uploadItem: FileUploadItem = {
                 fileName,
                 mimeType,
-                generatedName: item.fileInfo.generatedName,
+                generatedName: fileNameOverride === undefined ? item.fileInfo.generatedName : false,
                 message,
                 status: 'pending',
                 sharedCaption: item.sharedCaption,
