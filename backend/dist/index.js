@@ -3780,7 +3780,7 @@ import { UAParser } from "ua-parser-js";
 import axios2 from "axios";
 
 // src/services/telegramBot.ts
-import { TelegramClient as TelegramClient7, Api as Api13 } from "telegram";
+import { TelegramClient as TelegramClient7, Api as Api14 } from "telegram";
 
 // src/services/telegramAccountSafety.ts
 function telegramAccountStopReason(error) {
@@ -4008,9 +4008,13 @@ function parseTelegramMessageLink(input) {
   const messageId = Number(match[4]);
   if (!Number.isSafeInteger(messageId) || messageId < 1 || messageId > 2147483647) return null;
   if (match[1] && !/^[1-9]\d*$/.test(match[2])) return null;
+  const url = new URL(/^https?:\/\//i.test(link) ? link : `https://${link}`);
+  const comments = url.searchParams.getAll("comment");
+  const commentId = comments.length ? Number(comments[0]) : void 0;
+  if (comments.length && (comments.length !== 1 || !/^[1-9]\d*$/.test(comments[0]) || !Number.isSafeInteger(commentId) || commentId > 2147483647)) return null;
   const split = suffix?.lastIndexOf("/") ?? -1;
   const destination = suffix && split > 0 ? { folderName: suffix.slice(0, split), fileName: suffix.slice(split + 1) } : suffix ? { folderName: suffix } : {};
-  return { source: match[1] ? `-100${match[2]}` : `@${match[3]}`, messageId, ...destination };
+  return { source: match[1] ? `-100${match[2]}` : `@${match[3]}`, messageId, ...commentId === void 0 ? {} : { commentId }, ...destination };
 }
 function telegramDownloadFileName(requested, original) {
   if (requested === void 0) return original;
@@ -4041,9 +4045,9 @@ async function runTelegramMessageLinkDownload(link, dependencies, now = /* @__PU
   await dependencies.assertSourceAllowed(link.source);
   const folder = joinFolderPath(await dependencies.getBaseFolder(), folderName);
   const target = await dependencies.getTarget();
-  const download = () => dependencies.download(link.source, [link.messageId], target, folder, link.fileName);
+  const download = () => dependencies.download(link.source, [link.messageId], target, folder, link.fileName, link.commentId);
   if (!dependencies.scopeKey || !dependencies.targetKey) return download();
-  const key = JSON.stringify([dependencies.scopeKey, link.source.toLowerCase(), link.messageId, dependencies.targetKey(target), folder, link.fileName]);
+  const key = JSON.stringify([dependencies.scopeKey, link.source.toLowerCase(), link.messageId, link.commentId, dependencies.targetKey(target), folder, link.fileName]);
   return downloads.run(key, download);
 }
 
@@ -4083,7 +4087,7 @@ var TelegramLinkFolderChoices = class {
 
 // src/services/telegramCommands.ts
 init_db();
-import { Api as Api10 } from "telegram";
+import { Api as Api11 } from "telegram";
 import { getPeerId as getPeerId2 } from "telegram/Utils.js";
 import checkDiskSpaceModule from "check-disk-space";
 import os2 from "os";
@@ -7589,7 +7593,7 @@ var TelegramEditCache = class {
 };
 
 // src/services/telegramUpload.ts
-import { Api as Api6 } from "telegram";
+import { Api as Api7 } from "telegram";
 
 // src/services/telegramAccountRepository.ts
 init_db();
@@ -9954,6 +9958,24 @@ async function runTelegramDownloadWorkers(count, operation, parentSignal) {
   if (failed) throw failure;
 }
 
+// src/services/telegramCommentLink.ts
+import { Api as Api4 } from "telegram";
+async function resolveTelegramCommentLink(client2, source, postId, commentId) {
+  if (!Number.isSafeInteger(commentId) || commentId < 1 || commentId > 2147483647) throw new Error("\u8BC4\u8BBA\u6D88\u606F ID \u65E0\u6548");
+  const discussion = await client2.invoke(new Api4.messages.GetDiscussionMessage({ peer: source, msgId: postId }));
+  const root = discussion.messages.at(-1);
+  if (!(root instanceof Api4.Message) || !(root.peerId instanceof Api4.PeerChannel)) throw new Error("\u8BE5\u5E16\u5B50\u6CA1\u6709\u53EF\u8BBF\u95EE\u7684\u8BC4\u8BBA\u533A");
+  const discussionSource = `-100${root.peerId.channelId.toString()}`;
+  const messages = await client2.getMessages(discussionSource, { ids: [commentId] });
+  const comment = messages.find((message) => message instanceof Api4.Message && message.id === commentId);
+  if (!comment) throw new Error("\u6307\u5B9A\u8BC4\u8BBA\u5DF2\u5220\u9664\u6216\u5F53\u524D Telegram \u8D26\u53F7\u65E0\u6CD5\u8BFB\u53D6");
+  const reply = comment.replyTo;
+  if (!(reply instanceof Api4.MessageReplyHeader) || (reply.replyToTopId ?? reply.replyToMsgId) !== root.id) {
+    throw new Error("\u6307\u5B9A\u6D88\u606F\u4E0D\u5C5E\u4E8E\u8BE5\u5E16\u5B50\u7684\u8BC4\u8BBA\u533A");
+  }
+  return { source: discussionSource, messageId: commentId };
+}
+
 // src/services/telegramUpload.ts
 init_settings();
 
@@ -10056,7 +10078,7 @@ function startSharedTelegramProgress(client2, chat, refresh) {
 init_telegramState();
 
 // src/utils/telegramMedia.ts
-import { Api as Api4 } from "telegram";
+import { Api as Api5 } from "telegram";
 function getDownloadableMedia(message) {
   if (!message.media) return null;
   const media = message.media;
@@ -10136,7 +10158,7 @@ function extractFileInfo(message) {
       mimeType = "audio/ogg";
     } else {
       const media = message.media;
-      if (media.document && media.document instanceof Api4.Document) {
+      if (media.document && media.document instanceof Api5.Document) {
         const doc = media.document;
         const fileNameAttr = doc.attributes?.find((a) => a.className === "DocumentAttributeFilename");
         generatedName = !fileNameAttr?.fileName;
@@ -10549,7 +10571,7 @@ async function prefetchForwardedSourceMessages(userClient2, messages) {
 }
 
 // src/utils/telegramPathSettings.ts
-import { Api as Api5 } from "telegram";
+import { Api as Api6 } from "telegram";
 init_settings();
 
 // src/utils/telegramPathStateStore.ts
@@ -10754,18 +10776,18 @@ function buildTelegramPathStateLines(chatId, locale = DEFAULT_LOCALE) {
   ];
 }
 function buildPathSettingsKeyboard(_state, locale = DEFAULT_LOCALE) {
-  return new Api5.ReplyInlineMarkup({
+  return new Api6.ReplyInlineMarkup({
     rows: [
-      new Api5.KeyboardButtonRow({
+      new Api6.KeyboardButtonRow({
         buttons: [
-          new Api5.KeyboardButtonCallback({ text: t(locale, "path.button.setOnce"), data: Buffer.from("pr_help_once") }),
-          new Api5.KeyboardButtonCallback({ text: t(locale, "path.button.setSession"), data: Buffer.from("pr_help_session") })
+          new Api6.KeyboardButtonCallback({ text: t(locale, "path.button.setOnce"), data: Buffer.from("pr_help_once") }),
+          new Api6.KeyboardButtonCallback({ text: t(locale, "path.button.setSession"), data: Buffer.from("pr_help_session") })
         ]
       }),
-      new Api5.KeyboardButtonRow({
+      new Api6.KeyboardButtonRow({
         buttons: [
-          new Api5.KeyboardButtonCallback({ text: t(locale, "path.button.recent"), data: Buffer.from("pr_recent") }),
-          new Api5.KeyboardButtonCallback({ text: t(locale, "path.button.clear"), data: Buffer.from("pr_clear_custom") })
+          new Api6.KeyboardButtonCallback({ text: t(locale, "path.button.recent"), data: Buffer.from("pr_recent") }),
+          new Api6.KeyboardButtonCallback({ text: t(locale, "path.button.clear"), data: Buffer.from("pr_clear_custom") })
         ]
       })
     ]
@@ -12948,7 +12970,7 @@ async function cancelSilentTask(client2, chatId, taskId, fallbackMessageId, user
       ``,
       t(locale, "upload.taskCancelled.controlsRemoved")
     ].join("\n");
-    await safeEditMessage(client2, editChatId, { message: silentMsgId, text, buttons: new Api6.ReplyInlineMarkup({ rows: [] }) });
+    await safeEditMessage(client2, editChatId, { message: silentMsgId, text, buttons: new Api7.ReplyInlineMarkup({ rows: [] }) });
   }
   silentSessionMap.delete(chatIdStr);
   removeTaskControlScope(session?.taskId);
@@ -13614,7 +13636,7 @@ function normalizeTelegramDownloadRefs(refs, defaultSourceEntity) {
   if (!refs) return void 0;
   return refs.filter((ref) => ref.id > 0).map((ref) => ({ ...ref, source: ref.source || defaultSourceEntity }));
 }
-async function downloadTelegramChannelRange(botClient, requestMessage, source, startMessageId, limit = 50, direction = "older", explicitIds, folderOverride, explicitRefs, onItemSettled, executionGroupKey, getExecutionControlState, taskSignal, ownerUserId, storageTarget = storageManager.getActiveTarget(), withItemLease, fileNameOverride) {
+async function downloadTelegramChannelRange(botClient, requestMessage, source, startMessageId, limit = 50, direction = "older", explicitIds, folderOverride, explicitRefs, onItemSettled, executionGroupKey, getExecutionControlState, taskSignal, ownerUserId, storageTarget = storageManager.getActiveTarget(), withItemLease, fileNameOverride, commentId) {
   const selectedDownloadAccount = await selectTelegramDownloadAccount(String(source));
   if (selectedDownloadAccount) selectedDownloadAccount.client.__tgVaultAccountId = selectedDownloadAccount.accountId;
   const userClient2 = selectedDownloadAccount?.client;
@@ -13638,7 +13660,12 @@ async function downloadTelegramChannelRange(botClient, requestMessage, source, s
   }
   try {
     const safeLimit = Math.max(1, Math.floor(limit || TG_BATCH_DEFAULT_LIMIT));
-    const sourceEntity = source.startsWith("@") || /^-?\d+$/.test(source) || /^https?:\/\//i.test(source) ? source : `@${source}`;
+    let sourceEntity = source.startsWith("@") || /^-?\d+$/.test(source) || /^https?:\/\//i.test(source) ? source : `@${source}`;
+    if (commentId !== void 0) {
+      const comment = await resolveTelegramCommentLink(userClient2, sourceEntity, startMessageId, commentId);
+      sourceEntity = comment.source;
+      explicitIds = [comment.messageId];
+    }
     const normalizedExplicitRefs = normalizeTelegramDownloadRefs(explicitRefs, sourceEntity);
     const ids = normalizedExplicitRefs?.map((ref) => ref.id) || explicitIds?.filter((id) => id > 0) || Array.from({ length: safeLimit }, (_, index) => direction === "newer" ? startMessageId + index : startMessageId - index).filter((id) => id > 0);
     if (ids.length === 0) {
@@ -14518,7 +14545,7 @@ function telegramHistoryOffset(endDateIso, offsetId) {
 // src/services/telegramChannelJobs.ts
 init_db();
 init_storage();
-import { Api as Api7 } from "telegram";
+import { Api as Api8 } from "telegram";
 import crypto17 from "node:crypto";
 import { getPeerId } from "telegram/Utils.js";
 
@@ -15216,8 +15243,8 @@ function telegramInviteErrorMessage(error, locale = DEFAULT_LOCALE) {
   return t(locale, "channels.errors.inviteResolutionFailed", { error: anyErr?.message || anyErr?.errorMessage || String(error) });
 }
 function assertJoinedPrivateInvite(invite, locale = DEFAULT_LOCALE) {
-  if (invite instanceof Api7.ChatInviteAlready) return;
-  if (invite instanceof Api7.ChatInvite) {
+  if (invite instanceof Api8.ChatInviteAlready) return;
+  if (invite instanceof Api8.ChatInvite) {
     throw new Error(t(locale, "channels.errors.inviteNotJoined"));
   }
 }
@@ -15231,7 +15258,7 @@ async function resolveTelegramSource(userClient2, sourceInput, locale = DEFAULT_
   }
   let invite;
   try {
-    invite = await userClient2.invoke(new Api7.messages.CheckChatInvite({ hash: inviteHash }));
+    invite = await userClient2.invoke(new Api8.messages.CheckChatInvite({ hash: inviteHash }));
   } catch (error) {
     throw new Error(telegramInviteErrorMessage(error, locale));
   }
@@ -18239,7 +18266,7 @@ function aggregateLocalFolders(files, options) {
 
 // src/services/telegramFolderBrowser.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
-import { Api as Api8 } from "telegram";
+import { Api as Api9 } from "telegram";
 function folderEntries(files, folder) {
   const prefix = folder ? `${folder}/` : "";
   const folders = /* @__PURE__ */ new Set();
@@ -18278,7 +18305,7 @@ var TelegramFolderBrowser = class {
       const token = randomUUID2().replaceAll("-", "");
       this.links.set(token, { scope, folder: target, page: targetPage, expires: this.now() + 15 * 6e4 });
       if (this.links.size > 4e3) this.links.delete(this.links.keys().next().value);
-      return new Api8.KeyboardButtonCallback({ text, data: Buffer.from(`folders_${token}`) });
+      return new Api9.KeyboardButtonCallback({ text, data: Buffer.from(`folders_${token}`) });
     };
     const rows = [];
     const lines = [t(locale, "folderBrowser.title", { folder: folder || t(locale, "fileBrowser.rootFolder") }), t(locale, "folderBrowser.page", { page: page + 1, total: totalPages }), ""];
@@ -18286,13 +18313,13 @@ var TelegramFolderBrowser = class {
       if (entry.file) {
         const file = entry.file;
         lines.push(`\u{1F4C4} ${file.name}`);
-        if (file.id && file.indexed !== false) rows.push(new Api8.KeyboardButtonRow({ buttons: [new Api8.KeyboardButtonCallback({ text: `\u{1F4C4} ${file.name.slice(0, 38)}`, data: Buffer.from(`fb_detail_${file.id}`) })] }));
+        if (file.id && file.indexed !== false) rows.push(new Api9.KeyboardButtonRow({ buttons: [new Api9.KeyboardButtonCallback({ text: `\u{1F4C4} ${file.name.slice(0, 38)}`, data: Buffer.from(`fb_detail_${file.id}`) })] }));
       } else {
         const name = entry.folder.split("/").at(-1);
         lines.push(`\u{1F4C1} ${name}`);
-        rows.push(new Api8.KeyboardButtonRow({ buttons: [
+        rows.push(new Api9.KeyboardButtonRow({ buttons: [
           navigate(`\u{1F4C2} ${name.slice(0, 32)}`, entry.folder),
-          new Api8.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: name })
+          new Api9.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: name })
         ] }));
       }
     }
@@ -18300,30 +18327,30 @@ var TelegramFolderBrowser = class {
     const paging = [];
     if (page > 0) paging.push(navigate("\u2190", folder, page - 1));
     if (page + 1 < totalPages) paging.push(navigate("\u2192", folder, page + 1));
-    if (paging.length) rows.push(new Api8.KeyboardButtonRow({ buttons: paging }));
-    if (folder) rows.push(new Api8.KeyboardButtonRow({ buttons: [
+    if (paging.length) rows.push(new Api9.KeyboardButtonRow({ buttons: paging }));
+    if (folder) rows.push(new Api9.KeyboardButtonRow({ buttons: [
       navigate(t(locale, "folderBrowser.parent"), folder.split("/").slice(0, -1).join("/")),
-      new Api8.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: folder.split("/").at(-1) })
+      new Api9.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: folder.split("/").at(-1) })
     ] }));
-    return { message: lines.join("\n"), buttons: new Api8.ReplyInlineMarkup({ rows }), parseMode: false };
+    return { message: lines.join("\n"), buttons: new Api9.ReplyInlineMarkup({ rows }), parseMode: false };
   }
 };
 
 // src/services/telegramFileCopyKeyboard.ts
-import { Api as Api9 } from "telegram";
+import { Api as Api10 } from "telegram";
 function buildTelegramFileCopyKeyboard(files, locale = DEFAULT_LOCALE) {
   if (!files.length) return void 0;
-  return new Api9.ReplyInlineMarkup({ rows: files.slice(0, 12).map((file) => {
+  return new Api10.ReplyInlineMarkup({ rows: files.slice(0, 12).map((file) => {
     const buttons = [];
-    if (file.folder) buttons.push(new Api9.KeyboardButtonCopy({
+    if (file.folder) buttons.push(new Api10.KeyboardButtonCopy({
       text: `\u{1F4CB} ${file.folder.split("/").at(-1).slice(0, 38)}`,
       copyText: file.folder.split("/").at(-1)
     }));
-    if (file.id) buttons.push(new Api9.KeyboardButtonCallback({
+    if (file.id) buttons.push(new Api10.KeyboardButtonCallback({
       text: `${t(locale, "fileBrowser.detail")} \xB7 ${file.name.slice(0, 30)}`,
       data: Buffer.from(`fb_detail_${file.id}`)
     }));
-    return new Api9.KeyboardButtonRow({ buttons });
+    return new Api10.KeyboardButtonRow({ buttons });
   }).filter((row) => row.buttons.length > 0) });
 }
 
@@ -18341,9 +18368,9 @@ var pendingStorageClearSnapshots = /* @__PURE__ */ new Map();
 var pendingBulkTaskCancellations = /* @__PURE__ */ new Map();
 var destructiveConfirmations = new DestructiveConfirmationStore();
 function buildFileActionKeyboard(file, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
-    rows: [...buildTelegramFileCopyKeyboard([{ name: String(file.name), folder: file.folder }], locale)?.rows || [], ...buildTelegramFileActionRows(file, locale).map((row) => new Api10.KeyboardButtonRow({
-      buttons: row.map((button) => new Api10.KeyboardButtonCallback({ text: button.text, data: Buffer.from(button.data) }))
+  return new Api11.ReplyInlineMarkup({
+    rows: [...buildTelegramFileCopyKeyboard([{ name: String(file.name), folder: file.folder }], locale)?.rows || [], ...buildTelegramFileActionRows(file, locale).map((row) => new Api11.KeyboardButtonRow({
+      buttons: row.map((button) => new Api11.KeyboardButtonCallback({ text: button.text, data: Buffer.from(button.data) }))
     }))]
   });
 }
@@ -18351,21 +18378,21 @@ function buildFileSearchKeyboard(files, locale = DEFAULT_LOCALE) {
   return buildTelegramFileCopyKeyboard(files.slice(0, 8), locale);
 }
 function buildDeleteConfirmKeyboard(confirmId, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
-    rows: [new Api10.KeyboardButtonRow({
+  return new Api11.ReplyInlineMarkup({
+    rows: [new Api11.KeyboardButtonRow({
       buttons: [
-        new Api10.KeyboardButtonCallback({ text: t(locale, "commands.deleteConfirm"), data: Buffer.from(`del_confirm_${confirmId}`) }),
-        new Api10.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from(`del_cancel_${confirmId}`) })
+        new Api11.KeyboardButtonCallback({ text: t(locale, "commands.deleteConfirm"), data: Buffer.from(`del_confirm_${confirmId}`) }),
+        new Api11.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from(`del_cancel_${confirmId}`) })
       ]
     })]
   });
 }
 function buildBulkTaskCancelKeyboard(confirmId, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
-    rows: [new Api10.KeyboardButtonRow({
+  return new Api11.ReplyInlineMarkup({
+    rows: [new Api11.KeyboardButtonRow({
       buttons: [
-        new Api10.KeyboardButtonCallback({ text: t(locale, "commands.bulkConfirm"), data: Buffer.from(`bulk_task_confirm_${confirmId}`) }),
-        new Api10.KeyboardButtonCallback({ text: t(locale, "common.back"), data: Buffer.from(`bulk_task_cancel_${confirmId}`) })
+        new Api11.KeyboardButtonCallback({ text: t(locale, "commands.bulkConfirm"), data: Buffer.from(`bulk_task_confirm_${confirmId}`) }),
+        new Api11.KeyboardButtonCallback({ text: t(locale, "common.back"), data: Buffer.from(`bulk_task_cancel_${confirmId}`) })
       ]
     })]
   });
@@ -18380,29 +18407,29 @@ async function getCurrentDownloadWorkers() {
 }
 function buildDownloadWorkersKeyboard(current3, confirmValue, locale = DEFAULT_LOCALE) {
   if (confirmValue) {
-    return new Api10.ReplyInlineMarkup({
+    return new Api11.ReplyInlineMarkup({
       rows: [
-        new Api10.KeyboardButtonRow({
+        new Api11.KeyboardButtonRow({
           buttons: [
-            new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto135", { value0: `\u26A0\uFE0F ${confirmValue}` }), data: Buffer.from(`dw_confirm_${confirmValue}`) }),
-            new Api10.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("dw_cancel") })
+            new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto135", { value0: `\u26A0\uFE0F ${confirmValue}` }), data: Buffer.from(`dw_confirm_${confirmValue}`) }),
+            new Api11.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("dw_cancel") })
           ]
         })
       ]
     });
   }
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 4 ? "\u2705 " : ""}4`, data: Buffer.from("dw_set_4") }),
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 8 ? "\u2705 " : ""}8`, data: Buffer.from("dw_set_8") })
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 4 ? "\u2705 " : ""}4`, data: Buffer.from("dw_set_4") }),
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 8 ? "\u2705 " : ""}8`, data: Buffer.from("dw_set_8") })
         ]
       }),
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 12 ? "\u2705 " : ""}12 \u26A0\uFE0F`, data: Buffer.from("dw_set_12") }),
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 16 ? "\u2705 " : ""}16 \u26A0\uFE0F`, data: Buffer.from("dw_set_16") })
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 12 ? "\u2705 " : ""}12 \u26A0\uFE0F`, data: Buffer.from("dw_set_12") }),
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 16 ? "\u2705 " : ""}16 \u26A0\uFE0F`, data: Buffer.from("dw_set_16") })
         ]
       })
     ]
@@ -18410,14 +18437,14 @@ function buildDownloadWorkersKeyboard(current3, confirmValue, locale = DEFAULT_L
 }
 function buildStorageMaintenanceKeyboard(localFileCount, confirmationToken, locale = DEFAULT_LOCALE) {
   if (localFileCount <= 0) return void 0;
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: confirmationToken ? [
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.clearLocalConfirm"), data: Buffer.from(`storage_clear_confirm_${confirmationToken}`) }),
-          new Api10.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from(`storage_clear_cancel_${confirmationToken}`) })
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.clearLocalConfirm"), data: Buffer.from(`storage_clear_confirm_${confirmationToken}`) }),
+          new Api11.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from(`storage_clear_cancel_${confirmationToken}`) })
         ] : [
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.clearLocalButton", { count: localFileCount }), data: Buffer.from("storage_clear_ask") })
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.clearLocalButton", { count: localFileCount }), data: Buffer.from("storage_clear_ask") })
         ]
       })
     ]
@@ -18438,24 +18465,24 @@ function buildStorageAccountKeyboard(accounts, activeAccountId, locale = DEFAULT
     const isActive = account.is_active || account.id === activeAccountId;
     const providerLabel = getProviderDisplayName(account.type).replace(/^[^\p{L}\p{N}]+/u, "").trim();
     const accountName = shortenStorageAccountName(account.name || t(locale, "commands.accountUnnamed"));
-    return new Api10.KeyboardButtonRow({
-      buttons: [new Api10.KeyboardButtonCallback({
+    return new Api11.KeyboardButtonRow({
+      buttons: [new Api11.KeyboardButtonCallback({
         text: `${isActive ? "\u2705" : "\u2B1C"} ${providerLabel} \xB7 ${accountName}`,
         data: Buffer.from(`storage_switch_${account.id}`)
       })]
     });
   });
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
-        buttons: [new Api10.KeyboardButtonCallback({
+      new Api11.KeyboardButtonRow({
+        buttons: [new Api11.KeyboardButtonCallback({
           text: `${!activeAccountId ? "\u2705" : "\u2B1C"} \u{1F4BE} ${t(locale, "commands.localStorage")}`,
           data: Buffer.from("storage_switch_local")
         })]
       }),
       ...accountButtons,
-      new Api10.KeyboardButtonRow({
-        buttons: [new Api10.KeyboardButtonCallback({ text: `\u{1F504} ${t(locale, "commands.refreshList")}`, data: Buffer.from("storage_switch_refresh") })]
+      new Api11.KeyboardButtonRow({
+        buttons: [new Api11.KeyboardButtonCallback({ text: `\u{1F504} ${t(locale, "commands.refreshList")}`, data: Buffer.from("storage_switch_refresh") })]
       })
     ]
   });
@@ -18508,7 +18535,7 @@ async function editStorageSwitchMessage(client2, update, toast) {
       throw error;
     }
   }
-  await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: toast }));
+  await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: toast }));
 }
 async function scanLocalDownloadFiles() {
   const baseDir = path19.resolve(UPLOAD_DIR3);
@@ -18560,29 +18587,29 @@ async function getCurrentFileConcurrency() {
 }
 function buildFileConcurrencyKeyboard(current3, confirmValue, locale = DEFAULT_LOCALE) {
   if (confirmValue) {
-    return new Api10.ReplyInlineMarkup({
+    return new Api11.ReplyInlineMarkup({
       rows: [
-        new Api10.KeyboardButtonRow({
+        new Api11.KeyboardButtonRow({
           buttons: [
-            new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto145", { value0: `\u26A0\uFE0F ${confirmValue}` }), data: Buffer.from(`fc_confirm_${confirmValue}`) }),
-            new Api10.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("fc_cancel") })
+            new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto145", { value0: `\u26A0\uFE0F ${confirmValue}` }), data: Buffer.from(`fc_confirm_${confirmValue}`) }),
+            new Api11.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("fc_cancel") })
           ]
         })
       ]
     });
   }
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 1 ? "\u2705 " : ""}1`, data: Buffer.from("fc_set_1") }),
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 2 ? "\u2705 " : ""}2`, data: Buffer.from("fc_set_2") })
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 1 ? "\u2705 " : ""}1`, data: Buffer.from("fc_set_1") }),
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 2 ? "\u2705 " : ""}2`, data: Buffer.from("fc_set_2") })
         ]
       }),
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 3 ? "\u2705 " : ""}3`, data: Buffer.from("fc_set_3") }),
-          new Api10.KeyboardButtonCallback({ text: `${current3 === 4 ? "\u2705 " : ""}4 \u26A0\uFE0F`, data: Buffer.from("fc_set_4") })
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 3 ? "\u2705 " : ""}3`, data: Buffer.from("fc_set_3") }),
+          new Api11.KeyboardButtonCallback({ text: `${current3 === 4 ? "\u2705 " : ""}4 \u26A0\uFE0F`, data: Buffer.from("fc_set_4") })
         ]
       })
     ]
@@ -18611,12 +18638,12 @@ async function getPathCenterState() {
   return { automaticBySource: true, automaticByType: true };
 }
 function buildDuplicateModeKeyboard(mode, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto011", { value0: mode === "skip" ? "\u2705" : "\u2B1C" }), data: Buffer.from("dm_set_skip") }),
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto012", { value0: mode === "copy" ? "\u2705" : "\u2B1C" }), data: Buffer.from("dm_set_copy") })
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto011", { value0: mode === "skip" ? "\u2705" : "\u2B1C" }), data: Buffer.from("dm_set_skip") }),
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto012", { value0: mode === "copy" ? "\u2705" : "\u2B1C" }), data: Buffer.from("dm_set_copy") })
         ]
       })
     ]
@@ -18639,12 +18666,12 @@ async function getCleanupEnabledSetting() {
   return isOn(value, false);
 }
 function buildCleanupSettingsKeyboard(enabled, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({
+      new Api11.KeyboardButtonRow({
         buttons: [
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto018", { value0: !enabled ? "\u2705" : "\u2B1C" }), data: Buffer.from("cs_set_off") }),
-          new Api10.KeyboardButtonCallback({ text: t(locale, "commands.auto019", { value0: enabled ? "\u2705" : "\u2B1C" }), data: Buffer.from("cs_set_on") })
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto018", { value0: !enabled ? "\u2705" : "\u2B1C" }), data: Buffer.from("cs_set_off") }),
+          new Api11.KeyboardButtonCallback({ text: t(locale, "commands.auto019", { value0: enabled ? "\u2705" : "\u2B1C" }), data: Buffer.from("cs_set_on") })
         ]
       })
     ]
@@ -18680,9 +18707,9 @@ async function handleHelp(message, buttons, locale) {
   await message.reply({ message: buildHelp(locale || await getTelegramUserLocaleOrDefault(message.senderId?.toJSNumber() || 0)), buttons });
 }
 function buildNotificationSettingsKeyboard(current3, locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
-    rows: buildNotificationSettingsButtonRows(current3, locale).map((row) => new Api10.KeyboardButtonRow({
-      buttons: row.map((button) => new Api10.KeyboardButtonCallback({
+  return new Api11.ReplyInlineMarkup({
+    rows: buildNotificationSettingsButtonRows(current3, locale).map((row) => new Api11.KeyboardButtonRow({
+      buttons: row.map((button) => new Api11.KeyboardButtonCallback({
         text: button.text,
         data: Buffer.from(button.data)
       }))
@@ -18728,7 +18755,7 @@ ${t(resolvedLocale, "commands.notificationsHint")}`
 async function handleNotificationsCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: MSG.AUTH_REQUIRED,
       alert: true
@@ -18743,7 +18770,7 @@ async function handleNotificationsCallback(client2, update, data) {
     const current3 = await getTelegramNotificationPreferences(userId, chatId);
     const next = updateNotificationPreference(current3, args, locale);
     if (JSON.stringify(next) === JSON.stringify(current3)) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
         queryId: update.queryId,
         message: t(locale, "commands.alreadyCurrent")
       }));
@@ -18759,12 +18786,12 @@ async function handleNotificationsCallback(client2, update, data) {
       text: buildNotificationSettingsText(saved, locale),
       buttons: buildNotificationSettingsKeyboard(saved, locale)
     });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "commands.notificationsUpdated")
     }));
   } catch (error) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "commands.settingsFailed", { error: error.message }),
       alert: true
@@ -18856,14 +18883,14 @@ async function handleStorage(message, locale) {
   }
 }
 function buildTargetKeyboard(locale = DEFAULT_LOCALE) {
-  return new Api10.ReplyInlineMarkup({
+  return new Api11.ReplyInlineMarkup({
     rows: [
-      new Api10.KeyboardButtonRow({ buttons: [
-        new Api10.KeyboardButtonCallback({ text: t(locale, "commands.targetNextButton"), data: Buffer.from("target_once_active") }),
-        new Api10.KeyboardButtonCallback({ text: t(locale, "commands.targetSessionButton"), data: Buffer.from("target_session_active") })
+      new Api11.KeyboardButtonRow({ buttons: [
+        new Api11.KeyboardButtonCallback({ text: t(locale, "commands.targetNextButton"), data: Buffer.from("target_once_active") }),
+        new Api11.KeyboardButtonCallback({ text: t(locale, "commands.targetSessionButton"), data: Buffer.from("target_session_active") })
       ] }),
-      new Api10.KeyboardButtonRow({ buttons: [
-        new Api10.KeyboardButtonCallback({ text: t(locale, "commands.targetClearButton"), data: Buffer.from("target_clear") })
+      new Api11.KeyboardButtonRow({ buttons: [
+        new Api11.KeyboardButtonCallback({ text: t(locale, "commands.targetClearButton"), data: Buffer.from("target_clear") })
       ] })
     ]
   });
@@ -18931,19 +18958,19 @@ async function handleTargetCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const chatId = getCallbackChatKey(update);
   if (data === "target_clear") {
     await clearTelegramTargetState(chatId);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.targetRestored") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.targetRestored") }));
   } else {
     const mode = data === "target_once_active" ? "once" : "session";
     const active3 = storageManager.getActiveTarget();
     const expiresAt = new Date(Date.now() + (mode === "once" ? 24 * 60 * 60 * 1e3 : 7 * 24 * 60 * 60 * 1e3));
     await setTelegramTargetState(void 0, chatId, mode, active3.provider.name, active3.accountId, expiresAt);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, mode === "once" ? "commands.targetNextSet" : "commands.targetSessionSet")
     }));
@@ -18980,7 +19007,7 @@ async function handleStorageSwitchCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -18990,7 +19017,7 @@ async function handleStorageSwitchCallback(client2, update, data) {
     }
     const accountId = data.replace(/^storage_switch_/, "");
     if (!accountId) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.storageInvalid"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.storageInvalid"), alert: true }));
       return;
     }
     if (accountId === "local") {
@@ -19016,13 +19043,13 @@ async function handleStorageSwitchCallback(client2, update, data) {
     await editStorageSwitchMessage(client2, update, t(locale, "commands.storageSwitched", { name: selected3.name || getProviderDisplayName(selected3.type) }));
   } catch (error) {
     console.error("\u{1F916} \u5207\u6362\u5B58\u50A8\u6E90\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.storageSwitchError", { error: error.message }), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.storageSwitchError", { error: error.message }), alert: true }));
   }
 }
 async function handleStorageCleanupCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -19038,7 +19065,7 @@ async function handleStorageCleanupCallback(client2, update, data) {
         action: "clear_local_storage"
       });
       if (!cancelled) {
-        await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E05\u7406\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
+        await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E05\u7406\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
         return;
       }
       pendingStorageClearSnapshots.delete(tokenMatch[2]);
@@ -19047,7 +19074,7 @@ async function handleStorageCleanupCallback(client2, update, data) {
         text: stats.count > 0 ? `\u5DF2\u53D6\u6D88\u6E05\u7406\u3002\u5F53\u524D\u672C\u5730\u4E0B\u8F7D\u6587\u4EF6\uFF1A${stats.count} \u4E2A\uFF0C\u5360\u7528 ${formatBytes(stats.totalSize)}\u3002` : "\u5DF2\u53D6\u6D88\u6E05\u7406\u3002\u5F53\u524D\u6CA1\u6709\u672C\u5730\u4E0B\u8F7D\u6587\u4EF6\u3002",
         buttons: buildStorageMaintenanceKeyboard(stats.count)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u53D6\u6D88" }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u53D6\u6D88" }));
       return;
     }
     if (data === "storage_clear_ask") {
@@ -19075,7 +19102,7 @@ async function handleStorageCleanupCallback(client2, update, data) {
         ].join("\n"),
         buttons: buildStorageMaintenanceKeyboard(stats.count, confirmationToken)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u9700\u8981\u4E8C\u6B21\u786E\u8BA4" }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u9700\u8981\u4E8C\u6B21\u786E\u8BA4" }));
       return;
     }
     if (tokenMatch?.[1] === "confirm") {
@@ -19088,7 +19115,7 @@ async function handleStorageCleanupCallback(client2, update, data) {
       const snapshot = pendingStorageClearSnapshots.get(tokenMatch[2]);
       pendingStorageClearSnapshots.delete(tokenMatch[2]);
       if (consumed.status !== "ok" || !snapshot) {
-        await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E05\u7406\u786E\u8BA4\u65E0\u6548\u3001\u5DF2\u8FC7\u671F\u6216\u5DF2\u4F7F\u7528", alert: true }));
+        await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E05\u7406\u786E\u8BA4\u65E0\u6548\u3001\u5DF2\u8FC7\u671F\u6216\u5DF2\u4F7F\u7528", alert: true }));
         return;
       }
       let deletedCount = 0;
@@ -19127,15 +19154,15 @@ async function handleStorageCleanupCallback(client2, update, data) {
         ].join("\n"),
         buttons: buildStorageMaintenanceKeyboard(after.count)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u5DF2\u5220\u9664 ${deletedCount} \u4E2A\u6587\u4EF6` }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u5DF2\u5220\u9664 ${deletedCount} \u4E2A\u6587\u4EF6` }));
       return;
     }
     if (data.startsWith("storage_clear_confirm") || data.startsWith("storage_clear_cancel")) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u65E7\u6E05\u7406\u6309\u94AE\u5DF2\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001 /storage", alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u65E7\u6E05\u7406\u6309\u94AE\u5DF2\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001 /storage", alert: true }));
     }
   } catch (error) {
     console.error("\u{1F916} \u6E05\u7406\u672C\u5730\u4E0B\u8F7D\u6587\u4EF6\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u6E05\u7406\u5931\u8D25: ${error.message}`, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u6E05\u7406\u5931\u8D25: ${error.message}`, alert: true }));
   }
 }
 async function handleFind(message, args = [], locale) {
@@ -19194,13 +19221,13 @@ async function handleList(message, _args, locale) {
 async function handleTelegramFolderCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const locale = await getTelegramUserLocaleOrDefault(userId);
   const scope = folderBrowseScope(getCallbackChatKey(update), userId);
   const state = folderBrowser.resolve(data.slice("folders_".length), scope);
-  await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...state ? {} : { message: t(locale, "folderBrowser.expired"), alert: true } }));
+  await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...state ? {} : { message: t(locale, "folderBrowser.expired"), alert: true } }));
   if (!state) return;
   try {
     const view = folderBrowser.render(await loadFolderBrowseFiles(), scope, locale, state.folder, state.page);
@@ -19214,52 +19241,52 @@ async function handleTelegramFileBrowserCallback(client2, update, data) {
   const actorId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(actorId);
   if (!await isAuthenticatedAsync(actorId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const parsed = parseTelegramFileCallback(data);
   if (!parsed) return;
   const file = await getScopedFileById(parsed.fileId);
   if (!file) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileUnavailable"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileUnavailable"), alert: true }));
     return;
   }
   const chatId = getCallbackChatKey(update);
   const messageId = Number(update.msgId);
   if (parsed.action === "detail") {
     await client2.editMessage(update.peer, { message: messageId, text: buildTelegramFileDetail(file, locale), buttons: buildFileActionKeyboard(file, locale) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileDetail") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileDetail") }));
     return;
   }
   if (parsed.action === "copy") {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: String(file.id), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: String(file.id), alert: true }));
     return;
   }
   if (parsed.action === "favorite") {
     await updateScopedFileById(String(file.id), "is_favorite = $1, updated_at = NOW()", [!file.is_favorite]);
     file.is_favorite = !file.is_favorite;
     await client2.editMessage(update.peer, { message: messageId, text: buildTelegramFileDetail(file, locale), buttons: buildFileActionKeyboard(file, locale) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, file.is_favorite ? "commands.fileFavorited" : "commands.fileUnfavorited") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, file.is_favorite ? "commands.fileFavorited" : "commands.fileUnfavorited") }));
     return;
   }
   if (parsed.action === "link") {
     const capabilities = buildStorageCapabilities(String(file.source));
     if (!capabilities.share && String(file.source) !== "local") {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileShareUnsupported"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileShareUnsupported"), alert: true }));
       return;
     }
     const relative = getSignedUrl(String(file.id), "download", 3600);
     const base = (process.env.VITE_API_URL || process.env.OAUTH_CALLBACK_BASE_URL || "").replace(/\/$/, "");
     const link = base ? `${base}${relative}` : relative;
     await client2.sendMessage(update.peer, { message: t(locale, "commands.fileSignedLink", { link }) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileLinkCreated") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileLinkCreated") }));
     return;
   }
   if (parsed.action === "move" || parsed.action === "rename") {
     const key = `${actorId}:${chatId}`;
     pendingTelegramFileMutations.set(key, { actorId, chatId, messageId, fileId: String(file.id), action: parsed.action, expiresAt: Date.now() + 5 * 60 * 1e3 });
     await client2.sendMessage(update.peer, { message: t(locale, parsed.action === "move" ? "commands.fileMovePrompt" : "commands.fileRenamePrompt") });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, parsed.action === "move" ? "commands.fileAwaitFolder" : "commands.fileAwaitName") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, parsed.action === "move" ? "commands.fileAwaitFolder" : "commands.fileAwaitName") }));
     return;
   }
   const sent = await client2.sendMessage(update.peer, {
@@ -19268,7 +19295,7 @@ async function handleTelegramFileBrowserCallback(client2, update, data) {
   const confirmId = destructiveConfirmations.issue({ actorId, chatId, messageId: sent.id, action: "delete_file", objectId: String(file.id) });
   pendingDeleteConfirmations.set(confirmId, { fileId: String(file.id), name: String(file.name), size: Number(file.size || 0), selector: String(file.id), actorId, chatId, messageId: sent.id });
   await sent.edit({ text: sent.message, buttons: buildDeleteConfirmKeyboard(confirmId, locale) });
-  await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.confirmRequired") }));
+  await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.confirmRequired") }));
 }
 async function applyPendingTelegramFileMutation(message, actorId, input) {
   const locale = await getTelegramUserLocaleOrDefault(actorId);
@@ -19387,7 +19414,7 @@ async function handleDeleteConfirmCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const match = data.match(/^del_(confirm|cancel)_(.+)$/);
@@ -19395,7 +19422,7 @@ async function handleDeleteConfirmCallback(client2, update, data) {
   const [, action, confirmId] = match;
   const pending = pendingDeleteConfirmations.get(confirmId);
   if (!pending) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteExpired"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteExpired"), alert: true }));
     return;
   }
   const binding = {
@@ -19407,17 +19434,17 @@ async function handleDeleteConfirmCallback(client2, update, data) {
   };
   if (action === "cancel") {
     if (!destructiveConfirmations.cancel(confirmId, binding)) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteNotOwner"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteNotOwner"), alert: true }));
       return;
     }
     pendingDeleteConfirmations.delete(confirmId);
-    await client2.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "commands.deleteCancelled", { name: pending.name }), buttons: new Api10.ReplyInlineMarkup({ rows: [] }) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
+    await client2.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "commands.deleteCancelled", { name: pending.name }), buttons: new Api11.ReplyInlineMarkup({ rows: [] }) });
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
     return;
   }
   const consumed = destructiveConfirmations.consume(confirmId, binding);
   if (consumed.status !== "ok") {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteInvalid"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteInvalid"), alert: true }));
     return;
   }
   pendingDeleteConfirmations.delete(confirmId);
@@ -19427,28 +19454,28 @@ async function handleDeleteConfirmCallback(client2, update, data) {
     const file = result.rows[0];
     if (!file) {
       pendingDeleteConfirmations.delete(confirmId);
-      await client2.editMessage(update.peer, { message: Number(update.msgId), text: `\u274C ${t(locale, "commands.fileUnavailable")}.`, buttons: new Api10.ReplyInlineMarkup({ rows: [] }) });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileMissingShort"), alert: true }));
+      await client2.editMessage(update.peer, { message: Number(update.msgId), text: `\u274C ${t(locale, "commands.fileUnavailable")}.`, buttons: new Api11.ReplyInlineMarkup({ rows: [] }) });
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileMissingShort"), alert: true }));
       return;
     }
     if (file.source === "openlist") {
-      await client2.editMessage(update.peer, { message: Number(update.msgId), text: `\u274C ${t(locale, "commands.fileOpenListDeleteUnsupported")}`, buttons: new Api10.ReplyInlineMarkup({ rows: [] }) });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileDeleteUnsupportedShort"), alert: true }));
+      await client2.editMessage(update.peer, { message: Number(update.msgId), text: `\u274C ${t(locale, "commands.fileOpenListDeleteUnsupported")}`, buttons: new Api11.ReplyInlineMarkup({ rows: [] }) });
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.fileDeleteUnsupportedShort"), alert: true }));
       return;
     }
     await removePhysicalFile(file);
     await query("DELETE FROM files WHERE id = $1", [file.id]);
-    await client2.editMessage(update.peer, { message: Number(update.msgId), text: buildDeleteSuccess(file.name, file.id, locale), buttons: new Api10.ReplyInlineMarkup({ rows: [] }) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleted") }));
+    await client2.editMessage(update.peer, { message: Number(update.msgId), text: buildDeleteSuccess(file.name, file.id, locale), buttons: new Api11.ReplyInlineMarkup({ rows: [] }) });
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleted") }));
   } catch (error) {
     console.error("\u{1F916} \u786E\u8BA4\u5220\u9664\u6587\u4EF6\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteFailed", { error: error.message }), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.deleteFailed", { error: error.message }), alert: true }));
   }
 }
 function buildTaskCenterMarkup(rows) {
-  return new Api10.ReplyInlineMarkup({
-    rows: rows.map((row) => new Api10.KeyboardButtonRow({
-      buttons: row.map((button) => new Api10.KeyboardButtonCallback({
+  return new Api11.ReplyInlineMarkup({
+    rows: rows.map((row) => new Api11.KeyboardButtonRow({
+      buttons: row.map((button) => new Api11.KeyboardButtonCallback({
         text: button.text,
         data: Buffer.from(button.data)
       }))
@@ -19583,42 +19610,42 @@ async function handleTaskCenterCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const parsed = parseTaskCenterCallback(data);
   if (!parsed) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskInvalidButton"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskInvalidButton"), alert: true }));
     return;
   }
   const chatId = getCallbackChatKey(update);
   const ownerKey = taskCenterCardKey(chatId, Number(update.msgId));
   const owner = taskCenterCardOwners.get(ownerKey);
   if (!owner) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskOldCard"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskOldCard"), alert: true }));
     return;
   }
   if (owner.expiresAt < Date.now() || owner.userId !== userId) {
     if (owner.expiresAt < Date.now()) taskCenterCardOwners.delete(ownerKey);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskWrongOwner"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskWrongOwner"), alert: true }));
     return;
   }
   owner.expiresAt = Date.now() + TASK_CENTER_CARD_TTL_MS;
   try {
     if (parsed.view === "list") {
       await renderTaskCenterList(client2, update, userId, chatId, parsed.page);
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskRefreshed") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskRefreshed") }));
       return;
     }
     const item = await findTaskCenterItem(parsed.sourceType, parsed.id, chatId, userId);
     if (!item) {
       await renderTaskCenterList(client2, update, userId, chatId, parsed.page);
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskEnded"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskEnded"), alert: true }));
       return;
     }
     if (parsed.view === "detail") {
       await editTaskCenterView(client2, update, buildTaskCenterDetail(item, parsed.page, { locale }));
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
       return;
     }
     if (parsed.action === "cancel_prompt") {
@@ -19631,7 +19658,7 @@ async function handleTaskCenterCallback(client2, update, data) {
         expiresAt: Date.now() + TASK_CENTER_CONFIRM_TTL_MS
       });
       await editTaskCenterView(client2, update, buildTaskCancelConfirm(item, parsed.page, locale));
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskConfirmCancel") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskConfirmCancel") }));
       return;
     }
     if (parsed.action === "cancel_confirm") {
@@ -19639,12 +19666,12 @@ async function handleTaskCenterCallback(client2, update, data) {
       const pending = pendingTaskCenterCancels.get(confirmationKey);
       pendingTaskCenterCancels.delete(confirmationKey);
       if (!pending || pending.expiresAt < Date.now() || pending.sourceType !== parsed.sourceType || pending.taskId !== parsed.id) {
-        await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskCancelExpired"), alert: true }));
+        await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskCancelExpired"), alert: true }));
         return;
       }
     }
     if (parsed.action === "retry") {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskRetryUnsupported"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.taskRetryUnsupported"), alert: true }));
       return;
     }
     let ok = false;
@@ -19682,10 +19709,10 @@ async function handleTaskCenterCallback(client2, update, data) {
         await renderTaskCenterList(client2, update, userId, chatId, parsed.page);
       }
     }
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: toast, alert: !ok }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: toast, alert: !ok }));
   } catch (error) {
     console.error("\u{1F916} \u4EFB\u52A1\u4E2D\u5FC3\u6309\u94AE\u64CD\u4F5C\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "commands.taskOperationFailed", { error: error.message }),
       alert: true
@@ -19759,7 +19786,7 @@ async function cancelTasksForScope(userId, chatId) {
 async function handleBulkTaskCancelCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const match = data.match(/^bulk_task_(confirm|cancel)_([A-Za-z0-9_-]+)$/);
@@ -19767,7 +19794,7 @@ async function handleBulkTaskCancelCallback(client2, update, data) {
   const [, action, confirmId] = match;
   const pending = pendingBulkTaskCancellations.get(confirmId);
   if (!pending) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6279\u91CF\u53D6\u6D88\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6279\u91CF\u53D6\u6D88\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
     return;
   }
   const binding = {
@@ -19778,18 +19805,18 @@ async function handleBulkTaskCancelCallback(client2, update, data) {
   };
   if (action === "cancel") {
     if (!destructiveConfirmations.cancel(confirmId, binding)) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BE5\u786E\u8BA4\u4E0D\u5C5E\u4E8E\u4F60\u6216\u5DF2\u8FC7\u671F", alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BE5\u786E\u8BA4\u4E0D\u5C5E\u4E8E\u4F60\u6216\u5DF2\u8FC7\u671F", alert: true }));
       return;
     }
     pendingBulkTaskCancellations.delete(confirmId);
-    await client2.editMessage(update.peer, { message: Number(update.msgId), text: "\u5DF2\u8FD4\u56DE\uFF0C\u5F53\u524D\u804A\u5929\u4EFB\u52A1\u672A\u88AB\u53D6\u6D88\u3002", buttons: new Api10.ReplyInlineMarkup({ rows: [] }) });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8FD4\u56DE" }));
+    await client2.editMessage(update.peer, { message: Number(update.msgId), text: "\u5DF2\u8FD4\u56DE\uFF0C\u5F53\u524D\u804A\u5929\u4EFB\u52A1\u672A\u88AB\u53D6\u6D88\u3002", buttons: new Api11.ReplyInlineMarkup({ rows: [] }) });
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8FD4\u56DE" }));
     return;
   }
   const consumed = destructiveConfirmations.consume(confirmId, binding);
   pendingBulkTaskCancellations.delete(confirmId);
   if (consumed.status !== "ok") {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BE5\u786E\u8BA4\u4E0D\u5C5E\u4E8E\u4F60\u3001\u5DF2\u8FC7\u671F\u6216\u5DF2\u4F7F\u7528", alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BE5\u786E\u8BA4\u4E0D\u5C5E\u4E8E\u4F60\u3001\u5DF2\u8FC7\u671F\u6216\u5DF2\u4F7F\u7528", alert: true }));
     return;
   }
   try {
@@ -19802,12 +19829,12 @@ async function handleBulkTaskCancelCallback(client2, update, data) {
         `\u666E\u901A\u4E0B\u8F7D\uFF1A${result.ordinaryTasks} \u4E2A\u4EFB\u52A1\uFF08\u5904\u7406\u4E2D ${result.ordinaryActiveFiles} / \u7B49\u5F85 ${result.ordinaryPendingFiles} \u4E2A\u6587\u4EF6\uFF09`,
         `\u9891\u9053\u4EFB\u52A1\uFF1A${result.channelTasks} \u4E2A`
       ].join("\n"),
-      buttons: new Api10.ReplyInlineMarkup({ rows: [] })
+      buttons: new Api11.ReplyInlineMarkup({ rows: [] })
     });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5F53\u524D\u804A\u5929\u4EFB\u52A1\u5DF2\u53D6\u6D88" }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5F53\u524D\u804A\u5929\u4EFB\u52A1\u5DF2\u53D6\u6D88" }));
   } catch (error) {
     console.error("\u{1F916} \u6279\u91CF\u53D6\u6D88\u5F53\u524D\u804A\u5929\u4EFB\u52A1\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u53D6\u6D88\u5931\u8D25: ${error.message}`, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u53D6\u6D88\u5931\u8D25: ${error.message}`, alert: true }));
   }
 }
 async function handleStopTasks(message) {
@@ -19928,7 +19955,7 @@ async function handleCancelTask(message, args) {
 async function handleChannelTaskQueueCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const match = data.match(/^ctq_(pause|resume|cancel)_([0-9a-f]{4,}|all)$/i);
@@ -19936,7 +19963,7 @@ async function handleChannelTaskQueueCallback(client2, update, data) {
   const [, action, selector] = match;
   try {
     if (action === "cancel") {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
         queryId: update.queryId,
         message: "\u65E7\u7248\u53D6\u6D88\u6309\u94AE\u5DF2\u5931\u6548\uFF0C\u8BF7\u4F7F\u7528\u65B0\u7248 /tasks \u91CD\u65B0\u8FDB\u5165\u4EFB\u52A1\u8BE6\u60C5\u5E76\u786E\u8BA4",
         alert: true
@@ -19947,15 +19974,15 @@ async function handleChannelTaskQueueCallback(client2, update, data) {
     const callbackChatId = getCallbackChatKey(update);
     const matches = rows.filter((job) => String(job.chat_id || "") === callbackChatId && String(job.id).toLowerCase().startsWith(selector.toLowerCase()));
     if (matches.length !== 1) {
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: matches.length > 1 ? "\u4EFB\u52A1 ID \u524D\u7F00\u4E0D\u552F\u4E00\uFF0C\u8BF7\u4F7F\u7528\u65B0\u7248 /tasks \u5237\u65B0" : "\u4EFB\u52A1\u5DF2\u7ED3\u675F\u6216\u5DF2\u5931\u6548", alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: matches.length > 1 ? "\u4EFB\u52A1 ID \u524D\u7F00\u4E0D\u552F\u4E00\uFF0C\u8BF7\u4F7F\u7528\u65B0\u7248 /tasks \u5237\u65B0" : "\u4EFB\u52A1\u5DF2\u7ED3\u675F\u6216\u5DF2\u5931\u6548", alert: true }));
       return;
     }
     const legacyAction = action;
     const result = await operateChannelTaskCenterItem(legacyAction, userId, callbackChatId, selector);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.toast, alert: !result.ok }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.toast, alert: !result.ok }));
   } catch (error) {
     console.error("\u{1F916} \u517C\u5BB9\u9891\u9053\u4EFB\u52A1\u6309\u94AE\u64CD\u4F5C\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u64CD\u4F5C\u5931\u8D25: ${error.message}`, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: `\u64CD\u4F5C\u5931\u8D25: ${error.message}`, alert: true }));
   }
 }
 async function handleRetryFailedTasks(message, args) {
@@ -20067,7 +20094,7 @@ async function handlePathRulesCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -20080,13 +20107,13 @@ async function handlePathRulesCallback(client2, update, data) {
       await client2.sendMessage(update.peer, {
         message: recent.length > 0 ? [t(locale, "path.recent.title"), "", ...recent.map((item, index) => `${index + 1}. ${item}`), "", t(locale, "path.recent.hint")].join("\n") : t(locale, "path.recent.empty")
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.recentSent") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.recentSent") }));
       return;
     } else if (data === "pr_help_once" || data === "pr_help_session") {
       const mode = data === "pr_help_once" ? "once" : "session";
       setPendingTelegramPathInput(chatKey, userId, mode);
       await client2.sendMessage(update.peer, { message: await buildPendingPathPromptPersistent(mode, chatKey, locale) });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.sendFolder") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.sendFolder") }));
       return;
     }
     await refreshTelegramPathState(chatKey);
@@ -20095,10 +20122,10 @@ async function handlePathRulesCallback(client2, update, data) {
       text: buildPathSettingsText(pathCenterState, chatKey, locale),
       buttons: buildPathSettingsKeyboard(pathCenterState, locale)
     });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.updated") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "path.toast.updated") }));
   } catch (error) {
     console.error("\u{1F916} \u8BBE\u7F6E\u4FDD\u5B58\u4F4D\u7F6E\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
   }
 }
 async function handleDuplicateMode(message, locale) {
@@ -20113,7 +20140,7 @@ async function handleDuplicateModeCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -20126,10 +20153,10 @@ async function handleDuplicateModeCallback(client2, update, data) {
       text: buildDuplicateModeText(mode, locale),
       buttons: buildDuplicateModeKeyboard(mode, locale)
     });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto125", { value0: mode === "skip" ? t(locale, "commands.auto011", { value0: "" }).trim() : t(locale, "commands.auto012", { value0: "" }).trim() }) }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto125", { value0: mode === "skip" ? t(locale, "commands.auto011", { value0: "" }).trim() : t(locale, "commands.auto012", { value0: "" }).trim() }) }));
   } catch (error) {
     console.error("\u{1F916} \u8BBE\u7F6E\u91CD\u590D\u6587\u4EF6\u5904\u7406\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
   }
 }
 async function handleCleanupSettings(message, locale) {
@@ -20144,7 +20171,7 @@ async function handleCleanupSettingsCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -20161,17 +20188,17 @@ async function handleCleanupSettingsCallback(client2, update, data) {
       text: buildCleanupSettingsText(enabled, locale),
       buttons: buildCleanupSettingsKeyboard(enabled, locale)
     });
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, enabled ? "commands.auto127" : "commands.auto126") }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, enabled ? "commands.auto127" : "commands.auto126") }));
   } catch (error) {
     console.error("\u{1F916} \u8BBE\u7F6E\u81EA\u52A8\u6E05\u7406\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.settingFailedRetry"), alert: true }));
   }
 }
 async function handleDownloadWorkersCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: MSG.AUTH_REQUIRED,
       alert: true
@@ -20186,7 +20213,7 @@ async function handleDownloadWorkersCallback(client2, update, data) {
         text: buildDownloadWorkersText(current3, locale),
         buttons: buildDownloadWorkersKeyboard(current3, void 0, locale)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
       return;
     }
     const setMatch = data.match(/^dw_set_(4|8|12|16)$/);
@@ -20207,7 +20234,7 @@ async function handleDownloadWorkersCallback(client2, update, data) {
           ].join("\n"),
           buttons: buildDownloadWorkersKeyboard(workers, workers, locale)
         });
-        await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.secondConfirm") }));
+        await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.secondConfirm") }));
         return;
       }
       await setSetting("telegram_download_workers", String(workers));
@@ -20218,7 +20245,7 @@ async function handleDownloadWorkersCallback(client2, update, data) {
 ${t(locale, "commands.auto134", { value0: "", value1: workers })}`,
         buttons: buildDownloadWorkersKeyboard(workers, void 0, locale)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto135", { value0: workers }) }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto135", { value0: workers }) }));
       return;
     }
     const confirmMatch = data.match(/^dw_confirm_(12|16)$/);
@@ -20232,11 +20259,11 @@ ${t(locale, "commands.auto134", { value0: "", value1: workers })}`,
 ${t(locale, "commands.auto136", { value0: "", value1: workers })}`,
         buttons: buildDownloadWorkersKeyboard(workers, void 0, locale)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto137", { value0: workers }), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto137", { value0: workers }), alert: true }));
     }
   } catch (error) {
     console.error("\u{1F916} \u8BBE\u7F6E\u5E76\u53D1\u4E0B\u8F7D worker \u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "commands.settingFailedRetry"),
       alert: true
@@ -20247,7 +20274,7 @@ async function handleFileConcurrencyCallback(client2, update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: MSG.AUTH_REQUIRED,
       alert: true
@@ -20263,7 +20290,7 @@ async function handleFileConcurrencyCallback(client2, update, data) {
         text: buildFileConcurrencyText(current3, locale),
         buttons: buildFileConcurrencyKeyboard(current3)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.cancelled") }));
       return;
     }
     const setMatch = data.match(/^fc_set_(1|2|3|4)$/);
@@ -20284,7 +20311,7 @@ async function handleFileConcurrencyCallback(client2, update, data) {
           ].join("\n"),
           buttons: buildFileConcurrencyKeyboard(concurrency2, concurrency2)
         });
-        await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.secondConfirm") }));
+        await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.secondConfirm") }));
         return;
       }
       await setSetting("telegram_file_download_concurrency", String(concurrency2));
@@ -20296,7 +20323,7 @@ async function handleFileConcurrencyCallback(client2, update, data) {
 ${t(locale, "commands.auto144", { value0: "", value1: normalized })}`,
         buttons: buildFileConcurrencyKeyboard(normalized)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto145", { value0: normalized }) }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto145", { value0: normalized }) }));
       return;
     }
     const confirmMatch = data.match(/^fc_confirm_4$/);
@@ -20310,11 +20337,11 @@ ${t(locale, "commands.auto144", { value0: "", value1: normalized })}`,
 ${t(locale, "commands.auto146", { value0: "", value1: normalized })}`,
         buttons: buildFileConcurrencyKeyboard(normalized)
       });
-      await client2.invoke(new Api10.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto147"), alert: true }));
+      await client2.invoke(new Api11.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "commands.auto147"), alert: true }));
     }
   } catch (error) {
     console.error("\u{1F916} \u8BBE\u7F6E\u6587\u4EF6\u7EA7\u5E76\u53D1\u5931\u8D25:", error);
-    await client2.invoke(new Api10.messages.SetBotCallbackAnswer({
+    await client2.invoke(new Api11.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "commands.settingFailedRetry"),
       alert: true
@@ -20323,16 +20350,16 @@ ${t(locale, "commands.auto146", { value0: "", value1: normalized })}`,
 }
 
 // src/services/telegramPromptCopy.ts
-import { Api as Api11 } from "telegram";
+import { Api as Api12 } from "telegram";
 function withPromptCopyButtons(options, text) {
   if (typeof text !== "string") return options;
   const values = /* @__PURE__ */ new Set();
   for (const match of text.matchAll(/(?:发送|回复|send|reply(?: with)?|отправьте)\s*[“"«`]+([^”"»`\r\n]{1,100})[”"»`]+/gi)) values.add(match[1]);
-  if (!values.size || options.buttons && !(options.buttons instanceof Api11.ReplyInlineMarkup)) return options;
-  const rows = options.buttons instanceof Api11.ReplyInlineMarkup ? options.buttons.rows : [];
-  const existing = new Set(rows.flatMap((row) => row.buttons).filter((button) => button instanceof Api11.KeyboardButtonCopy).map((button) => button.copyText));
-  const copies = [...values].filter((value) => !existing.has(value)).slice(0, 4).map((value) => new Api11.KeyboardButtonCopy({ text: `\u{1F4CB} ${value}`, copyText: value }));
-  return copies.length ? { ...options, buttons: new Api11.ReplyInlineMarkup({ rows: [...rows, new Api11.KeyboardButtonRow({ buttons: copies })] }) } : options;
+  if (!values.size || options.buttons && !(options.buttons instanceof Api12.ReplyInlineMarkup)) return options;
+  const rows = options.buttons instanceof Api12.ReplyInlineMarkup ? options.buttons.rows : [];
+  const existing = new Set(rows.flatMap((row) => row.buttons).filter((button) => button instanceof Api12.KeyboardButtonCopy).map((button) => button.copyText));
+  const copies = [...values].filter((value) => !existing.has(value)).slice(0, 4).map((value) => new Api12.KeyboardButtonCopy({ text: `\u{1F4CB} ${value}`, copyText: value }));
+  return copies.length ? { ...options, buttons: new Api12.ReplyInlineMarkup({ rows: [...rows, new Api12.KeyboardButtonRow({ buttons: copies })] }) } : options;
 }
 function installTelegramPromptCopy(client2) {
   const send = client2.sendMessage.bind(client2);
@@ -20381,12 +20408,12 @@ function buildCommandHomePage(requestedPage) {
 }
 
 // src/services/telegramCallbackMessage.ts
-import { Api as Api12 } from "telegram";
+import { Api as Api13 } from "telegram";
 function callbackActorMessage(message, actorId) {
   if (!message) throw new Error("Telegram menu message is unavailable");
   return Object.create(message, {
     senderId: { value: actorId },
-    fromId: { value: new Api12.PeerUser({ userId: actorId }) }
+    fromId: { value: new Api13.PeerUser({ userId: actorId }) }
   });
 }
 
@@ -20613,12 +20640,12 @@ function buildBotStartKeyboard(locale = DEFAULT_LOCALE) {
 }
 function homePageKeyboard(requestedPage, locale = DEFAULT_LOCALE) {
   const page = buildCommandHomePage(requestedPage);
-  return new Api13.ReplyInlineMarkup({
-    rows: page.buttons.map((row) => new Api13.KeyboardButtonRow({
+  return new Api14.ReplyInlineMarkup({
+    rows: page.buttons.map((row) => new Api14.KeyboardButtonRow({
       buttons: row.map((button) => {
         const command = button.data.match(/^home_open_(.+)$/)?.[1];
         const definition = command ? BOT_COMMANDS.find((item) => item.command === command) : void 0;
-        return new Api13.KeyboardButtonCallback({ text: definition ? commandLabel(definition.command, locale) : button.text, data: Buffer.from(button.data) });
+        return new Api14.KeyboardButtonCallback({ text: definition ? commandLabel(definition.command, locale) : button.text, data: Buffer.from(button.data) });
       })
     }))
   });
@@ -20635,9 +20662,9 @@ async function showMenuPanel(message, panel, locale) {
 ${t(locale, "bot.home.hint")}${panel === "files" ? `
 
 ${fileMenuNotes[locale] || fileMenuNotes["zh-CN"]}` : ""}`,
-    buttons: new Api13.ReplyInlineMarkup({ rows: [
-      ...rows.map((commands) => new Api13.KeyboardButtonRow({ buttons: commands.map((command) => new Api13.KeyboardButtonCallback({ text: commandLabel(command, locale), data: Buffer.from(`home_open_${command}`) })) })),
-      new Api13.KeyboardButtonRow({ buttons: [new Api13.KeyboardButtonCallback({ text: "\u21A9\uFE0F", data: Buffer.from("home_page_0") })] })
+    buttons: new Api14.ReplyInlineMarkup({ rows: [
+      ...rows.map((commands) => new Api14.KeyboardButtonRow({ buttons: commands.map((command) => new Api14.KeyboardButtonCallback({ text: commandLabel(command, locale), data: Buffer.from(`home_open_${command}`) })) })),
+      new Api14.KeyboardButtonRow({ buttons: [new Api14.KeyboardButtonCallback({ text: "\u21A9\uFE0F", data: Buffer.from("home_page_0") })] })
     ] })
   });
 }
@@ -20648,10 +20675,10 @@ function homePageText(requestedPage, locale = DEFAULT_LOCALE) {
 async function handleBotHomeCallback(update, data) {
   const userId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
-  await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+  await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
   const locale = await getTelegramUserLocaleOrDefault(userId);
   const currentMessage = async () => client.getMessages(update.peer, { ids: Number(update.msgId) }).then((messages) => callbackActorMessage(messages[0], update.userId));
   if (data === "home_tasks" || data === "home_open_tasks") return handleTasks(await currentMessage(), locale);
@@ -20748,7 +20775,7 @@ async function downloadMessageLink(message, senderId, link, locale) {
         const selected3 = await consumeOrGetTelegramTargetState(chatId.toString());
         return selected3 ? storageManager.getTarget(selected3.provider, selected3.accountId) : storageManager.getActiveTarget();
       },
-      download: (source, ids, target, folder, fileName) => downloadTelegramChannelRange(
+      download: (source, ids, target, folder, fileName, commentId) => downloadTelegramChannelRange(
         client,
         message,
         source,
@@ -20765,7 +20792,8 @@ async function downloadMessageLink(message, senderId, link, locale) {
         senderId,
         target,
         void 0,
-        fileName
+        fileName,
+        commentId
       )
     });
     if (!result.successful && !result.failed) await message.reply({ message: t(locale, "bot.link.empty") });
@@ -20776,7 +20804,7 @@ async function downloadMessageLink(message, senderId, link, locale) {
 async function handleLinkFolderChoice(update, data) {
   const senderId = update.userId.toJSNumber();
   if (!await isAuthenticatedAsync(senderId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const locale = await getTelegramUserLocaleOrDefault(senderId);
@@ -20784,24 +20812,24 @@ async function handleLinkFolderChoice(update, data) {
   const messages = await client.getMessages(update.peer, { ids: Number(update.msgId) });
   const menu = messages[0];
   const choice = match && menu?.chatId ? linkFolderChoices.consume(match[1], `${menu.chatId}:${senderId}`, match[2] === "yes") : null;
-  await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...choice ? {} : { message: t(locale, "bot.link.folderExpired"), alert: true } }));
+  await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...choice ? {} : { message: t(locale, "bot.link.folderExpired"), alert: true } }));
   if (!choice) return;
-  await client.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "bot.link.folderSelected", { folder: choice.link.folderName }), parseMode: false, buttons: new Api13.ReplyInlineMarkup({ rows: [] }) });
+  await client.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "bot.link.folderSelected", { folder: choice.link.folderName }), parseMode: false, buttons: new Api14.ReplyInlineMarkup({ rows: [] }) });
   await downloadMessageLink(choice.context, senderId, choice.link, locale);
 }
 var digestTimer = null;
 var botLifecycle = Promise.resolve();
 function buildTelegramDownloadModeKeyboard(locale = DEFAULT_LOCALE) {
-  return new Api13.ReplyInlineMarkup({
+  return new Api14.ReplyInlineMarkup({
     rows: [
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.dateMode"), data: Buffer.from("tgd_mode_date") }),
-          new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.tagMode"), data: Buffer.from("tgd_mode_tag") })
+          new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.dateMode"), data: Buffer.from("tgd_mode_date") }),
+          new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.tagMode"), data: Buffer.from("tgd_mode_tag") })
         ]
       }),
-      new Api13.KeyboardButtonRow({
-        buttons: [new Api13.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("tgd_cancel") })]
+      new Api14.KeyboardButtonRow({
+        buttons: [new Api14.KeyboardButtonCallback({ text: t(locale, "common.cancel"), data: Buffer.from("tgd_cancel") })]
       })
     ]
   });
@@ -21206,34 +21234,34 @@ async function listManageableTelegramSubscriptions(userId) {
 function buildSubscriptionActionKeyboard(rows, requestedPage = 0, locale = DEFAULT_LOCALE) {
   const page = buildTelegramSubscriptionPage(rows, requestedPage);
   const actionRows = page.visibleRows.flatMap((row, localIndex) => [
-    new Api13.KeyboardButtonRow({
-      buttons: [new Api13.KeyboardButtonCallback({ text: `${page.startIndex + localIndex + 1}. ${row.title || row.source}`, data: Buffer.from(`tsub_view_${row.id}_${page.page}`) })]
+    new Api14.KeyboardButtonRow({
+      buttons: [new Api14.KeyboardButtonCallback({ text: `${page.startIndex + localIndex + 1}. ${row.title || row.source}`, data: Buffer.from(`tsub_view_${row.id}_${page.page}`) })]
     }),
-    ...[0, 2, 5].map((start, index, starts) => new Api13.KeyboardButtonRow({
-      buttons: buildSubscriptionOperations(row, locale).slice(start, starts[index + 1]).map((operation) => new Api13.KeyboardButtonCallback({
+    ...[0, 2, 5].map((start, index, starts) => new Api14.KeyboardButtonRow({
+      buttons: buildSubscriptionOperations(row, locale).slice(start, starts[index + 1]).map((operation) => new Api14.KeyboardButtonCallback({
         text: operation.label,
         data: Buffer.from(`tsub_${operation.action}_${row.id}_${page.page}`)
       }))
     })),
-    new Api13.KeyboardButtonRow({
+    new Api14.KeyboardButtonRow({
       buttons: [
-        new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.editFolder"), data: Buffer.from(`tsub_folder_${row.id}_${page.page}`) }),
-        new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.clearFolder"), data: Buffer.from(`tsub_clear_${row.id}_${page.page}`) }),
-        new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.unsubscribe"), data: Buffer.from(`tsub_cancel_${row.id}_${page.page}`) })
+        new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.editFolder"), data: Buffer.from(`tsub_folder_${row.id}_${page.page}`) }),
+        new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.clearFolder"), data: Buffer.from(`tsub_clear_${row.id}_${page.page}`) }),
+        new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.unsubscribe"), data: Buffer.from(`tsub_cancel_${row.id}_${page.page}`) })
       ]
     })
   ]);
   const navigation = [];
-  if (page.page > 0) navigation.push(new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.previous"), data: Buffer.from(`tsub_page_${page.page - 1}`) }));
-  navigation.push(new Api13.KeyboardButtonCallback({ text: `\u{1F504} ${t(locale, "common.refresh")}`, data: Buffer.from(`tsub_page_${page.page}`) }));
-  if (page.page + 1 < page.totalPages) navigation.push(new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.next"), data: Buffer.from(`tsub_page_${page.page + 1}`) }));
-  return new Api13.ReplyInlineMarkup({
+  if (page.page > 0) navigation.push(new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.previous"), data: Buffer.from(`tsub_page_${page.page - 1}`) }));
+  navigation.push(new Api14.KeyboardButtonCallback({ text: `\u{1F504} ${t(locale, "common.refresh")}`, data: Buffer.from(`tsub_page_${page.page}`) }));
+  if (page.page + 1 < page.totalPages) navigation.push(new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.next"), data: Buffer.from(`tsub_page_${page.page + 1}`) }));
+  return new Api14.ReplyInlineMarkup({
     rows: [
       ...actionRows,
-      new Api13.KeyboardButtonRow({
-        buttons: [new Api13.KeyboardButtonCallback({ text: t(locale, "bot.button.addSubscription"), data: Buffer.from("tsub_add") })]
+      new Api14.KeyboardButtonRow({
+        buttons: [new Api14.KeyboardButtonCallback({ text: t(locale, "bot.button.addSubscription"), data: Buffer.from("tsub_add") })]
       }),
-      new Api13.KeyboardButtonRow({ buttons: navigation })
+      new Api14.KeyboardButtonRow({ buttons: navigation })
     ]
   });
 }
@@ -21252,11 +21280,11 @@ function buildSubscriptionCancelConfirm(target, token, locale = DEFAULT_LOCALE) 
       "",
       t(locale, "bot.subscription.confirmBody")
     ].join("\n"),
-    buttons: new Api13.ReplyInlineMarkup({
-      rows: [new Api13.KeyboardButtonRow({
+    buttons: new Api14.ReplyInlineMarkup({
+      rows: [new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: t(locale, "bot.subscription.confirmButton"), data: Buffer.from(`tsub_confirm_${token}`) }),
-          new Api13.KeyboardButtonCallback({ text: t(locale, "bot.subscription.backButton"), data: Buffer.from(`tsub_back_${token}`) })
+          new Api14.KeyboardButtonCallback({ text: t(locale, "bot.subscription.confirmButton"), data: Buffer.from(`tsub_confirm_${token}`) }),
+          new Api14.KeyboardButtonCallback({ text: t(locale, "bot.subscription.backButton"), data: Buffer.from(`tsub_back_${token}`) })
         ]
       })]
     })
@@ -21304,39 +21332,39 @@ function getPendingSubscriptionCancel(update, token, userId) {
 function generatePasswordKeyboard(currentLength, locale = DEFAULT_LOCALE) {
   const display = "\u25CF".repeat(currentLength) + "-".repeat(Math.max(0, 4 - currentLength));
   const displayWithSpaces = display.split("").join(" ");
-  return new Api13.ReplyInlineMarkup({
+  return new Api14.ReplyInlineMarkup({
     rows: [
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: `\u{1F512}  ${displayWithSpaces}`, data: Buffer.from("pwd_display") })
+          new Api14.KeyboardButtonCallback({ text: `\u{1F512}  ${displayWithSpaces}`, data: Buffer.from("pwd_display") })
         ]
       }),
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: "1", data: Buffer.from("pwd_1") }),
-          new Api13.KeyboardButtonCallback({ text: "2", data: Buffer.from("pwd_2") }),
-          new Api13.KeyboardButtonCallback({ text: "3", data: Buffer.from("pwd_3") })
+          new Api14.KeyboardButtonCallback({ text: "1", data: Buffer.from("pwd_1") }),
+          new Api14.KeyboardButtonCallback({ text: "2", data: Buffer.from("pwd_2") }),
+          new Api14.KeyboardButtonCallback({ text: "3", data: Buffer.from("pwd_3") })
         ]
       }),
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: "4", data: Buffer.from("pwd_4") }),
-          new Api13.KeyboardButtonCallback({ text: "5", data: Buffer.from("pwd_5") }),
-          new Api13.KeyboardButtonCallback({ text: "6", data: Buffer.from("pwd_6") })
+          new Api14.KeyboardButtonCallback({ text: "4", data: Buffer.from("pwd_4") }),
+          new Api14.KeyboardButtonCallback({ text: "5", data: Buffer.from("pwd_5") }),
+          new Api14.KeyboardButtonCallback({ text: "6", data: Buffer.from("pwd_6") })
         ]
       }),
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: "7", data: Buffer.from("pwd_7") }),
-          new Api13.KeyboardButtonCallback({ text: "8", data: Buffer.from("pwd_8") }),
-          new Api13.KeyboardButtonCallback({ text: "9", data: Buffer.from("pwd_9") })
+          new Api14.KeyboardButtonCallback({ text: "7", data: Buffer.from("pwd_7") }),
+          new Api14.KeyboardButtonCallback({ text: "8", data: Buffer.from("pwd_8") }),
+          new Api14.KeyboardButtonCallback({ text: "9", data: Buffer.from("pwd_9") })
         ]
       }),
-      new Api13.KeyboardButtonRow({
+      new Api14.KeyboardButtonRow({
         buttons: [
-          new Api13.KeyboardButtonCallback({ text: t(locale, "keyboard.cancel"), data: Buffer.from("pwd_clear") }),
-          new Api13.KeyboardButtonCallback({ text: "0", data: Buffer.from("pwd_0") }),
-          new Api13.KeyboardButtonCallback({ text: "\u232B", data: Buffer.from("pwd_backspace") })
+          new Api14.KeyboardButtonCallback({ text: t(locale, "keyboard.cancel"), data: Buffer.from("pwd_clear") }),
+          new Api14.KeyboardButtonCallback({ text: "0", data: Buffer.from("pwd_0") }),
+          new Api14.KeyboardButtonCallback({ text: "\u232B", data: Buffer.from("pwd_backspace") })
         ]
       })
     ]
@@ -21346,10 +21374,10 @@ function canTelegramUserAuthenticate(userId, allowedUsers) {
   return allowedUsers.length > 0 && allowedUsers.includes(userId);
 }
 function languageKeyboard(locale = DEFAULT_LOCALE) {
-  return new Api13.ReplyInlineMarkup({ rows: [new Api13.KeyboardButtonRow({ buttons: [
-    new Api13.KeyboardButtonCallback({ text: t(locale, "language.chinese"), data: Buffer.from("lang_zh-CN") }),
-    new Api13.KeyboardButtonCallback({ text: t(locale, "language.english"), data: Buffer.from("lang_en") }),
-    new Api13.KeyboardButtonCallback({ text: t(locale, "language.russian"), data: Buffer.from("lang_ru") })
+  return new Api14.ReplyInlineMarkup({ rows: [new Api14.KeyboardButtonRow({ buttons: [
+    new Api14.KeyboardButtonCallback({ text: t(locale, "language.chinese"), data: Buffer.from("lang_zh-CN") }),
+    new Api14.KeyboardButtonCallback({ text: t(locale, "language.english"), data: Buffer.from("lang_en") }),
+    new Api14.KeyboardButtonCallback({ text: t(locale, "language.russian"), data: Buffer.from("lang_ru") })
   ] })] });
 }
 function languagePanel(locale) {
@@ -21369,7 +21397,7 @@ async function handleLanguageSelection(update, data) {
   await getTelegramUserLocale(userId);
   await setTelegramUserLocale(userId, locale);
   await renderStartAfterLocale(update, userId, locale);
-  await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "language.changed") }));
+  await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "language.changed") }));
 }
 async function handlePasswordCallback(update) {
   if (!client) return;
@@ -21379,7 +21407,7 @@ async function handlePasswordCallback(update) {
   if (!data.startsWith("pwd_")) return;
   const lockSeconds = getPinLockSeconds(userId);
   if (lockSeconds > 0) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: `\u5BC6\u7801\u9519\u8BEF\u6B21\u6570\u8FC7\u591A\uFF0C\u8BF7 ${lockSeconds} \u79D2\u540E\u518D\u8BD5`,
       alert: true
@@ -21393,7 +21421,7 @@ async function handlePasswordCallback(update) {
   }
   try {
     if (data === "pwd_display") {
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
       return;
     }
     if (data === "pwd_backspace") {
@@ -21405,7 +21433,7 @@ async function handlePasswordCallback(update) {
         message: update.msgId,
         text: MSG.AUTH_CANCELLED
       });
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
       return;
     } else {
       const digit = data.replace("pwd_", "");
@@ -21422,7 +21450,7 @@ async function handlePasswordCallback(update) {
               text,
               buttons: generatePasswordKeyboard(0)
             });
-            await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+            await client.invoke(new Api14.messages.SetBotCallbackAnswer({
               queryId: update.queryId,
               message: failure.locked ? "\u5DF2\u4E34\u65F6\u9501\u5B9A" : "\u5BC6\u7801\u9519\u8BEF",
               alert: failure.locked
@@ -21444,7 +21472,7 @@ async function handlePasswordCallback(update) {
               text: t(locale2, "bot.auth.notAllowed"),
               buttons: generatePasswordKeyboard(0, locale2)
             });
-            await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale2, "bot.auth.notAllowedShort"), alert: true }));
+            await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale2, "bot.auth.notAllowedShort"), alert: true }));
             return;
           }
           passwordInputState.delete(userId);
@@ -21457,7 +21485,7 @@ async function handlePasswordCallback(update) {
               message: update.msgId,
               text: MSG.AUTH_2FA_PROMPT
             });
-            await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_2FA_TOAST }));
+            await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_2FA_TOAST }));
             return;
           }
           await persistAuthenticatedUser(userId);
@@ -21465,7 +21493,7 @@ async function handlePasswordCallback(update) {
             message: update.msgId,
             text: buildAuthSuccess()
           });
-          await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_SUCCESS }));
+          await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_SUCCESS }));
           return;
         }
       }
@@ -21475,11 +21503,11 @@ async function handlePasswordCallback(update) {
       text: MSG.AUTH_INPUT_PROMPT,
       buttons: generatePasswordKeyboard(state.password.length)
     });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
   } catch (error) {
     console.error("\u{1F916} \u5904\u7406\u5BC6\u7801\u56DE\u8C03\u5931\u8D25:", error);
     try {
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId }));
     } catch (e) {
     }
   }
@@ -21489,7 +21517,7 @@ async function handleCleanupButtonCallback(update, cleanupId) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   try {
@@ -21502,14 +21530,14 @@ async function handleCleanupButtonCallback(update, cleanupId) {
     } catch (e) {
       console.error("\u{1F916} \u66F4\u65B0\u6E05\u7406\u7ED3\u679C\u6D88\u606F\u5931\u8D25:", e);
     }
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: result.success ? t(locale, "bot.callback.cleanupSuccess") : t(locale, "bot.callback.cleanupFailed")
     }));
   } catch (error) {
     console.error("\u{1F916} \u5904\u7406\u6E05\u7406\u56DE\u8C03\u5931\u8D25:", error);
     try {
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({
         queryId: update.queryId,
         message: t(locale, "bot.callback.cleanupFailed")
       }));
@@ -21522,7 +21550,7 @@ async function handleUploadReceiptCallback(update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const match = data.match(/^receipt_(retry|failures)_([A-Za-z0-9_-]+)$/);
@@ -21531,25 +21559,25 @@ async function handleUploadReceiptCallback(update, data) {
   const chatId = resolveTaskChatIdForControl(taskId);
   const callbackChatId = callbackChatKey(update, userId);
   if (!chatId || callbackChatId !== messageChatKey({ chatId }, userId) || !canControlTask(taskId, chatId, userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.taskCardInvalid"), alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.taskCardInvalid"), alert: true }));
     return;
   }
   if (action === "retry") {
     const result = await retryFailedDownloadTasks(50, taskId, chatId, userId);
     await refreshSilentProgress(client, update.peer, userId);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.retried > 0 ? t(locale, "bot.callback.retryCount", { count: result.retried }) : t(locale, "bot.callback.noRetry") }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.retried > 0 ? t(locale, "bot.callback.retryCount", { count: result.retried }) : t(locale, "bot.callback.noRetry") }));
     return;
   }
   const details = listFailedDownloadTaskDetails(taskId, chatId, userId);
   await client.sendMessage(update.peer, { message: [t(locale, "bot.callback.failureDetailsTitle"), "", ...details.length ? details.slice(0, 30).map((item) => `\u2022 ${item}`) : [t(locale, "bot.callback.failureDetailsEmpty")]].join("\n") });
-  await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.failureDetailsSent") }));
+  await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.failureDetailsSent") }));
 }
 async function handleTaskQueueCallback(update, data) {
   if (!client) return;
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: MSG.AUTH_REQUIRED,
       alert: true
@@ -21568,7 +21596,7 @@ async function handleTaskQueueCallback(update, data) {
   })();
   const canonicalControlChatId = String(controlChatId || "").replace(/^-100/, "").replace(/^-/, "");
   if (!controlChatId || callbackChatId !== canonicalControlChatId || !canControlTask(taskId, controlChatId, userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "bot.callback.taskUnavailable"),
       alert: true
@@ -21579,19 +21607,19 @@ async function handleTaskQueueCallback(update, data) {
     if (action === "pause") {
       const result = pauseDownloadTasks(taskId);
       await refreshSilentProgress(client, update.peer, userId);
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.total > 0 ? t(locale, "bot.callback.queuePaused") : t(locale, "bot.callback.noPausableTasks") }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.total > 0 ? t(locale, "bot.callback.queuePaused") : t(locale, "bot.callback.noPausableTasks") }));
       return;
     }
     if (action === "resume") {
       const result = resumeDownloadTasks(taskId);
       await refreshSilentProgress(client, update.peer, userId);
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.total > 0 ? t(locale, "bot.callback.queueResumed") : t(locale, "bot.callback.noWaitingTasks") }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: result.total > 0 ? t(locale, "bot.callback.queueResumed") : t(locale, "bot.callback.noWaitingTasks") }));
       return;
     }
     await cancelSilentTask(client, update.peer, taskId, update.msgId, userId);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.backgroundCancelled"), alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.backgroundCancelled"), alert: true }));
   } catch (error) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: t(locale, "bot.callback.operationFailed", { error: error.message }),
       alert: true
@@ -21603,7 +21631,7 @@ async function handleTelegramDownloadModeCallback(update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const chatKey = callbackChatKey(update, userId);
@@ -21616,7 +21644,7 @@ async function handleTelegramDownloadModeCallback(update, data) {
     allowedActions: ["cancel", "mode_date", "mode_tag"]
   });
   if (!validation.ok) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.callbackExpired"), alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.callbackExpired"), alert: true }));
     return;
   }
   const record = telegramWizardStates.get(userId, chatKey);
@@ -21624,7 +21652,7 @@ async function handleTelegramDownloadModeCallback(update, data) {
   if (data === "tgd_cancel") {
     telegramWizardStates.delete(userId, chatKey);
     await client.editMessage(update.peer, { message: update.msgId, text: t(locale, "bot.wizard.downloadCancelled") });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.cancelled") }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.callback.cancelled") }));
     return;
   }
   if (data === "tgd_mode_date") {
@@ -21632,7 +21660,7 @@ async function handleTelegramDownloadModeCallback(update, data) {
     state.step = "source";
     putTelegramWizardState(userId, chatKey, state, record.originMessageId);
     await client.editMessage(update.peer, { message: update.msgId, text: buildTelegramWizardPrompt(state, locale) });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.modeDate") }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.modeDate") }));
     return;
   }
   if (data === "tgd_mode_tag") {
@@ -21640,7 +21668,7 @@ async function handleTelegramDownloadModeCallback(update, data) {
     state.step = "source";
     putTelegramWizardState(userId, chatKey, state, record.originMessageId);
     await client.editMessage(update.peer, { message: update.msgId, text: buildTelegramWizardPrompt(state, locale) });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.modeTag") }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: t(locale, "bot.wizard.modeTag") }));
     return;
   }
 }
@@ -21649,7 +21677,7 @@ async function handleTelegramSubscriptionCallback(update, data) {
   const userId = update.userId.toJSNumber();
   const locale = await getTelegramUserLocaleOrDefault(userId);
   if (!await isAuthenticatedAsync(userId)) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
     return;
   }
   const parsed = parseTelegramSubscriptionCallback(data);
@@ -21660,11 +21688,11 @@ async function handleTelegramSubscriptionCallback(update, data) {
       message: update.msgId,
       text: buildTelegramWizardPrompt(state, locale)
     });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u53D1\u9001\u9891\u9053" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u53D1\u9001\u9891\u9053" }));
     return;
   }
   if (!parsed) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u6309\u94AE\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u6309\u94AE\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
     return;
   }
   const rows = await listManageableTelegramSubscriptions(userId);
@@ -21675,13 +21703,13 @@ async function handleTelegramSubscriptionCallback(update, data) {
       text: buildSubscriptionManagePanel2(rows, page.page, await getTelegramUserLocaleOrDefault(userId)),
       buttons: buildSubscriptionActionKeyboard(rows, page.page, await getTelegramUserLocaleOrDefault(userId))
     });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u5217\u8868\u5DF2\u5237\u65B0" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u5217\u8868\u5DF2\u5237\u65B0" }));
     return;
   }
   if (parsed.kind === "confirm" || parsed.kind === "back") {
     const pending = getPendingSubscriptionCancel(update, parsed.token, userId);
     if (!pending) {
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u53D6\u6D88\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u5237\u65B0\u8BA2\u9605\u5217\u8868", alert: true }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u53D6\u6D88\u786E\u8BA4\u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u5237\u65B0\u8BA2\u9605\u5217\u8868", alert: true }));
       return;
     }
     pendingSubscriptionCancels.delete(parsed.token);
@@ -21699,7 +21727,7 @@ async function handleTelegramSubscriptionCallback(update, data) {
         ].join("\n"),
         buttons: buildSubscriptionActionKeyboard(rowsAfterCancel, page2.page, locale)
       });
-      await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: sub ? "\u5DF2\u53D6\u6D88\u8BA2\u9605" : "\u8BA2\u9605\u4E0D\u5B58\u5728\u6216\u5DF2\u7ECF\u53D6\u6D88", alert: true }));
+      await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: sub ? "\u5DF2\u53D6\u6D88\u8BA2\u9605" : "\u8BA2\u9605\u4E0D\u5B58\u5728\u6216\u5DF2\u7ECF\u53D6\u6D88", alert: true }));
       return;
     }
     const page = buildTelegramSubscriptionPage(rows, pending.page);
@@ -21708,33 +21736,33 @@ async function handleTelegramSubscriptionCallback(update, data) {
       text: buildSubscriptionManagePanel2(rows, page.page, await getTelegramUserLocaleOrDefault(userId)),
       buttons: buildSubscriptionActionKeyboard(rows, page.page, await getTelegramUserLocaleOrDefault(userId))
     });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8FD4\u56DE\u8BA2\u9605\u5217\u8868" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8FD4\u56DE\u8BA2\u9605\u5217\u8868" }));
     return;
   }
   if (parsed.kind !== "action") {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u6309\u94AE\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u6309\u94AE\u65E0\u6548\u6216\u5DF2\u8FC7\u671F", alert: true }));
     return;
   }
   const target = rows.find((row) => String(row.id) === parsed.id);
   if (!target) {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u4E0D\u5B58\u5728\u6216\u5DF2\u53D6\u6D88", alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BA2\u9605\u4E0D\u5B58\u5728\u6216\u5DF2\u53D6\u6D88", alert: true }));
     return;
   }
   if (parsed.action === "sync") {
     await requestTelegramSubscriptionSync(userId, parsed.id);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8BF7\u6C42\u7ACB\u5373\u540C\u6B65" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u8BF7\u6C42\u7ACB\u5373\u540C\u6B65" }));
     return;
   }
   if (parsed.action === "pause" || parsed.action === "resume") {
     await setTelegramSubscriptionEnabled(userId, parsed.id, parsed.action === "resume");
     const refreshed = await listManageableTelegramSubscriptions(userId);
     await client.editMessage(update.peer, { message: update.msgId, text: buildSubscriptionManagePanel2(refreshed, parsed.page, locale), buttons: buildSubscriptionActionKeyboard(refreshed, parsed.page, locale) });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: parsed.action === "resume" ? "\u5DF2\u6062\u590D\u8BA2\u9605" : "\u5DF2\u6682\u505C\u8BA2\u9605" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: parsed.action === "resume" ? "\u5DF2\u6062\u590D\u8BA2\u9605" : "\u5DF2\u6682\u505C\u8BA2\u9605" }));
     return;
   }
   if (parsed.action === "from_now") {
     await setTelegramSubscriptionFromNow(userId, parsed.id);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E38\u6807\u5DF2\u66F4\u65B0\u4E3A\u5F53\u524D\u6700\u65B0\u6D88\u606F" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u6E38\u6807\u5DF2\u66F4\u65B0\u4E3A\u5F53\u524D\u6700\u65B0\u6D88\u606F" }));
     return;
   }
   if (parsed.action === "target") {
@@ -21742,28 +21770,28 @@ async function handleTelegramSubscriptionCallback(update, data) {
     await updateTelegramSubscriptionTarget(userId, parsed.id, current3 ? { mode: "follow_global" } : { mode: "fixed", provider: storageManager.getActiveTarget().provider.name, accountId: storageManager.getActiveTarget().accountId });
     const refreshed = await listManageableTelegramSubscriptions(userId);
     await client.editMessage(update.peer, { message: update.msgId, text: buildSubscriptionManagePanel2(refreshed, parsed.page, locale), buttons: buildSubscriptionActionKeyboard(refreshed, parsed.page, locale) });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: current3 ? "\u5DF2\u6539\u4E3A\u8DDF\u968F\u5168\u5C40" : "\u5DF2\u56FA\u5B9A\u4E3A\u5F53\u524D\u76EE\u6807" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: current3 ? "\u5DF2\u6539\u4E3A\u8DDF\u968F\u5168\u5C40" : "\u5DF2\u56FA\u5B9A\u4E3A\u5F53\u524D\u76EE\u6807" }));
     return;
   }
   if (parsed.action === "result") {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: target.last_result ? JSON.stringify(target.last_result).slice(0, 180) : "\u6682\u65E0\u8FD0\u884C\u7ED3\u679C", alert: true }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: target.last_result ? JSON.stringify(target.last_result).slice(0, 180) : "\u6682\u65E0\u8FD0\u884C\u7ED3\u679C", alert: true }));
     return;
   }
   if (parsed.action === "retry") {
     const failed = await query(`SELECT id FROM telegram_background_jobs WHERE kind = 'subscription_sync' AND params->>'subscriptionId' = $1 AND status IN ('failed','completed_with_errors') ORDER BY updated_at DESC LIMIT 1`, [String(target.id)]);
     const retried = failed.rows[0] ? await retryTelegramBackgroundJob(userId, String(failed.rows[0].id), target.chat_id?.toString()) : null;
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: retried ? "\u5DF2\u91CD\u8BD5\u6700\u8FD1\u5931\u8D25\u9879" : "\u6CA1\u6709\u53EF\u91CD\u8BD5\u5931\u8D25\u9879" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: retried ? "\u5DF2\u91CD\u8BD5\u6700\u8FD1\u5931\u8D25\u9879" : "\u6CA1\u6709\u53EF\u91CD\u8BD5\u5931\u8D25\u9879" }));
     return;
   }
   if (parsed.action === "backfill") {
     const state = { kind: "tg_date", step: "start_date", source: target.source };
     const sent = await client.sendMessage(update.peer, { message: buildTelegramWizardPrompt(state, locale) });
     putTelegramWizardState(userId, callbackChatKey(update, userId), state, sent.id);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u8F93\u5165\u8865\u6293\u5F00\u59CB\u65E5\u671F" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u8F93\u5165\u8865\u6293\u5F00\u59CB\u65E5\u671F" }));
     return;
   }
   if (parsed.action === "view") {
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({
       queryId: update.queryId,
       message: target.folder_override ? `\u4E13\u5C5E\u76EE\u5F55\uFF1A${target.folder_override}` : "\u5F53\u524D\u4F7F\u7528\u9ED8\u8BA4\u4FDD\u5B58\u8DEF\u5F84",
       alert: true
@@ -21781,7 +21809,7 @@ async function handleTelegramSubscriptionCallback(update, data) {
     };
     const sent = await client.sendMessage(update.peer, { message: buildTelegramWizardPrompt(state, locale) });
     putTelegramWizardState(userId, callbackChatKey(update, userId), state, sent.id);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u53D1\u9001\u65B0\u7684\u4E13\u5C5E\u76EE\u5F55" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u53D1\u9001\u65B0\u7684\u4E13\u5C5E\u76EE\u5F55" }));
     return;
   }
   if (parsed.action === "clear") {
@@ -21793,12 +21821,12 @@ async function handleTelegramSubscriptionCallback(update, data) {
       text: buildSubscriptionManagePanel2(rowsAfterClear, page.page, locale),
       buttons: buildSubscriptionActionKeyboard(rowsAfterClear, page.page, locale)
     });
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u6E05\u9664\u4E13\u5C5E\u76EE\u5F55" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u5DF2\u6E05\u9664\u4E13\u5C5E\u76EE\u5F55" }));
     return;
   }
   if (parsed.action === "cancel") {
     await editSubscriptionCancelConfirmation(update, userId, target, parsed.page);
-    await client.invoke(new Api13.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u786E\u8BA4\u662F\u5426\u53D6\u6D88\u8BA2\u9605" }));
+    await client.invoke(new Api14.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: "\u8BF7\u786E\u8BA4\u662F\u5426\u53D6\u6D88\u8BA2\u9605" }));
   }
 }
 async function initTelegramBot(credentialsOverride) {
@@ -21877,9 +21905,9 @@ async function initTelegramBot(credentialsOverride) {
       const savedFingerprint = await getSetting(TELEGRAM_BOT_COMMAND_MENU_FINGERPRINT_SETTING, "");
       if (savedFingerprint !== commandMenuFingerprint) {
         for (const { locale, langCode } of menuLocales) {
-          const commands = buildBotCommandMenu(locale).map((command) => new Api13.BotCommand(command));
-          await withTelegramClientDeadline(client.invoke(new Api13.bots.SetBotCommands({
-            scope: new Api13.BotCommandScopeDefault(),
+          const commands = buildBotCommandMenu(locale).map((command) => new Api14.BotCommand(command));
+          await withTelegramClientDeadline(client.invoke(new Api14.bots.SetBotCommands({
+            scope: new Api14.BotCommandScopeDefault(),
             langCode,
             commands
           })), 1e4, "Telegram Bot \u547D\u4EE4\u83DC\u5355\u6CE8\u518C\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
@@ -22064,9 +22092,9 @@ ${t(locale, "bot.link.renameHelp")}`, parseMode: false });
               await message.reply({
                 message: t(locale, "bot.link.reuseFolder", { folder: choice.folder, date: choice.dateFolder }),
                 parseMode: false,
-                buttons: new Api13.ReplyInlineMarkup({ rows: [new Api13.KeyboardButtonRow({ buttons: [
-                  new Api13.KeyboardButtonCallback({ text: t(locale, "bot.link.folderYes"), data: Buffer.from(`linkfolder_${choice.token}_yes`) }),
-                  new Api13.KeyboardButtonCallback({ text: t(locale, "bot.link.folderNo"), data: Buffer.from(`linkfolder_${choice.token}_no`) })
+                buttons: new Api14.ReplyInlineMarkup({ rows: [new Api14.KeyboardButtonRow({ buttons: [
+                  new Api14.KeyboardButtonCallback({ text: t(locale, "bot.link.folderYes"), data: Buffer.from(`linkfolder_${choice.token}_yes`) }),
+                  new Api14.KeyboardButtonCallback({ text: t(locale, "bot.link.folderNo"), data: Buffer.from(`linkfolder_${choice.token}_no`) })
                 ] })] })
               });
               return;

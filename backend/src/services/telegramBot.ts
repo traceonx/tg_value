@@ -254,9 +254,9 @@ async function downloadMessageLink(message: Api.Message, senderId: number, link:
                 const selected = await consumeOrGetTelegramTargetState(chatId.toString());
                 return selected ? storageManager.getTarget(selected.provider, selected.accountId) : storageManager.getActiveTarget();
             },
-            download: (source, ids, target, folder, fileName) => downloadTelegramChannelRange(
+            download: (source, ids, target, folder, fileName, commentId) => downloadTelegramChannelRange(
                 client!, message, source, ids[0], 1, 'older', ids,
-                folder, undefined, undefined, undefined, undefined, undefined, senderId, target, undefined, fileName,
+                folder, undefined, undefined, undefined, undefined, undefined, senderId, target, undefined, fileName, commentId,
             ),
         });
         if (!result.successful && !result.failed) await message.reply({ message: t(locale, 'bot.link.empty') });

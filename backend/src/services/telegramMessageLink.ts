@@ -7,6 +7,7 @@ const downloads = new TelegramSingleFlight<{ successful: number; failed: number 
 export interface TelegramMessageLink {
     source: string;
     messageId: number;
+    commentId?: number;
     folderName?: string;
     fileName?: string;
 }
@@ -23,12 +24,16 @@ export function parseTelegramMessageLink(input: string): TelegramMessageLink | n
     const messageId = Number(match[4]);
     if (!Number.isSafeInteger(messageId) || messageId < 1 || messageId > 2147483647) return null;
     if (match[1] && !/^[1-9]\d*$/.test(match[2])) return null;
+    const url = new URL(/^https?:\/\//i.test(link) ? link : `https://${link}`);
+    const comments = url.searchParams.getAll('comment');
+    const commentId = comments.length ? Number(comments[0]) : undefined;
+    if (comments.length && (comments.length !== 1 || !/^[1-9]\d*$/.test(comments[0]) || !Number.isSafeInteger(commentId) || commentId! > 2147483647)) return null;
     const split = suffix?.lastIndexOf('/') ?? -1;
     // Validate raw components downstream before any target/path state is consumed.
     const destination = suffix && split > 0
         ? { folderName: suffix.slice(0, split), fileName: suffix.slice(split + 1) }
         : suffix ? { folderName: suffix } : {};
-    return { source: match[1] ? `-100${match[2]}` : `@${match[3]}`, messageId, ...destination };
+    return { source: match[1] ? `-100${match[2]}` : `@${match[3]}`, messageId, ...(commentId === undefined ? {} : { commentId }), ...destination };
 }
 
 export function telegramDownloadFileName(requested: string | undefined, original: string): string {
@@ -62,7 +67,7 @@ export async function runTelegramMessageLinkDownload<T>(
         getBaseFolder: () => Promise<string | null>;
         scopeKey?: string;
         targetKey?: (target: T) => string;
-        download: (source: string, ids: number[], target: T, folder: string, fileName?: string) => Promise<{ successful: number; failed: number }>;
+        download: (source: string, ids: number[], target: T, folder: string, fileName?: string, commentId?: number) => Promise<{ successful: number; failed: number }>;
     },
     now = new Date(),
 ) {
@@ -71,8 +76,8 @@ export async function runTelegramMessageLinkDownload<T>(
     await dependencies.assertSourceAllowed(link.source);
     const folder = joinFolderPath(await dependencies.getBaseFolder(), folderName);
     const target = await dependencies.getTarget();
-    const download = () => dependencies.download(link.source, [link.messageId], target, folder, link.fileName);
+    const download = () => dependencies.download(link.source, [link.messageId], target, folder, link.fileName, link.commentId);
     if (!dependencies.scopeKey || !dependencies.targetKey) return download();
-    const key = JSON.stringify([dependencies.scopeKey, link.source.toLowerCase(), link.messageId, dependencies.targetKey(target), folder, link.fileName]);
+    const key = JSON.stringify([dependencies.scopeKey, link.source.toLowerCase(), link.messageId, link.commentId, dependencies.targetKey(target), folder, link.fileName]);
     return downloads.run(key, download);
 }

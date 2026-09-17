@@ -2,6 +2,25 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseTelegramMessageLink, runTelegramMessageLinkDownload, telegramMessageLinkFolderName, telegramDownloadFileName } from './telegramMessageLink.js';
 
+test('comment links retain the comment id and destination and reject malformed ids', async () => {
+    const raw = 'https://t.me/dmlfse/7788?comment=4913';
+    for (const text of [raw, `[${raw}](${raw})`, `/tg_link ${raw}`]) {
+        assert.deepEqual(parseTelegramMessageLink(text), { source: '@dmlfse', messageId: 7788, commentId: 4913 });
+    }
+    const link = parseTelegramMessageLink(`${raw} Dark Blue/01`)!;
+    assert.equal(link.folderName, 'Dark Blue');
+    assert.equal(link.fileName, '01');
+    for (const value of ['0', '-1', '', 'abc', '2147483648', '1&comment=2']) assert.equal(parseTelegramMessageLink(`https://t.me/dmlfse/7788?comment=${value}`), null);
+    await runTelegramMessageLinkDownload(link, {
+        assertSourceAllowed: async () => {}, getBaseFolder: async () => null, getTarget: async () => 'local',
+        download: async (source, ids, _target, folder, name, commentId) => {
+            assert.equal(source, '@dmlfse'); assert.deepEqual(ids, [7788]);
+            assert.equal(commentId, 4913); assert.equal(folder, 'Dark Blue'); assert.equal(name, '01');
+            return { successful: 1, failed: 0 };
+        },
+    });
+});
+
 test('folder slash filename syntax preserves extension and forwards requested name', async () => {
     const link = parseTelegramMessageLink('https://t.me/lifan223/2389 Dark Blue/01')!;
     assert.deepEqual(link, { source: '@lifan223', messageId: 2389, folderName: 'Dark Blue', fileName: '01' });

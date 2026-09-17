@@ -17,6 +17,7 @@ import { markStorageAccountCooldown } from './storageCooldown.js';
 import { getTelegramUserClient, isTelegramUserClientReady } from './telegramUserClient.js';
 import { runTelegramDownloadWorkers } from './telegramDownloadWorkers.js';
 import { telegramDownloadFileName } from './telegramMessageLink.js';
+import { resolveTelegramCommentLink } from './telegramCommentLink.js';
 import { getSetting } from '../utils/settings.js';
 import { getTelegramProgressIntervalMs, startSharedTelegramProgress } from './telegramProgressSettings.js';
 import { isAuthenticatedAsync } from './telegramState.js';
@@ -2261,6 +2262,7 @@ export async function downloadTelegramChannelRange(
     storageTarget: StorageTargetSnapshot = storageManager.getActiveTarget(),
     withItemLease?: <T>(ref: TelegramDownloadMessageRef, operation: () => Promise<T>) => Promise<T>,
     fileNameOverride?: string,
+    commentId?: number,
 ): Promise<{ requested: number; found: number; skipped: number; failed: number; successful: number; successfulMessageIds: number[]; failedMessageIds: number[]; skippedMessageIds: number[]; firstId: number; lastId: number }> {
     const selectedDownloadAccount = await selectTelegramDownloadAccount(String(source));
     if (selectedDownloadAccount) (selectedDownloadAccount.client as any).__tgVaultAccountId = selectedDownloadAccount.accountId;
@@ -2286,9 +2288,14 @@ export async function downloadTelegramChannelRange(
     }
     try {
     const safeLimit = Math.max(1, Math.floor(limit || TG_BATCH_DEFAULT_LIMIT));
-    const sourceEntity = source.startsWith('@') || /^-?\d+$/.test(source) || /^https?:\/\//i.test(source)
+    let sourceEntity = source.startsWith('@') || /^-?\d+$/.test(source) || /^https?:\/\//i.test(source)
         ? source
         : `@${source}`;
+    if (commentId !== undefined) {
+        const comment = await resolveTelegramCommentLink(userClient, sourceEntity, startMessageId, commentId);
+        sourceEntity = comment.source;
+        explicitIds = [comment.messageId];
+    }
     const normalizedExplicitRefs = normalizeTelegramDownloadRefs(explicitRefs, sourceEntity);
     const ids = normalizedExplicitRefs?.map(ref => ref.id) || explicitIds?.filter(id => id > 0) || Array.from({ length: safeLimit }, (_, index) => (
         direction === 'newer' ? startMessageId + index : startMessageId - index
