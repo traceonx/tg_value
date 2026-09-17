@@ -20833,7 +20833,7 @@ var TELEGRAM_MESSAGE_RATE_WINDOW_MS = Math.max(1e4, parseInt(process.env.TELEGRA
 var TELEGRAM_MESSAGE_RATE_MAX = Math.max(5, parseInt(process.env.TELEGRAM_RATE_MAX || "30", 10) || 30);
 var TELEGRAM_HEAVY_RATE_WINDOW_MS = Math.max(6e4, parseInt(process.env.TELEGRAM_HEAVY_RATE_WINDOW_MS || "600000", 10) || 6e5);
 var TELEGRAM_HEAVY_RATE_MAX = Math.max(1, parseInt(process.env.TELEGRAM_HEAVY_RATE_MAX || "5", 10) || 5);
-var TELEGRAM_HEAVY_COMMANDS = /* @__PURE__ */ new Set(["/tg_download", "/tg_date", "/tg_tag", "/cleanup_settings"]);
+var TELEGRAM_HEAVY_COMMANDS = /* @__PURE__ */ new Set(["/cleanup_settings"]);
 var pinFailureState = /* @__PURE__ */ new Map();
 var TELEGRAM_PIN_FAIL_WINDOW_MS = Math.max(6e4, parseInt(process.env.TELEGRAM_PIN_FAIL_WINDOW_MS || "900000", 10) || 9e5);
 var TELEGRAM_PIN_FAIL_MAX = Math.max(3, parseInt(process.env.TELEGRAM_PIN_FAIL_MAX || "5", 10) || 5);
@@ -20862,7 +20862,10 @@ function recordPinFailure(userId) {
 }
 function consumeTelegramRateLimit(userId, text) {
   const now = Date.now();
-  const normalized = parseTelegramMessageLink(text) ? "/tg_download" : text.trim().split(/\s+/, 1)[0].replace(/@\w+$/, "").toLowerCase();
+  const normalized = text.trim().split(/\s+/, 1)[0].replace(/@\w+$/, "").toLowerCase();
+  if (parseTelegramMessageLink(text) || ["/tg_link", "/tg_download", "/tg_date", "/tg_tag"].includes(normalized)) {
+    return { limited: false, retryAfterSeconds: 0 };
+  }
   const checks = [
     { key: `${userId}:all`, windowMs: TELEGRAM_MESSAGE_RATE_WINDOW_MS, max: TELEGRAM_MESSAGE_RATE_MAX }
   ];

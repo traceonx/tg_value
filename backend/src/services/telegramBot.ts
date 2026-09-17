@@ -379,7 +379,7 @@ const TELEGRAM_MESSAGE_RATE_WINDOW_MS = Math.max(10_000, parseInt(process.env.TE
 const TELEGRAM_MESSAGE_RATE_MAX = Math.max(5, parseInt(process.env.TELEGRAM_RATE_MAX || '30', 10) || 30);
 const TELEGRAM_HEAVY_RATE_WINDOW_MS = Math.max(60_000, parseInt(process.env.TELEGRAM_HEAVY_RATE_WINDOW_MS || '600000', 10) || 600_000);
 const TELEGRAM_HEAVY_RATE_MAX = Math.max(1, parseInt(process.env.TELEGRAM_HEAVY_RATE_MAX || '5', 10) || 5);
-const TELEGRAM_HEAVY_COMMANDS = new Set(['/tg_download', '/tg_date', '/tg_tag', '/cleanup_settings']);
+const TELEGRAM_HEAVY_COMMANDS = new Set(['/cleanup_settings']);
 
 interface PinFailureState {
     windowStartedAt: number;
@@ -425,7 +425,12 @@ function clearPinFailures(userId: number): void {
 
 function consumeTelegramRateLimit(userId: number, text: string): { limited: boolean; retryAfterSeconds: number } {
     const now = Date.now();
-    const normalized = parseTelegramMessageLink(text) ? '/tg_download' : text.trim().split(/\s+/, 1)[0].replace(/@\w+$/, '').toLowerCase();
+    const normalized = text.trim().split(/\s+/, 1)[0].replace(/@\w+$/, '').toLowerCase();
+    // Download admission has no application-imposed cooldown. Server FloodWait
+    // remains enforced by the account request gate while executing the task.
+    if (parseTelegramMessageLink(text) || ['/tg_link', '/tg_download', '/tg_date', '/tg_tag'].includes(normalized)) {
+        return { limited: false, retryAfterSeconds: 0 };
+    }
     const checks = [
         { key: `${userId}:all`, windowMs: TELEGRAM_MESSAGE_RATE_WINDOW_MS, max: TELEGRAM_MESSAGE_RATE_MAX },
     ];
