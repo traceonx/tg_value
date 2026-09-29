@@ -17,6 +17,7 @@ import { markStorageAccountCooldown } from './storageCooldown.js';
 import { getTelegramUserClient, isTelegramUserClientReady } from './telegramUserClient.js';
 import { runTelegramDownloadWorkers } from './telegramDownloadWorkers.js';
 import { telegramDownloadFileName } from './telegramMessageLink.js';
+import { TransferProgressTracker, type TransferProgressSample } from '../utils/telegramTransferProgress.js';
 import { resolveTelegramCommentLink } from './telegramCommentLink.js';
 import { getSetting } from '../utils/settings.js';
 import { getTelegramProgressIntervalMs, startSharedTelegramProgress } from './telegramProgressSettings.js';
@@ -811,6 +812,7 @@ function updateLastStatusMessageId(chatId: Api.TypeEntityLike | undefined, msgId
 // ─── 单文件合并状态追踪器 ──────────────────────────────────────
 
 interface ActiveUploadEntry {
+    transferProgress?: TransferProgressSample;
     id?: string;
     fileName: string;
     typeEmoji: string;
@@ -1364,7 +1366,8 @@ export function retryFailedDownloadTasks(limit = 10, taskId?: string, chatId?: s
 
 // 多文件上传队列管理
 interface FileUploadItem {
-    onDownloadProgress?: (downloaded: number, total: number) => void;
+    transferProgress?: TransferProgressSample;
+    onDownloadProgress?: (downloaded: number, total: number, sample: TransferProgressSample) => void;
     fileName: string;
     mimeType: string;
     generatedName?: boolean;
@@ -1887,9 +1890,16 @@ async function processFileUpload(
                 return { status: 'success' as const };
             }
             file.status = 'uploading';
+            const progressTracker = new TransferProgressTracker();
             const reportProgress = (downloaded: number, total: number) => {
                 if (taskId) downloadQueue.updateProgress(taskId, downloaded, total);
-                file.onDownloadProgress?.(downloaded, total);
+                const sample = progressTracker.update(downloaded, total);
+                file.transferProgress = sample;
+                file.onDownloadProgress?.(downloaded, total, sample);
+                if (queue?.chatId) {
+                    const batchId = (file.message as any).groupedId?.toString();
+                    if (batchId) updateBatch(queue.chatId.toString(), batchId, { currentFileName: file.fileName, currentFileActive: true, currentDownloaded: downloaded, currentTotal: total, transferProgress: sample });
+                }
             };
             // 不再单独更新 msg，由外部轮询或回调处理
             // if (queue && queue.statusMsgId && queue.chatId) ...
@@ -2087,6 +2097,9 @@ async function processBatchUploadSnapshot(client: TelegramClient | undefined, qu
             queuePending: stats.pending,
             currentFileName: currentFile?.fileName,
             currentFileActive: Boolean(currentFile),
+            currentDownloaded: currentFile?.transferProgress?.downloaded,
+            currentTotal: currentFile?.transferProgress?.total,
+            transferProgress: currentFile?.transferProgress,
         });
 
         // 静默模式下编辑静默通知为进度卡；非静默模式更新合并状态
@@ -2540,8 +2553,8 @@ export async function downloadTelegramChannelRange(
                 groupSize: item.groupSize,
                 storageTarget,
                 persistentRef: item.persistentRef,
-                onDownloadProgress: (downloaded, total) => updateBatch(chatIdStr, batchId, {
-                    currentFileName: fileName, currentFileActive: true, currentDownloaded: downloaded, currentTotal: total,
+                onDownloadProgress: (downloaded, total, sample) => updateBatch(chatIdStr, batchId, {
+                    currentFileName: fileName, currentFileActive: true, currentDownloaded: downloaded, currentTotal: total, transferProgress: sample,
                 }),
                 withLease: withItemLease ? operation => withItemLease(item.persistentRef, operation) : undefined,
             };
@@ -2835,13 +2848,14 @@ export async function handleFileUpload(client: TelegramClient, event: NewMessage
         }
 
         let lastUpdateTime = 0;
+        const progressTracker = new TransferProgressTracker();
         const onProgress = async (downloaded: number, total: number) => {
+            const sample = progressTracker.update(downloaded, total);
+            updateUploadPhase(chatIdStr, uploadId, { phase: 'downloading', downloaded, total, transferProgress: sample });
             const intervalMs = await getTelegramProgressIntervalMs();
             const now = Date.now();
             if (now - lastUpdateTime < intervalMs) return;
             lastUpdateTime = now;
-
-            updateUploadPhase(chatIdStr, uploadId, { phase: 'downloading', downloaded, total });
 
             if (silentSessionMap.has(chatIdStr)) {
                 await runStatusAction(chatId, async () => {
@@ -2858,7 +2872,7 @@ export async function handleFileUpload(client: TelegramClient, event: NewMessage
                 await runStatusAction(chatId, async () => {
                     await safeEditMessage(client, chatId, {
                         message: statusMsg!.id,
-                        text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, undefined, locale),
+                        text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, undefined, locale, sample),
                     });
                 });
             }

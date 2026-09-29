@@ -6,6 +6,7 @@
  */
 
 import { Api } from 'telegram';
+import { transferProgressLines, type TransferProgressSample } from './telegramTransferProgress.js';
 import { formatBytes, getTypeEmoji } from './telegramUtils.js';
 export { getProviderDisplayName } from './providerMetadata.js';
 import { getProviderDisplayName } from './providerMetadata.js';
@@ -408,16 +409,15 @@ export function buildDownloadProgress(
     typeEmoji: string,
     startTime?: number,
     locale: TelegramLocale = DEFAULT_LOCALE,
+    sample?: TransferProgressSample,
 ): string {
-    const bar = startTime
-        ? generateProgressBarWithSpeed(downloaded, total, startTime)
-        : generateProgressBar(downloaded, total);
+    const now = Date.now();
+    const progress = sample || (startTime && now - startTime >= 1000 ? { downloaded, total, bytesPerSecond: downloaded * 1000 / (now - startTime), updatedAt: now } : undefined);
     return [
         t(locale, 'upload.downloading'),
-        `${bar}`,
         ``,
         `${typeEmoji} ${fileName}`,
-        `${formatLocalizedBytes(downloaded, locale)} / ${formatLocalizedBytes(total, locale)}`,
+        ...transferProgressLines(downloaded, total, progress, locale, now),
     ].join('\n');
 }
 
@@ -479,6 +479,9 @@ export function buildSilentModeNotice(fileCount: number, taskId?: string, queueP
 }
 
 interface SilentProgressBatch {
+    currentDownloaded?: number;
+    currentTotal?: number;
+    transferProgress?: TransferProgressSample;
     folderName: string;
     folderPath?: string;
     totalFiles: number;
@@ -492,6 +495,7 @@ interface SilentProgressBatch {
 }
 
 interface SilentProgressFile {
+    transferProgress?: TransferProgressSample;
     fileName: string;
     phase: ConsolidatedUploadFile['phase'];
     downloaded?: number;
@@ -548,6 +552,10 @@ export function buildSilentProgress(
         ``,
         `✅ 成功: ${successfulFiles}　❌ 失败: ${failedFiles}　⏳ 剩余: ${remainingFiles}`,
         ...(currentFile ? [`📄 当前: ${currentFile}`] : []),
+        ...(currentFile && activeBatch?.currentFileActive && activeBatch.currentDownloaded !== undefined
+            ? transferProgressLines(activeBatch.currentDownloaded, activeBatch.currentTotal || 0, activeBatch.transferProgress)
+            : currentFile && activeSingle?.phase === 'downloading'
+                ? transferProgressLines(activeSingle.downloaded || 0, activeSingle.total || 0, activeSingle.transferProgress) : []),
         ...(activeBatch ? [`📁 批次: ${activeBatch.folderName}`] : []),
         ...(activeBatch?.queuePending ? [`🕒 队列等待: ${activeBatch.queuePending}`] : []),
         ``,
@@ -602,6 +610,7 @@ export function buildSilentAllTasksComplete(
 // ─── 合并状态（单文件 + 批量） ──────────────────────────────
 
 export interface ConsolidatedUploadFile {
+    transferProgress?: TransferProgressSample;
     id?: string;
     fileName: string;
     typeEmoji: string;
@@ -616,6 +625,7 @@ export interface ConsolidatedUploadFile {
 }
 
 export interface ConsolidatedBatchEntry {
+    transferProgress?: TransferProgressSample;
     currentDownloaded?: number;
     currentTotal?: number;
     id: string;
@@ -755,13 +765,7 @@ export async function buildConsolidatedStatus(
             switch (file.phase) {
                 case 'downloading':
                     icon = '⬇️';
-                    if (file.downloaded !== undefined && file.total) {
-                        const pct = Math.round((file.downloaded / file.total) * 100);
-                        const progressBar = generateProgressBar(file.downloaded, file.total);
-                        detail = `${progressBar} ${pct}%`;
-                    } else {
-                        detail = '下载中...';
-                    }
+                    detail = transferProgressLines(file.downloaded || 0, file.total || 0, file.transferProgress).join('\n    ');
                     break;
                 case 'saving':
                     icon = '💾'; detail = '保存...'; break;
@@ -799,8 +803,8 @@ export async function buildConsolidatedStatus(
                 lines.push(`    ${progress} (${batch.completed}/${batch.totalFiles})`);
                 if (batch.currentFileActive && batch.currentFileName) {
                     lines.push(`    📄 当前: ${batch.currentFileName}`);
-                    if (batch.currentTotal && batch.currentDownloaded !== undefined) {
-                        lines.push(`    ⬇️ ${Math.min(100, Math.round(batch.currentDownloaded / batch.currentTotal * 100))}% · ${formatBytes(batch.currentDownloaded)} / ${formatBytes(batch.currentTotal)}`);
+                    if (batch.currentDownloaded !== undefined) {
+                        lines.push(...transferProgressLines(batch.currentDownloaded, batch.currentTotal || 0, batch.transferProgress).map(line => `    ${line}`));
                     }
                 }
             } else {

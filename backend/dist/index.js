@@ -4289,6 +4289,10 @@ function extractFileInfo(message) {
 
 // src/i18n/telegramRussian.json
 var telegramRussian_default = {
+  "progress.unknownSize": "\u0420\u0430\u0437\u043C\u0435\u0440 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u0435\u043D",
+  "progress.speedEta": "\u26A1 \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C {speed}\u3000\u23F1 \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C {eta}",
+  "progress.waitingData": "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u044B\u0445; \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u0438 \u043E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u043F\u043E\u043A\u0430 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B.",
+  "progress.saving": "\u{1F4BE} \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u043C \u0444\u0430\u0439\u043B\u2026",
   "bot.comments.title": "\u{1F3AC} \u0412\u0438\u0434\u0435\u043E \u0432 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u0445: {count} \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 (\u043F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u043E {scanned} \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0435\u0432)",
   "bot.comments.choose": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043E\u0434\u043D\u043E \u0432\u0438\u0434\u0435\u043E. \u0427\u0442\u043E\u0431\u044B \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0434\u0440\u0443\u0433\u043E\u0435, \u043E\u0442\u043F\u0440\u0430\u0432\u044C\u0442\u0435 \u0441\u0441\u044B\u043B\u043A\u0443 \u043D\u0430 \u043F\u043E\u0441\u0442 \u0441\u043D\u043E\u0432\u0430.",
   "bot.comments.download": "\u2B07\uFE0F \u0421\u043A\u0430\u0447\u0430\u0442\u044C \u0432\u0438\u0434\u0435\u043E {number}",
@@ -5677,6 +5681,10 @@ var resources = {
     "bot.link.folderSelected": "\u{1F4C1} \u672C\u6B21\u4FDD\u5B58\u76EE\u5F55\uFF1A{folder}",
     "bot.link.folderExpired": "\u6B64\u9009\u62E9\u5DF2\u5931\u6548\u6216\u4E0D\u5C5E\u4E8E\u4F60\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001\u94FE\u63A5\u3002",
     "folderBrowser.title": "\u{1F4C1} \u6587\u4EF6\u5939\uFF1A{folder}",
+    "progress.unknownSize": "\u603B\u5927\u5C0F\u672A\u77E5",
+    "progress.speedEta": "\u26A1 \u901F\u5EA6 {speed}\u3000\u23F1 \u9884\u8BA1\u5269\u4F59 {eta}",
+    "progress.waitingData": "\u7B49\u5F85\u65B0\u6570\u636E\uFF0C\u901F\u5EA6\u548C\u5269\u4F59\u65F6\u95F4\u6682\u4E0D\u53EF\u7528\u3002",
+    "progress.saving": "\u{1F4BE} \u4E0B\u8F7D\u5B8C\u6210\uFF0C\u6B63\u5728\u4FDD\u5B58\u6587\u4EF6\u2026",
     "bot.comments.title": "\u{1F3AC} \u8BC4\u8BBA\u89C6\u9891\uFF1A\u672C\u9875\u53D1\u73B0 {count} \u4E2A\uFF08\u68C0\u67E5\u4E86 {scanned} \u6761\u8BC4\u8BBA\uFF09",
     "bot.comments.choose": "\u9009\u62E9\u4E00\u4E2A\u89C6\u9891\u4E0B\u8F7D\uFF1B\u53EF\u91CD\u65B0\u53D1\u9001\u5E16\u5B50\u94FE\u63A5\u9009\u62E9\u5176\u4ED6\u89C6\u9891\u3002",
     "bot.comments.download": "\u2B07\uFE0F \u4E0B\u8F7D\u89C6\u9891 {number}",
@@ -6634,6 +6642,10 @@ var resources = {
     "bot.link.folderSelected": "\u{1F4C1} Save this download to: {folder}",
     "bot.link.folderExpired": "This choice expired or belongs to another user. Send the link again.",
     "folderBrowser.title": "\u{1F4C1} Folder: {folder}",
+    "progress.unknownSize": "Size unknown",
+    "progress.speedEta": "\u26A1 Speed {speed}\u3000\u23F1 Remaining {eta}",
+    "progress.waitingData": "Waiting for data; speed and remaining time are unavailable.",
+    "progress.saving": "\u{1F4BE} Download complete. Saving file\u2026",
     "bot.comments.title": "\u{1F3AC} Comment videos: {count} found on this page ({scanned} comments checked)",
     "bot.comments.choose": "Choose one video to download. Send the post link again to choose another.",
     "bot.comments.download": "\u2B07\uFE0F Download video {number}",
@@ -8871,6 +8883,56 @@ import path20 from "path";
 // src/utils/telegramMessages.ts
 import { Api as Api4 } from "telegram";
 
+// src/utils/telegramTransferProgress.ts
+var TransferProgressTracker = class {
+  constructor(now = Date.now) {
+    this.now = now;
+  }
+  now;
+  baseline;
+  lastBytes = 0;
+  lastChangedAt = 0;
+  speed;
+  update(downloaded, total) {
+    const now = this.now();
+    const bytes = Number.isFinite(downloaded) ? Math.max(0, downloaded) : 0;
+    if (!this.baseline || bytes < this.lastBytes) {
+      this.baseline = { bytes, at: now };
+      this.speed = void 0;
+      this.lastChangedAt = now;
+    } else if (now - this.baseline.at >= 1e3) {
+      this.speed = Math.max(0, (bytes - this.baseline.bytes) * 1e3 / (now - this.baseline.at));
+      this.baseline = { bytes, at: now };
+    }
+    if (bytes !== this.lastBytes) this.lastChangedAt = now;
+    this.lastBytes = bytes;
+    return { downloaded: bytes, total: Number.isFinite(total) ? Math.max(0, total) : 0, bytesPerSecond: this.speed, updatedAt: this.lastChangedAt };
+  }
+};
+function transferProgressLines(downloaded, total, sample, locale = DEFAULT_LOCALE, now = Date.now()) {
+  const bytes = Number.isFinite(downloaded) ? Math.max(0, downloaded) : 0;
+  const size = Number.isFinite(total) ? Math.max(0, total) : 0;
+  const complete = size > 0 && bytes >= size;
+  const stale = sample !== void 0 && now - sample.updatedAt >= 15e3;
+  const speed = !stale && Number.isFinite(sample?.bytesPerSecond) && sample.bytesPerSecond > 0 ? sample.bytesPerSecond : void 0;
+  const cells = 12;
+  const ratio = size > 0 ? Math.min(1, bytes / size) : 0;
+  const percentage = complete ? "100" : (Math.floor(ratio * 1e3) / 10).toFixed(1).replace(/\.0$/, "");
+  const filled = Math.floor(ratio * cells);
+  const bar = size > 0 ? "\u25B0".repeat(filled) + "\u25B1".repeat(cells - filled) : "\u25B1".repeat(Math.floor(now / 1e3) % cells) + "\u25B0" + "\u25B1".repeat(cells - 1 - Math.floor(now / 1e3) % cells);
+  const frame = complete ? "\u2713" : stale ? "\u23F8" : ["\u25D0", "\u25D3", "\u25D1", "\u25D2"][Math.floor(now / 1e3) % 4];
+  const lines = [
+    `${frame} ${bar} ${size > 0 ? `${percentage}%` : t(locale, "progress.unknownSize")}`,
+    `\u{1F4E6} ${formatBytes2(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes2(size, locale) : "\u2014"}`
+  ];
+  if (complete) return [...lines, t(locale, "progress.saving")];
+  const etaSeconds = speed && size > bytes ? Math.ceil((size - bytes) / speed) : void 0;
+  const eta = etaSeconds === void 0 ? "\u2014" : `${String(Math.floor(etaSeconds / 3600)).padStart(2, "0")}:${String(Math.floor(etaSeconds / 60) % 60).padStart(2, "0")}:${String(etaSeconds % 60).padStart(2, "0")}`;
+  lines.push(t(locale, "progress.speedEta", { speed: speed ? `${formatBytes2(speed, locale)}/s` : "\u2014", eta }));
+  if (stale) lines.push(t(locale, "progress.waitingData"));
+  return lines;
+}
+
 // src/utils/providerMetadata.ts
 var PROVIDERS = {
   local: { id: "local", label: "\u672C\u5730\u5B58\u50A8", emoji: "\u{1F4BE}" },
@@ -9043,14 +9105,6 @@ function generateProgressBar(completed, total, barLength = 20) {
   const emptyLength = barLength - 1 - filledLength;
   return "[" + "=".repeat(filledLength) + ">" + "-".repeat(emptyLength) + "] " + percentage + "%";
 }
-function generateProgressBarWithSpeed(completed, total, startTime, barLength = 20) {
-  const bar = generateProgressBar(completed, total, barLength);
-  if (!startTime || completed <= 0) return bar;
-  const elapsed = (Date.now() - startTime) / 1e3;
-  if (elapsed < 1) return bar;
-  const speed = completed / elapsed;
-  return `${bar} \u26A1 ${formatBytes(speed)}/s`;
-}
 var LINE = "\u2501".repeat(22);
 var THIN_LINE = "\u2500".repeat(22);
 var MSG = {
@@ -9173,14 +9227,14 @@ function buildDuplicateSkipped(fileName, folder, existingId, locale = DEFAULT_LO
     t(locale, "upload.duplicateCopyAdvice")
   ].join("\n");
 }
-function buildDownloadProgress(fileName, downloaded, total, typeEmoji, startTime, locale = DEFAULT_LOCALE) {
-  const bar = startTime ? generateProgressBarWithSpeed(downloaded, total, startTime) : generateProgressBar(downloaded, total);
+function buildDownloadProgress(fileName, downloaded, total, typeEmoji, startTime, locale = DEFAULT_LOCALE, sample) {
+  const now = Date.now();
+  const progress = sample || (startTime && now - startTime >= 1e3 ? { downloaded, total, bytesPerSecond: downloaded * 1e3 / (now - startTime), updatedAt: now } : void 0);
   return [
     t(locale, "upload.downloading"),
-    `${bar}`,
     ``,
     `${typeEmoji} ${fileName}`,
-    `${formatBytes2(downloaded, locale)} / ${formatBytes2(total, locale)}`
+    ...transferProgressLines(downloaded, total, progress, locale, now)
   ].join("\n");
 }
 function buildSavingFile(fileName, typeEmoji, locale = DEFAULT_LOCALE) {
@@ -9254,6 +9308,7 @@ function buildSilentProgress(sessionTotal, batches, singleFiles = [], sessionCom
     ``,
     `\u2705 \u6210\u529F: ${successfulFiles}\u3000\u274C \u5931\u8D25: ${failedFiles}\u3000\u23F3 \u5269\u4F59: ${remainingFiles}`,
     ...currentFile ? [`\u{1F4C4} \u5F53\u524D: ${currentFile}`] : [],
+    ...currentFile && activeBatch?.currentFileActive && activeBatch.currentDownloaded !== void 0 ? transferProgressLines(activeBatch.currentDownloaded, activeBatch.currentTotal || 0, activeBatch.transferProgress) : currentFile && activeSingle?.phase === "downloading" ? transferProgressLines(activeSingle.downloaded || 0, activeSingle.total || 0, activeSingle.transferProgress) : [],
     ...activeBatch ? [`\u{1F4C1} \u6279\u6B21: ${activeBatch.folderName}`] : [],
     ...activeBatch?.queuePending ? [`\u{1F552} \u961F\u5217\u7B49\u5F85: ${activeBatch.queuePending}`] : [],
     ``,
@@ -9373,13 +9428,7 @@ async function buildConsolidatedStatus(singleFiles, batches) {
       switch (file.phase) {
         case "downloading":
           icon = "\u2B07\uFE0F";
-          if (file.downloaded !== void 0 && file.total) {
-            const pct = Math.round(file.downloaded / file.total * 100);
-            const progressBar = generateProgressBar(file.downloaded, file.total);
-            detail = `${progressBar} ${pct}%`;
-          } else {
-            detail = "\u4E0B\u8F7D\u4E2D...";
-          }
+          detail = transferProgressLines(file.downloaded || 0, file.total || 0, file.transferProgress).join("\n    ");
           break;
         case "saving":
           icon = "\u{1F4BE}";
@@ -9421,8 +9470,8 @@ async function buildConsolidatedStatus(singleFiles, batches) {
         lines.push(`    ${progress} (${batch.completed}/${batch.totalFiles})`);
         if (batch.currentFileActive && batch.currentFileName) {
           lines.push(`    \u{1F4C4} \u5F53\u524D: ${batch.currentFileName}`);
-          if (batch.currentTotal && batch.currentDownloaded !== void 0) {
-            lines.push(`    \u2B07\uFE0F ${Math.min(100, Math.round(batch.currentDownloaded / batch.currentTotal * 100))}% \xB7 ${formatBytes(batch.currentDownloaded)} / ${formatBytes(batch.currentTotal)}`);
+          if (batch.currentDownloaded !== void 0) {
+            lines.push(...transferProgressLines(batch.currentDownloaded, batch.currentTotal || 0, batch.transferProgress).map((line) => `    ${line}`));
           }
         }
       } else {
@@ -13584,9 +13633,16 @@ async function processFileUpload(client2, file, queue2, groupId, getExecutionCon
         return { status: "success" };
       }
       file.status = "uploading";
+      const progressTracker = new TransferProgressTracker();
       const reportProgress = (downloaded, total) => {
         if (taskId) downloadQueue.updateProgress(taskId, downloaded, total);
-        file.onDownloadProgress?.(downloaded, total);
+        const sample = progressTracker.update(downloaded, total);
+        file.transferProgress = sample;
+        file.onDownloadProgress?.(downloaded, total, sample);
+        if (queue2?.chatId) {
+          const batchId = file.message.groupedId?.toString();
+          if (batchId) updateBatch(queue2.chatId.toString(), batchId, { currentFileName: file.fileName, currentFileActive: true, currentDownloaded: downloaded, currentTotal: total, transferProgress: sample });
+        }
       };
       const firstAttemptSuccess = await attemptUpload(signal, reportProgress);
       if (!firstAttemptSuccess && !signal.aborted && !file.retried && !file.storageCooldownUntil) {
@@ -13746,7 +13802,10 @@ async function processBatchUploadSnapshot(client2, queueKey, queue2) {
       failed,
       queuePending: stats.pending,
       currentFileName: currentFile?.fileName,
-      currentFileActive: Boolean(currentFile)
+      currentFileActive: Boolean(currentFile),
+      currentDownloaded: currentFile?.transferProgress?.downloaded,
+      currentTotal: currentFile?.transferProgress?.total,
+      transferProgress: currentFile?.transferProgress
     });
     if (silentSessionMap.has(chatId.toString())) {
       await runStatusAction(chatId, async () => {
@@ -14094,11 +14153,12 @@ async function downloadTelegramChannelRange(botClient, requestMessage, source, s
             groupSize: item.groupSize,
             storageTarget,
             persistentRef: item.persistentRef,
-            onDownloadProgress: (downloaded, total) => updateBatch(chatIdStr, batchId, {
+            onDownloadProgress: (downloaded, total, sample) => updateBatch(chatIdStr, batchId, {
               currentFileName: fileName,
               currentFileActive: true,
               currentDownloaded: downloaded,
-              currentTotal: total
+              currentTotal: total,
+              transferProgress: sample
             }),
             withLease: withItemLease ? (operation) => withItemLease(item.persistentRef, operation) : void 0
           };
@@ -14369,12 +14429,14 @@ async function handleFileUpload(client2, event) {
       });
     }
     let lastUpdateTime = 0;
+    const progressTracker = new TransferProgressTracker();
     const onProgress = async (downloaded, total) => {
+      const sample = progressTracker.update(downloaded, total);
+      updateUploadPhase(chatIdStr, uploadId, { phase: "downloading", downloaded, total, transferProgress: sample });
       const intervalMs = await getTelegramProgressIntervalMs();
       const now = Date.now();
       if (now - lastUpdateTime < intervalMs) return;
       lastUpdateTime = now;
-      updateUploadPhase(chatIdStr, uploadId, { phase: "downloading", downloaded, total });
       if (silentSessionMap.has(chatIdStr)) {
         await runStatusAction(chatId, async () => {
           await refreshSilentProgress(client2, chatId);
@@ -14389,7 +14451,7 @@ async function handleFileUpload(client2, event) {
         await runStatusAction(chatId, async () => {
           await safeEditMessage(client2, chatId, {
             message: statusMsg.id,
-            text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, void 0, locale)
+            text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, void 0, locale, sample)
           });
         });
       }
