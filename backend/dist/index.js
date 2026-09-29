@@ -8820,6 +8820,14 @@ function telegramFloodWaitSeconds(error) {
 // src/services/telegramLinkFolderChoice.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 var TTL = 10 * 6e4;
+async function runTelegramLinkFolderChoice(store, token, scope, reuse, effects) {
+  const choice = store.consume(token, scope, reuse);
+  await effects.answer(Boolean(choice)).catch(effects.feedbackError);
+  if (!choice) return false;
+  await effects.update(choice.link.folderName).catch(effects.feedbackError);
+  await effects.download(choice.context, choice.link);
+  return true;
+}
 var TelegramLinkFolderChoices = class {
   constructor(now = Date.now) {
     this.now = now;
@@ -21050,13 +21058,12 @@ async function handleLinkFolderChoice(update, data) {
   }
   const locale = await getTelegramUserLocaleOrDefault(senderId);
   const match = /^linkfolder_([a-f0-9]{32})_(yes|no)$/.exec(data);
-  const messages = await client.getMessages(update.peer, { ids: Number(update.msgId) });
-  const menu = messages[0];
-  const choice = match && menu?.chatId ? linkFolderChoices.consume(match[1], `${menu.chatId}:${senderId}`, match[2] === "yes") : null;
-  await client.invoke(new Api15.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...choice ? {} : { message: t(locale, "bot.link.folderExpired"), alert: true } }));
-  if (!choice) return;
-  await client.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "bot.link.folderSelected", { folder: choice.link.folderName }), parseMode: false, buttons: new Api15.ReplyInlineMarkup({ rows: [] }) });
-  await downloadMessageLink(choice.context, senderId, choice.link, locale);
+  await runTelegramLinkFolderChoice(linkFolderChoices, match?.[1] || "", `${callbackChatKey(update, senderId)}:${senderId}`, match?.[2] === "yes", {
+    answer: (accepted) => client.invoke(new Api15.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...accepted ? {} : { message: t(locale, "bot.link.folderExpired"), alert: true } })),
+    update: (folder) => client.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, "bot.link.folderSelected", { folder }), parseMode: false, buttons: new Api15.ReplyInlineMarkup({ rows: [] }) }),
+    download: (message, link) => downloadMessageLink(message, senderId, link, locale),
+    feedbackError: (error) => console.warn("Telegram folder choice feedback failed:", error)
+  });
 }
 var digestTimer = null;
 var botLifecycle = Promise.resolve();
@@ -22328,7 +22335,7 @@ ${t(locale, "bot.link.renameHelp")}`, parseMode: false });
           clearPendingTelegramPathInput(chatId.toString(), senderId);
           const locale = await getTelegramUserLocaleOrDefault(senderId);
           try {
-            const choice = linkFolderChoices.prepare(`${chatId}:${senderId}`, messageLink, message);
+            const choice = linkFolderChoices.prepare(`${messageChatKey(message, senderId)}:${senderId}`, messageLink, message);
             if (choice) {
               await message.reply({
                 message: t(locale, "bot.link.reuseFolder", { folder: choice.folder, date: choice.dateFolder }),

@@ -5,7 +5,7 @@ import { parseTelegramMessageLink, runTelegramMessageLinkDownload, telegramMessa
 import { scanCommentVideos, CommentVideoChoices, commentVideoMenu, commentMessageScope, commentCallbackScope, collectAllCommentVideos, commentDownloadLink } from './telegramCommentVideos.js';
 import { selectTelegramDownloadAccount, stopTelegramAccountForError } from './telegramMultiAccountRuntime.js';
 import type { TelegramMessageLink } from './telegramMessageLink.js';
-import { TelegramLinkFolderChoices } from './telegramLinkFolderChoice.js';
+import { TelegramLinkFolderChoices, runTelegramLinkFolderChoice } from './telegramLinkFolderChoice.js';
 import { handleTelegramFolderCallback } from './telegramCommands.js';
 import { installTelegramPromptCopy } from './telegramPromptCopy.js';
 import { resolveTelegramStorageFolderPersistent } from '../utils/telegramPathSettings.js';
@@ -362,13 +362,12 @@ async function handleLinkFolderChoice(update: Api.UpdateBotCallbackQuery, data: 
     }
     const locale = await getTelegramUserLocaleOrDefault(senderId);
     const match = /^linkfolder_([a-f0-9]{32})_(yes|no)$/.exec(data);
-    const messages = await client!.getMessages(update.peer, { ids: Number(update.msgId) });
-    const menu = messages[0] as Api.Message | undefined;
-    const choice = match && menu?.chatId ? linkFolderChoices.consume(match[1], `${menu.chatId}:${senderId}`, match[2] === 'yes') : null;
-    await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...(choice ? {} : { message: t(locale, 'bot.link.folderExpired'), alert: true }) }));
-    if (!choice) return;
-    await client!.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, 'bot.link.folderSelected', { folder: choice.link.folderName }), parseMode: false, buttons: new Api.ReplyInlineMarkup({ rows: [] }) });
-    await downloadMessageLink(choice.context, senderId, choice.link, locale);
+    await runTelegramLinkFolderChoice(linkFolderChoices, match?.[1] || '', `${callbackChatKey(update, senderId)}:${senderId}`, match?.[2] === 'yes', {
+        answer: accepted => client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, ...(accepted ? {} : { message: t(locale, 'bot.link.folderExpired'), alert: true }) })),
+        update: folder => client!.editMessage(update.peer, { message: Number(update.msgId), text: t(locale, 'bot.link.folderSelected', { folder }), parseMode: false, buttons: new Api.ReplyInlineMarkup({ rows: [] }) }),
+        download: (message, link) => downloadMessageLink(message, senderId, link, locale),
+        feedbackError: error => console.warn('Telegram folder choice feedback failed:', error),
+    });
 }
 let digestTimer: NodeJS.Timeout | null = null;
 let botLifecycle: Promise<void> = Promise.resolve();
@@ -1878,7 +1877,7 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                     clearPendingTelegramPathInput(chatId.toString(), senderId);
                     const locale = await getTelegramUserLocaleOrDefault(senderId);
                     try {
-                        const choice = linkFolderChoices.prepare(`${chatId}:${senderId}`, messageLink, message);
+                        const choice = linkFolderChoices.prepare(`${messageChatKey(message, senderId)}:${senderId}`, messageLink, message);
                         if (choice) {
                             await message.reply({ message: t(locale, 'bot.link.reuseFolder', { folder: choice.folder, date: choice.dateFolder }), parseMode: false,
                                 buttons: new Api.ReplyInlineMarkup({ rows: [new Api.KeyboardButtonRow({ buttons: [

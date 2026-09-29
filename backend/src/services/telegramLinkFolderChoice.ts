@@ -2,6 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { telegramMessageLinkFolderName, type TelegramMessageLink } from './telegramMessageLink.js';
 
 const TTL = 10 * 60_000;
+export async function runTelegramLinkFolderChoice<T>(
+    store: TelegramLinkFolderChoices<T>, token: string, scope: string, reuse: boolean,
+    effects: {
+        answer: (accepted: boolean) => Promise<unknown>;
+        update: (folder: string) => Promise<unknown>;
+        download: (context: T, link: TelegramMessageLink) => Promise<unknown>;
+        feedbackError: (error: unknown) => void;
+    },
+): Promise<boolean> {
+    const choice = store.consume(token, scope, reuse);
+    await effects.answer(Boolean(choice)).catch(effects.feedbackError);
+    if (!choice) return false;
+    await effects.update(choice.link.folderName).catch(effects.feedbackError);
+    await effects.download(choice.context, choice.link);
+    return true;
+}
+
 export class TelegramLinkFolderChoices<T> {
     private recent = new Map<string, { folder: string; at: number }>();
     private pending = new Map<string, { scope: string; link: TelegramMessageLink; context: T; folder: string; dateFolder: string; expires: number }>();
