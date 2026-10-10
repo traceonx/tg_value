@@ -11,7 +11,7 @@ import { installTelegramPromptCopy } from './telegramPromptCopy.js';
 import { resolveTelegramStorageFolderPersistent } from '../utils/telegramPathSettings.js';
 import { downloadTelegramChannelRange } from './telegramUpload.js';
 import { assertTelegramSourceAllowed } from './telegramChannelJobs.js';
-import { StringSession } from 'telegram/sessions/index.js';
+import { TelegramSession } from './telegramSession.js';
 import { NewMessage, NewMessageEvent } from 'telegram/events/index.js';
 import { Raw } from 'telegram/events/index.js';
 import fs from 'fs';
@@ -1609,7 +1609,7 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
     }
 
     try {
-        client = new TelegramClient(new StringSession(''), apiId, apiHash, {
+        client = new TelegramClient(new TelegramSession(''), apiId, apiHash, {
             proxy: getTelegramProxy(),
             connectionRetries: 5,
             reconnectRetries: 5,

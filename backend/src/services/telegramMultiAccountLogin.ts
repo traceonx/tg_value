@@ -1,5 +1,5 @@
 import { Api, TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions/index.js';
+import { TelegramSession } from './telegramSession.js';
 import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { Raw } from 'telegram/events/index.js';
 import { getEffectiveTelegramBotConfig } from './telegramBotConfig.js';
@@ -42,7 +42,7 @@ async function getCredentials(): Promise<TelegramLoginCredentials | null> {
 }
 
 function makeClient(credentials: TelegramLoginCredentials): TelegramClient {
-    const client = new TelegramClient(new StringSession(''), credentials.apiId, credentials.apiHash, {
+    const client = new TelegramClient(new TelegramSession(''), credentials.apiId, credentials.apiHash, {
         proxy: getTelegramProxy(),
         connectionRetries: 15,
         retryDelay: 2000,

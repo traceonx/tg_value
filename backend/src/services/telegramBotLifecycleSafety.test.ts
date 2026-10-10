@@ -51,7 +51,7 @@ test('Bot replacement avoids stale saved sessions and requires full activation b
     assert.doesNotMatch(bot, /session\.save\(\)[\s\S]*writeFileSync\(SESSION_FILE/);
     const startupSection = bot.slice(bot.indexOf("console.log('🤖 Telegram Bot 正在启动...')"), bot.indexOf("console.log('🤖 Telegram Bot 已连接!')"));
     assert.doesNotMatch(startupSection, /Promise\.race/);
-    assert.match(bot, /new TelegramClient\(new StringSession\(''\)/);
+    assert.match(bot, /new TelegramClient\(new TelegramSession\(''\)/);
     assert.match(bot, /await withTelegramOperationDeadline\(client\.start/);
     const startup = bot.slice(bot.indexOf('export async function initTelegramBot'), bot.indexOf('async function withTelegramClientDeadline'));
     assert.doesNotMatch(startup, /startTelegramSubscriptionWorker|startTelegramJobRecoveryWorker|startPeriodicCleanup/);

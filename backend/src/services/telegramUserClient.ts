@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Api, TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions/index.js';
+import { TelegramSession } from './telegramSession.js';
 import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { getEffectiveTelegramBotConfig } from './telegramBotConfig.js';
 import { TelegramUserWebLoginFlows, type TelegramUserLoginAccount, type TelegramUserLoginClient } from './telegramUserWebLogin.js';
@@ -58,7 +58,7 @@ export async function migrateLegacyTelegramUserSession(): Promise<string> {
 }
 
 function makeClient(session: string, credentials: { apiId: number; apiHash: string }): TelegramClient {
-    const client = new TelegramClient(new StringSession(session), credentials.apiId, credentials.apiHash, {
+    const client = new TelegramClient(new TelegramSession(session), credentials.apiId, credentials.apiHash, {
         proxy: getTelegramProxy(),
         connectionRetries: 15,
         retryDelay: 2000,

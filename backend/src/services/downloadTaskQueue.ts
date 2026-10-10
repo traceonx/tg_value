@@ -114,6 +114,11 @@ interface DownloadFileTask extends DownloadFileTaskSnapshot {
     onPendingCancelled?: () => void | Promise<void>;
 }
 
+interface DownloadTaskHistory extends DownloadFileTaskSnapshot {
+    rawExecute?: DownloadFileTask['rawExecute'];
+    onPendingCancelled?: DownloadFileTask['onPendingCancelled'];
+}
+
 export type DownloadTaskGroupControlStatus = 'ok' | 'not_found' | 'forbidden' | 'terminal' | 'blocked';
 
 export interface DownloadTaskGroupControlResult {
@@ -128,7 +133,7 @@ export type DownloadTaskPauseOrigin = 'user' | 'system';
 export class DownloadTaskQueue {
     private queue: DownloadFileTask[] = [];
     private active: DownloadFileTask[] = [];
-    private history: DownloadFileTask[] = [];
+    private history: DownloadTaskHistory[] = [];
     private groups = new Map<string, DownloadTaskGroupRecord>();
     private readonly maxHistory = 50;
     private maxConcurrent: number;
@@ -590,7 +595,7 @@ export class DownloadTaskQueue {
         let retried = 0;
         for (const task of failed) {
             const group = this.groups.get(task.groupId);
-            if (!group || group.stateOverride === 'cancelled' || group.stateOverride === 'cancelling') continue;
+            if (!group || !task.rawExecute || group.stateOverride === 'cancelled' || group.stateOverride === 'cancelling') continue;
             group.failed = Math.max(0, group.failed - 1);
             this.removeHistoryTask(task);
             void this.add(task.groupId, task.fileName, task.rawExecute, task.totalSize || 0, task.onPendingCancelled)
@@ -671,8 +676,8 @@ export class DownloadTaskQueue {
         this.pushHistory(task);
     }
 
-    private removeHistoryTask(task: DownloadFileTask): void {
-        const index = this.history.indexOf(task);
+    private removeHistoryTask(task: DownloadFileTaskSnapshot): void {
+        const index = this.history.findIndex(item => item.id === task.id);
         if (index >= 0) this.history.splice(index, 1);
     }
 
@@ -688,12 +693,20 @@ export class DownloadTaskQueue {
 
     private pushHistory(task: DownloadFileTask): void {
         this.removeHistoryTask(task);
-        this.history.unshift(task);
+        // Keep display data only. Execution closures can retain entire message batches.
+        // Failed tasks retain just the callbacks needed by the bounded retry history.
+        this.history.unshift({
+            ...this.publicTask(task),
+            ...(task.status === 'failed' ? {
+                rawExecute: task.rawExecute,
+                onPendingCancelled: task.onPendingCancelled,
+            } : {}),
+        });
         if (this.history.length > this.maxHistory) this.history.splice(this.maxHistory);
         this.pruneTerminalGroups();
     }
 
-    private publicTask(task: DownloadFileTask): DownloadFileTaskSnapshot {
+    private publicTask(task: DownloadFileTaskSnapshot): DownloadFileTaskSnapshot {
         return {
             id: task.id,
             groupId: task.groupId,

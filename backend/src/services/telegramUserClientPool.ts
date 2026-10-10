@@ -6,7 +6,7 @@ import type {
 } from './telegramAccountRepository.js';
 import { telegramAccountRepository } from './telegramAccountRepository.js';
 import { TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions/index.js';
+import { TelegramSession } from './telegramSession.js';
 import { installTelegramRequestGate } from './telegramRequestGate.js';
 import { decryptCredential } from '../utils/credentialCrypto.js';
 import { getTelegramProxy } from './telegramProxy.js';
@@ -287,7 +287,7 @@ export const telegramUserClientPool = new TelegramUserClientPool<TelegramClient>
     decryptSession: decryptCredential,
     createClient: (session, credentials, accountId) => {
         const client = new TelegramClient(
-        new StringSession(session), credentials.apiId, credentials.apiHash, {
+        new TelegramSession(session), credentials.apiId, credentials.apiHash, {
             proxy: getTelegramProxy(),
             connectionRetries: 15, retryDelay: 2000, useWSS: false,
             deviceModel: 'TG Vault User Downloader', systemVersion: '1.0.0', appVersion: '1.0.0', floodSleepThreshold: 0,
