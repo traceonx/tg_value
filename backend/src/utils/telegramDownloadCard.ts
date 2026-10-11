@@ -20,11 +20,12 @@ export function downloadCardData(text: string) {
     if (index < 0) return null;
     const percent = lines[index].match(/([\d.]+)%/);
     const sizeIndex = /\//.test(lines[index - 1] || '') ? index - 1 : index + 1;
-    const title = lines.slice(0, Math.min(index, sizeIndex)).reverse().find(line => line.trim()) || 'Download';
+    const title = lines.slice(0, Math.min(index, sizeIndex)).reverse().find(line => line.trim()) || '—';
     const meta = lines.slice(index + 1).find(line => line.includes('⏱')) || '';
     const folder = lines.find(line => /📁/.test(line))?.replace(/.*📁\s*(批次:\s*)?/, '') || '';
     return { title: clean(title), size: clean(lines[sizeIndex] || ''), percent: percent ? Math.min(100, Math.max(0, Number(percent[1]))) : null,
-        speed: meta.match(/⬇\s*(.*?)\s*·/)?.[1] || '—', eta: meta.match(/\d+:\d{2}:\d{2}/)?.[0] || '—', folder: clean(folder) };
+        speed: meta.match(/⬇\s*(.*?)\s*·/)?.[1] || '—', eta: meta.match(/\d+:\d{2}:\d{2}/)?.[0] || '—',
+        remaining: meta.split('⏱')[1]?.trim() || '—', folder: clean(folder) };
 }
 
 export function downloadCardCaption(text: string): string {
@@ -50,7 +51,7 @@ export async function renderDownloadCard(text: string): Promise<Buffer> {
         const height = Math.max(240, 100 + lines.length * 38);
         return sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="${height}"><rect width="1440" height="${height}" rx="60" fill="white"/><g font-family="Noto Sans CJK SC, Microsoft YaHei, Arial, sans-serif" font-size="28" fill="#374151">${lines.map((line, i) => `<text x="60" y="${70 + i * 38}">${escape(line)}</text>`).join('')}</g></svg>`)).png().toBuffer();
     }
-    const title = escape(shorten(data?.title || clean(text.split('\n').find(line => line.trim()) || 'Download'), 38));
+    const title = escape(shorten(data?.title || clean(text.split('\n').find(line => line.trim()) || '—'), 38));
     const percent = data?.percent;
     const overflow = text.length > 1024 ? text.split('\n').flatMap(line => clean(line).match(/.{1,55}/gu) || ['']) : [];
     const height = 420 + overflow.length * 38;
@@ -74,7 +75,7 @@ export async function renderDownloadCard(text: string): Promise<Buffer> {
         <text x="280" y="337" font-size="30" fill="#374151">↓ ${escape(data?.speed || '—')}</text>
         <path d="M575 303 V343 M970 303 V343" stroke="#E1E5ED" stroke-width="2"/>
         <circle cx="630" cy="322" r="19" fill="none" stroke="#74839B" stroke-width="4"/><path d="M630 309 V323 L640 330" stroke="#74839B" stroke-width="4" fill="none"/>
-        <text x="666" y="335" font-size="29" fill="#727B8D">剩余 ${escape(data?.eta || '—')}</text>
+        <text x="666" y="335" font-size="24" fill="#727B8D" textLength="285" lengthAdjust="spacingAndGlyphs">${escape(data.remaining)}</text>
         <path d="M1010 302 H1027 L1040 315 V342 H1010 Z M1027 302 V315 H1040" stroke="#6389BE" stroke-width="3" fill="none"/>
         <text x="1058" y="335" font-size="27" fill="#727B8D">${escape(shorten(data?.folder || '—', 16))}</text>
         ${overflow.map((line, i) => `<text x="60" y="${450 + i * 38}" font-size="28" fill="#374151">${escape(line)}</text>`).join('')}
