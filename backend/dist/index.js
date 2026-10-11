@@ -4290,7 +4290,7 @@ function extractFileInfo(message) {
 // src/i18n/telegramRussian.json
 var telegramRussian_default = {
   "progress.unknownSize": "\u0420\u0430\u0437\u043C\u0435\u0440 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u0435\u043D",
-  "progress.speedEta": "\u26A1 \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C {speed}\u3000\u23F1 \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C {eta}",
+  "progress.speedEta": "\u26A1 \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C {speed} \u23F1 \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C {eta}",
   "progress.waitingData": "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u044B\u0445; \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u0438 \u043E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u043F\u043E\u043A\u0430 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B.",
   "progress.saving": "\u{1F4BE} \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u043C \u0444\u0430\u0439\u043B\u2026",
   "bot.comments.title": "\u{1F3AC} \u0412\u0438\u0434\u0435\u043E \u0432 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u0445: {count} \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 (\u043F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u043E {scanned} \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0435\u0432)",
@@ -4309,8 +4309,12 @@ var telegramRussian_default = {
   "bot.comments.loading": "\u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u043C \u0431\u043E\u043B\u0435\u0435 \u0440\u0430\u043D\u043D\u0438\u0435 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0438\u2026",
   "bot.comments.selected": "\u0412\u044B\u0431\u0440\u0430\u043D\u043E. \u0421\u043E\u0437\u0434\u0430\u0451\u043C \u0437\u0430\u0434\u0430\u0447\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438\u2026",
   "folderBrowser.title": "\u{1F4C1} \u041F\u0430\u043F\u043A\u0430: {folder}",
-  "folderBrowser.page": "\u0421\u0442\u0440\u0430\u043D\u0438\u0446\u0430 {page} / {total} \xB7 \u041E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u043F\u0430\u043F\u043A\u0443 \u0438\u043B\u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u0435\u0451 \u0438\u043C\u044F",
-  "folderBrowser.copy": "\u{1F4CB} \u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0438\u043C\u044F \u043F\u0430\u043F\u043A\u0438",
+  "folderBrowser.page": "\u0421\u0442\u0440\u0430\u043D\u0438\u0446\u0430 {page} / {total}",
+  "folderBrowser.count": "\u{1F4C2} \u041F\u0430\u043F\u043E\u043A: {folders} \xB7 \u{1F4C4} \u0424\u0430\u0439\u043B\u043E\u0432: {files}",
+  "folderBrowser.previous": "\u2190 \u041D\u0430\u0437\u0430\u0434",
+  "folderBrowser.next": "\u0414\u0430\u043B\u0435\u0435 \u2192",
+  "folderBrowser.root": "\u{1F3E0} \u041A\u043E\u0440\u043D\u0435\u0432\u0430\u044F \u043F\u0430\u043F\u043A\u0430",
+  "folderBrowser.refresh": "\u{1F504} \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C",
   "folderBrowser.parent": "\u21A9\uFE0F \u041D\u0430 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0432\u044B\u0448\u0435",
   "folderBrowser.empty": "\u042D\u0442\u0430 \u043F\u0430\u043F\u043A\u0430 \u043F\u0443\u0441\u0442\u0430.",
   "folderBrowser.expired": "\u041A\u043D\u043E\u043F\u043A\u0430 \u0443\u0441\u0442\u0430\u0440\u0435\u043B\u0430, \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u043E\u0441\u044C \u0438\u043B\u0438 \u043F\u0440\u0438\u043D\u0430\u0434\u043B\u0435\u0436\u0438\u0442 \u0434\u0440\u0443\u0433\u043E\u043C\u0443 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044E. \u041E\u0442\u043F\u0440\u0430\u0432\u044C\u0442\u0435 /files \u0441\u043D\u043E\u0432\u0430.",
@@ -5700,8 +5704,12 @@ var resources = {
     "bot.comments.cancelled": "\u5DF2\u53D6\u6D88\u672C\u6B21\u9009\u62E9\uFF0C\u672A\u5F00\u59CB\u4E0B\u8F7D\u3002",
     "bot.comments.loading": "\u6B63\u5728\u68C0\u67E5\u66F4\u65E9\u7684\u8BC4\u8BBA\u2026",
     "bot.comments.selected": "\u5DF2\u9009\u62E9\uFF0C\u6B63\u5728\u63D0\u4EA4\u4E0B\u8F7D\u4EFB\u52A1\u2026",
-    "folderBrowser.page": "\u7B2C {page} / {total} \u9875 \xB7 \u70B9\u51FB\u6587\u4EF6\u5939\u8FDB\u5165\uFF0C\u70B9\u51FB\u590D\u5236\u6309\u94AE\u590D\u5236\u76EE\u5F55\u540D\u79F0",
-    "folderBrowser.copy": "\u{1F4CB} \u590D\u5236\u6587\u4EF6\u5939\u540D",
+    "folderBrowser.page": "\u7B2C {page} / {total} \u9875",
+    "folderBrowser.count": "\u{1F4C2} {folders} \u4E2A\u6587\u4EF6\u5939 \xB7 \u{1F4C4} {files} \u4E2A\u6587\u4EF6",
+    "folderBrowser.previous": "\u2190 \u4E0A\u4E00\u9875",
+    "folderBrowser.next": "\u4E0B\u4E00\u9875 \u2192",
+    "folderBrowser.root": "\u{1F3E0} \u6839\u76EE\u5F55",
+    "folderBrowser.refresh": "\u{1F504} \u5237\u65B0",
     "folderBrowser.parent": "\u21A9\uFE0F \u4E0A\u4E00\u7EA7",
     "folderBrowser.empty": "\u6B64\u6587\u4EF6\u5939\u4E3A\u7A7A\u3002",
     "folderBrowser.expired": "\u76EE\u5F55\u6309\u94AE\u5DF2\u8FC7\u671F\u3001\u5B58\u50A8\u5DF2\u5207\u6362\u6216\u4E0D\u5C5E\u4E8E\u4F60\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001 /files\u3002",
@@ -6661,8 +6669,12 @@ var resources = {
     "bot.comments.cancelled": "Selection cancelled. No download started.",
     "bot.comments.loading": "Checking older comments\u2026",
     "bot.comments.selected": "Selected. Submitting the download\u2026",
-    "folderBrowser.page": "Page {page} / {total} \xB7 Open a folder or copy its name",
-    "folderBrowser.copy": "\u{1F4CB} Copy folder name",
+    "folderBrowser.page": "Page {page} / {total}",
+    "folderBrowser.count": "\u{1F4C2} {folders} folders \xB7 \u{1F4C4} {files} files",
+    "folderBrowser.previous": "\u2190 Previous",
+    "folderBrowser.next": "Next \u2192",
+    "folderBrowser.root": "\u{1F3E0} Root",
+    "folderBrowser.refresh": "\u{1F504} Refresh",
     "folderBrowser.parent": "\u21A9\uFE0F Parent folder",
     "folderBrowser.empty": "This folder is empty.",
     "folderBrowser.expired": "This button expired, storage changed, or it belongs to another user. Send /files again.",
@@ -7422,7 +7434,30 @@ var telegramAccountRepository = new TelegramAccountRepository();
 
 // src/services/telegramUserClientPool.ts
 import { TelegramClient } from "telegram";
+
+// src/services/telegramSession.ts
 import { StringSession } from "telegram/sessions/index.js";
+var MAX_ENTITIES = 1e4;
+var TelegramSession = class extends StringSession {
+  peers = /* @__PURE__ */ new Map();
+  processEntities(value) {
+    for (const row of this._entitiesToRows(value)) {
+      const key = row[0].toString();
+      const previous = this.peers.get(key);
+      if (previous) this._entities.delete(previous);
+      this.peers.delete(key);
+      this.peers.set(key, row);
+      this._entities.add(row);
+      if (this.peers.size > MAX_ENTITIES) {
+        const oldest = this.peers.keys().next().value;
+        this._entities.delete(this.peers.get(oldest));
+        this.peers.delete(oldest);
+      }
+    }
+  }
+};
+
+// src/services/telegramUserClientPool.ts
 init_credentialCrypto();
 
 // src/services/telegramProxy.ts
@@ -7658,7 +7693,7 @@ var telegramUserClientPool = new TelegramUserClientPool({
   decryptSession: decryptCredential,
   createClient: (session, credentials, accountId) => {
     const client2 = new TelegramClient(
-      new StringSession(session),
+      new TelegramSession(session),
       credentials.apiId,
       credentials.apiHash,
       {
@@ -7723,7 +7758,6 @@ var finishTelegramDownloadAttempt = telegramAccountRepository.finishDownloadAtte
 
 // src/services/telegramMultiAccountLogin.ts
 import { Api as Api3, TelegramClient as TelegramClient2 } from "telegram";
-import { StringSession as StringSession2 } from "telegram/sessions/index.js";
 import { Raw } from "telegram/events/index.js";
 
 // src/services/telegramBotConfig.ts
@@ -8352,7 +8386,7 @@ async function getCredentials() {
   return apiId && apiHash ? { apiId, apiHash } : null;
 }
 function makeClient(credentials) {
-  const client2 = new TelegramClient2(new StringSession2(""), credentials.apiId, credentials.apiHash, {
+  const client2 = new TelegramClient2(new TelegramSession(""), credentials.apiId, credentials.apiHash, {
     proxy: getTelegramProxy(),
     connectionRetries: 15,
     retryDelay: 2e3,
@@ -9864,7 +9898,6 @@ init_storageCooldown();
 import fs10 from "node:fs";
 import path12 from "node:path";
 import { Api as Api5, TelegramClient as TelegramClient3 } from "telegram";
-import { StringSession as StringSession3 } from "telegram/sessions/index.js";
 
 // src/services/telegramUserWebLogin.ts
 import crypto11 from "node:crypto";
@@ -10085,7 +10118,7 @@ async function migrateLegacyTelegramUserSession() {
   return legacy;
 }
 function makeClient2(session, credentials) {
-  const client2 = new TelegramClient3(new StringSession3(session), credentials.apiId, credentials.apiHash, {
+  const client2 = new TelegramClient3(new TelegramSession(session), credentials.apiId, credentials.apiHash, {
     proxy: getTelegramProxy(),
     connectionRetries: 15,
     retryDelay: 2e3,
@@ -11522,7 +11555,7 @@ var DownloadTaskQueue = class {
     let retried = 0;
     for (const task of failed) {
       const group = this.groups.get(task.groupId);
-      if (!group || group.stateOverride === "cancelled" || group.stateOverride === "cancelling") continue;
+      if (!group || !task.rawExecute || group.stateOverride === "cancelled" || group.stateOverride === "cancelling") continue;
       group.failed = Math.max(0, group.failed - 1);
       this.removeHistoryTask(task);
       void this.add(task.groupId, task.fileName, task.rawExecute, task.totalSize || 0, task.onPendingCancelled).catch((error) => console.error(`[Queue] retry failed: ${task.fileName}`, error));
@@ -11594,7 +11627,7 @@ var DownloadTaskQueue = class {
     this.pushHistory(task);
   }
   removeHistoryTask(task) {
-    const index = this.history.indexOf(task);
+    const index = this.history.findIndex((item) => item.id === task.id);
     if (index >= 0) this.history.splice(index, 1);
   }
   pruneTerminalGroups() {
@@ -11606,7 +11639,13 @@ var DownloadTaskQueue = class {
   }
   pushHistory(task) {
     this.removeHistoryTask(task);
-    this.history.unshift(task);
+    this.history.unshift({
+      ...this.publicTask(task),
+      ...task.status === "failed" ? {
+        rawExecute: task.rawExecute,
+        onPendingCancelled: task.onPendingCancelled
+      } : {}
+    });
     if (this.history.length > this.maxHistory) this.history.splice(this.maxHistory);
     this.pruneTerminalGroups();
   }
@@ -18543,30 +18582,35 @@ var TelegramFolderBrowser = class {
       return new Api10.KeyboardButtonCallback({ text, data: Buffer.from(`folders_${token}`) });
     };
     const rows = [];
-    const lines = [t(locale, "folderBrowser.title", { folder: folder || t(locale, "fileBrowser.rootFolder") }), t(locale, "folderBrowser.page", { page: page + 1, total: totalPages }), ""];
+    const lines = [
+      t(locale, "folderBrowser.title", { folder: folder || t(locale, "fileBrowser.rootFolder") }),
+      t(locale, "folderBrowser.count", { folders: entries.folders.length, files: entries.files.length }),
+      t(locale, "folderBrowser.page", { page: page + 1, total: totalPages })
+    ];
     for (const entry of combined.slice(page * 10, (page + 1) * 10)) {
       if (entry.file) {
         const file = entry.file;
-        lines.push(`\u{1F4C4} ${file.name}`);
         if (file.id && file.indexed !== false) rows.push(new Api10.KeyboardButtonRow({ buttons: [new Api10.KeyboardButtonCallback({ text: `\u{1F4C4} ${file.name.slice(0, 38)}`, data: Buffer.from(`fb_detail_${file.id}`) })] }));
+        else lines.push(`\u{1F4C4} ${file.name}`);
       } else {
         const name = entry.folder.split("/").at(-1);
-        lines.push(`\u{1F4C1} ${name}`);
         rows.push(new Api10.KeyboardButtonRow({ buttons: [
-          navigate(`\u{1F4C2} ${name.slice(0, 32)}`, entry.folder),
-          new Api10.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: name })
+          navigate(`\u{1F4C2} ${name.slice(0, 32)}`, entry.folder)
         ] }));
       }
     }
     if (!combined.length) lines.push(t(locale, "folderBrowser.empty"));
     const paging = [];
-    if (page > 0) paging.push(navigate("\u2190", folder, page - 1));
-    if (page + 1 < totalPages) paging.push(navigate("\u2192", folder, page + 1));
+    if (page > 0) paging.push(navigate(t(locale, "folderBrowser.previous"), folder, page - 1));
+    if (page + 1 < totalPages) paging.push(navigate(t(locale, "folderBrowser.next"), folder, page + 1));
     if (paging.length) rows.push(new Api10.KeyboardButtonRow({ buttons: paging }));
-    if (folder) rows.push(new Api10.KeyboardButtonRow({ buttons: [
+    const navigation = [];
+    if (folder) navigation.push(
       navigate(t(locale, "folderBrowser.parent"), folder.split("/").slice(0, -1).join("/")),
-      new Api10.KeyboardButtonCopy({ text: t(locale, "folderBrowser.copy"), copyText: folder.split("/").at(-1) })
-    ] }));
+      navigate(t(locale, "folderBrowser.root"), "")
+    );
+    navigation.push(navigate(t(locale, "folderBrowser.refresh"), folder, page));
+    rows.push(new Api10.KeyboardButtonRow({ buttons: navigation }));
     return { message: lines.join("\n"), buttons: new Api10.ReplyInlineMarkup({ rows }), parseMode: false };
   }
 };
@@ -20606,7 +20650,6 @@ function installTelegramPromptCopy(client2) {
 // src/services/telegramBot.ts
 init_storage();
 init_telegramState();
-import { StringSession as StringSession4 } from "telegram/sessions/index.js";
 import { NewMessage } from "telegram/events/index.js";
 import { Raw as Raw2 } from "telegram/events/index.js";
 import fs14 from "fs";
@@ -22163,7 +22206,7 @@ async function initTelegramBot(credentialsOverride) {
     console.error("\u{1F916} Telegram Bot \u540C\u6B65\u5B58\u50A8\u914D\u7F6E\u5931\u8D25:", e);
   }
   try {
-    client = new TelegramClient7(new StringSession4(""), apiId, apiHash, {
+    client = new TelegramClient7(new TelegramSession(""), apiId, apiHash, {
       proxy: getTelegramProxy(),
       connectionRetries: 5,
       reconnectRetries: 5,

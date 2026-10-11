@@ -45,30 +45,35 @@ export class TelegramFolderBrowser {
             return new Api.KeyboardButtonCallback({ text, data: Buffer.from(`folders_${token}`) });
         };
         const rows: Api.KeyboardButtonRow[] = [];
-        const lines = [t(locale, 'folderBrowser.title', { folder: folder || t(locale, 'fileBrowser.rootFolder') }), t(locale, 'folderBrowser.page', { page: page + 1, total: totalPages }), ''];
+        const lines = [
+            t(locale, 'folderBrowser.title', { folder: folder || t(locale, 'fileBrowser.rootFolder') }),
+            t(locale, 'folderBrowser.count', { folders: entries.folders.length, files: entries.files.length }),
+            t(locale, 'folderBrowser.page', { page: page + 1, total: totalPages }),
+        ];
         for (const entry of combined.slice(page * 10, (page + 1) * 10)) {
             if (entry.file) {
                 const file = entry.file;
-                lines.push(`📄 ${file.name}`);
                 if (file.id && file.indexed !== false) rows.push(new Api.KeyboardButtonRow({ buttons: [new Api.KeyboardButtonCallback({ text: `📄 ${file.name.slice(0, 38)}`, data: Buffer.from(`fb_detail_${file.id}`) })] }));
+                else lines.push(`📄 ${file.name}`);
             } else {
                 const name = entry.folder.split('/').at(-1)!;
-                lines.push(`📁 ${name}`);
                 rows.push(new Api.KeyboardButtonRow({ buttons: [
                     navigate(`📂 ${name.slice(0, 32)}`, entry.folder),
-                    new Api.KeyboardButtonCopy({ text: t(locale, 'folderBrowser.copy'), copyText: name }),
                 ] }));
             }
         }
         if (!combined.length) lines.push(t(locale, 'folderBrowser.empty'));
         const paging: Api.TypeKeyboardButton[] = [];
-        if (page > 0) paging.push(navigate('←', folder, page - 1));
-        if (page + 1 < totalPages) paging.push(navigate('→', folder, page + 1));
+        if (page > 0) paging.push(navigate(t(locale, 'folderBrowser.previous'), folder, page - 1));
+        if (page + 1 < totalPages) paging.push(navigate(t(locale, 'folderBrowser.next'), folder, page + 1));
         if (paging.length) rows.push(new Api.KeyboardButtonRow({ buttons: paging }));
-        if (folder) rows.push(new Api.KeyboardButtonRow({ buttons: [
+        const navigation: Api.TypeKeyboardButton[] = [];
+        if (folder) navigation.push(
             navigate(t(locale, 'folderBrowser.parent'), folder.split('/').slice(0, -1).join('/')),
-            new Api.KeyboardButtonCopy({ text: t(locale, 'folderBrowser.copy'), copyText: folder.split('/').at(-1)! }),
-        ] }));
+            navigate(t(locale, 'folderBrowser.root'), ''),
+        );
+        navigation.push(navigate(t(locale, 'folderBrowser.refresh'), folder, page));
+        rows.push(new Api.KeyboardButtonRow({ buttons: navigation }));
         return { message: lines.join('\n'), buttons: new Api.ReplyInlineMarkup({ rows }), parseMode: false as const };
     }
 }
