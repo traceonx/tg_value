@@ -44,10 +44,9 @@ export function transferProgressLines(downloaded: number, total: number, sample?
     const bar = size > 0
         ? '▰'.repeat(filled) + '▱'.repeat(cells - filled)
         : '▱'.repeat(Math.floor(now / 1000) % cells) + '▰' + '▱'.repeat(cells - 1 - Math.floor(now / 1000) % cells);
-    const frame = complete ? '✓' : stale ? '⏸' : ['◐', '◓', '◑', '◒'][Math.floor(now / 1000) % 4];
     const lines = [
-        `${frame} ${bar} ${size > 0 ? `${percentage}%` : t(locale, 'progress.unknownSize')}`,
-        `📦 ${formatBytes(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes(size, locale) : '—'}`,
+        `${formatBytes(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes(size, locale) : '—'}`,
+        `${bar} ${size > 0 ? `${percentage}%` : t(locale, 'progress.unknownSize')}`,
     ];
     if (complete) return [...lines, t(locale, 'progress.saving')];
     const etaSeconds = speed && size > bytes ? Math.ceil((size - bytes) / speed) : undefined;

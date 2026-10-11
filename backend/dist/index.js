@@ -4290,7 +4290,7 @@ function extractFileInfo(message) {
 // src/i18n/telegramRussian.json
 var telegramRussian_default = {
   "progress.unknownSize": "\u0420\u0430\u0437\u043C\u0435\u0440 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u0435\u043D",
-  "progress.speedEta": "\u26A1 \u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C {speed} \u23F1 \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C {eta}",
+  "progress.speedEta": "\u2B07 {speed} \xB7 \u23F1 \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C {eta}",
   "progress.waitingData": "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0434\u0430\u043D\u043D\u044B\u0445; \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u0438 \u043E\u0441\u0442\u0430\u0432\u0448\u0435\u0435\u0441\u044F \u0432\u0440\u0435\u043C\u044F \u043F\u043E\u043A\u0430 \u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B.",
   "progress.saving": "\u{1F4BE} \u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u043C \u0444\u0430\u0439\u043B\u2026",
   "bot.comments.title": "\u{1F3AC} \u0412\u0438\u0434\u0435\u043E \u0432 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F\u0445: {count} \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 (\u043F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u043E {scanned} \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0435\u0432)",
@@ -5686,7 +5686,7 @@ var resources = {
     "bot.link.folderExpired": "\u6B64\u9009\u62E9\u5DF2\u5931\u6548\u6216\u4E0D\u5C5E\u4E8E\u4F60\uFF0C\u8BF7\u91CD\u65B0\u53D1\u9001\u94FE\u63A5\u3002",
     "folderBrowser.title": "\u{1F4C1} \u6587\u4EF6\u5939\uFF1A{folder}",
     "progress.unknownSize": "\u603B\u5927\u5C0F\u672A\u77E5",
-    "progress.speedEta": "\u26A1 \u901F\u5EA6 {speed}\u3000\u23F1 \u9884\u8BA1\u5269\u4F59 {eta}",
+    "progress.speedEta": "\u2B07 {speed} \xB7 \u23F1 \u5269\u4F59 {eta}",
     "progress.waitingData": "\u7B49\u5F85\u65B0\u6570\u636E\uFF0C\u901F\u5EA6\u548C\u5269\u4F59\u65F6\u95F4\u6682\u4E0D\u53EF\u7528\u3002",
     "progress.saving": "\u{1F4BE} \u4E0B\u8F7D\u5B8C\u6210\uFF0C\u6B63\u5728\u4FDD\u5B58\u6587\u4EF6\u2026",
     "bot.comments.title": "\u{1F3AC} \u8BC4\u8BBA\u89C6\u9891\uFF1A\u672C\u9875\u53D1\u73B0 {count} \u4E2A\uFF08\u68C0\u67E5\u4E86 {scanned} \u6761\u8BC4\u8BBA\uFF09",
@@ -6651,7 +6651,7 @@ var resources = {
     "bot.link.folderExpired": "This choice expired or belongs to another user. Send the link again.",
     "folderBrowser.title": "\u{1F4C1} Folder: {folder}",
     "progress.unknownSize": "Size unknown",
-    "progress.speedEta": "\u26A1 Speed {speed}\u3000\u23F1 Remaining {eta}",
+    "progress.speedEta": "\u2B07 {speed} \xB7 \u23F1 Remaining {eta}",
     "progress.waitingData": "Waiting for data; speed and remaining time are unavailable.",
     "progress.saving": "\u{1F4BE} Download complete. Saving file\u2026",
     "bot.comments.title": "\u{1F3AC} Comment videos: {count} found on this page ({scanned} comments checked)",
@@ -8954,10 +8954,9 @@ function transferProgressLines(downloaded, total, sample, locale = DEFAULT_LOCAL
   const percentage = complete ? "100" : (Math.floor(ratio * 1e3) / 10).toFixed(1).replace(/\.0$/, "");
   const filled = Math.floor(ratio * cells);
   const bar = size > 0 ? "\u25B0".repeat(filled) + "\u25B1".repeat(cells - filled) : "\u25B1".repeat(Math.floor(now / 1e3) % cells) + "\u25B0" + "\u25B1".repeat(cells - 1 - Math.floor(now / 1e3) % cells);
-  const frame = complete ? "\u2713" : stale ? "\u23F8" : ["\u25D0", "\u25D3", "\u25D1", "\u25D2"][Math.floor(now / 1e3) % 4];
   const lines = [
-    `${frame} ${bar} ${size > 0 ? `${percentage}%` : t(locale, "progress.unknownSize")}`,
-    `\u{1F4E6} ${formatBytes2(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes2(size, locale) : "\u2014"}`
+    `${formatBytes2(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes2(size, locale) : "\u2014"}`,
+    `${bar} ${size > 0 ? `${percentage}%` : t(locale, "progress.unknownSize")}`
   ];
   if (complete) return [...lines, t(locale, "progress.saving")];
   const etaSeconds = speed && size > bytes ? Math.ceil((size - bytes) / speed) : void 0;
@@ -9261,14 +9260,14 @@ function buildDuplicateSkipped(fileName, folder, existingId, locale = DEFAULT_LO
     t(locale, "upload.duplicateCopyAdvice")
   ].join("\n");
 }
-function buildDownloadProgress(fileName, downloaded, total, typeEmoji, startTime, locale = DEFAULT_LOCALE, sample) {
+function buildDownloadProgress(fileName, downloaded, total, typeEmoji, startTime, locale = DEFAULT_LOCALE, sample, folder) {
   const now = Date.now();
   const progress = sample || (startTime && now - startTime >= 1e3 ? { downloaded, total, bytesPerSecond: downloaded * 1e3 / (now - startTime), updatedAt: now } : void 0);
   return [
-    t(locale, "upload.downloading"),
-    ``,
     `${typeEmoji} ${fileName}`,
-    ...transferProgressLines(downloaded, total, progress, locale, now)
+    ``,
+    ...transferProgressLines(downloaded, total, progress, locale, now),
+    ...folder ? [`\u{1F4C1} ${folder}`] : []
   ].join("\n");
 }
 function buildSavingFile(fileName, typeEmoji, locale = DEFAULT_LOCALE) {
@@ -9344,6 +9343,7 @@ function buildSilentProgress(sessionTotal, batches, singleFiles = [], sessionCom
     ...currentFile ? [`\u{1F4C4} \u5F53\u524D: ${currentFile}`] : [],
     ...currentFile && activeBatch?.currentFileActive && activeBatch.currentDownloaded !== void 0 ? transferProgressLines(activeBatch.currentDownloaded, activeBatch.currentTotal || 0, activeBatch.transferProgress) : currentFile && activeSingle?.phase === "downloading" ? transferProgressLines(activeSingle.downloaded || 0, activeSingle.total || 0, activeSingle.transferProgress) : [],
     ...activeBatch ? [`\u{1F4C1} \u6279\u6B21: ${activeBatch.folderName}`] : [],
+    ...!activeBatch && activeSingle?.folder ? [`\u{1F4C1} ${activeSingle.folder}`] : [],
     ...activeBatch?.queuePending ? [`\u{1F552} \u961F\u5217\u7B49\u5F85: ${activeBatch.queuePending}`] : [],
     ``,
     ...buildTaskControlLines(taskId, queuePaused || queuePausing, pauseReason, systemPause),
@@ -9489,8 +9489,10 @@ async function buildConsolidatedStatus(singleFiles, batches) {
           detail = "\u6392\u961F";
           break;
       }
-      lines.push(`${icon} ${file.typeEmoji} ${file.fileName}`);
-      lines.push(`    \u2514 ${detail}`);
+      lines.push(`${file.phase === "downloading" ? file.typeEmoji : icon} ${file.fileName}`);
+      lines.push(file.phase === "downloading" ? detail.replaceAll("\n    ", "\n") : `    \u2514 ${detail}`);
+      if (file.phase === "downloading" && file.folder) lines.push(`\u{1F4C1} ${file.folder}`);
+      lines.push("");
     });
   }
   if ((activeBatches.length > 0 || doneBatches.length > 0) && !allCompleted) {
@@ -9631,6 +9633,94 @@ var TelegramEditCache = class {
 };
 
 // src/services/telegramUpload.ts
+import { CustomFile } from "telegram/client/uploads.js";
+
+// src/utils/telegramDownloadCard.ts
+import sharp from "sharp";
+var escape = (text) => text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[char]);
+var clean = (text) => text.replace(/\*\*|__/g, "").replace(/^\s*[└📄🎬⬇️📁📂]+\s*/u, "").replace(/^当前:\s*/, "").trim();
+var shorten = (text, length) => {
+  let width = 0;
+  let result = "";
+  for (const char of text) {
+    width += char.codePointAt(0) > 255 ? 2 : 1;
+    if (width > length) return result + "\u2026";
+    result += char;
+  }
+  return result;
+};
+function downloadCardData(text) {
+  const lines = text.split("\n");
+  const index = lines.findIndex((line) => /[▰▱]/u.test(line));
+  if (index < 0) return null;
+  const percent2 = lines[index].match(/([\d.]+)%/);
+  const sizeIndex = /\//.test(lines[index - 1] || "") ? index - 1 : index + 1;
+  const title = lines.slice(0, Math.min(index, sizeIndex)).reverse().find((line) => line.trim()) || "Download";
+  const meta = lines.slice(index + 1).find((line) => line.includes("\u23F1")) || "";
+  const folder = lines.find((line) => /📁/.test(line))?.replace(/.*📁\s*(批次:\s*)?/, "") || "";
+  return {
+    title: clean(title),
+    size: clean(lines[sizeIndex] || ""),
+    percent: percent2 ? Math.min(100, Math.max(0, Number(percent2[1]))) : null,
+    speed: meta.match(/⬇\s*(.*?)\s*·/)?.[1] || "\u2014",
+    eta: meta.match(/\d+:\d{2}:\d{2}/)?.[0] || "\u2014",
+    folder: clean(folder)
+  };
+}
+function downloadCardCaption(text) {
+  const data = downloadCardData(text);
+  if (!data) return text.length <= 1024 ? text : "";
+  const lines = text.split("\n");
+  const index = lines.findIndex((line) => /[▰▱]/u.test(line));
+  const sizeIndex = /\//.test(lines[index - 1] || "") ? index - 1 : index + 1;
+  let titleIndex = Math.min(index, sizeIndex) - 1;
+  while (titleIndex >= 0 && !lines[titleIndex].trim()) titleIndex--;
+  const metaIndex = lines.findIndex((line, i) => i > index && line.includes("\u23F1"));
+  const folderIndex = lines.findIndex((line) => /📁/.test(line));
+  const removed = /* @__PURE__ */ new Set([index, sizeIndex, titleIndex, metaIndex, folderIndex]);
+  const caption = lines.filter((_, i) => !removed.has(i)).join("\n").trim();
+  return caption.length <= 1024 ? caption : "";
+}
+async function renderDownloadCard(text) {
+  const data = downloadCardData(text);
+  if (!data) {
+    const lines = text.split("\n").flatMap((line) => Array.from(clean(line)).join("").match(/.{1,55}/gu) || [""]);
+    const height2 = Math.max(240, 100 + lines.length * 38);
+    return sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="${height2}"><rect width="1440" height="${height2}" rx="60" fill="white"/><g font-family="Noto Sans CJK SC, Microsoft YaHei, Arial, sans-serif" font-size="28" fill="#374151">${lines.map((line, i) => `<text x="60" y="${70 + i * 38}">${escape(line)}</text>`).join("")}</g></svg>`)).png().toBuffer();
+  }
+  const title = escape(shorten(data?.title || clean(text.split("\n").find((line) => line.trim()) || "Download"), 38));
+  const percent2 = data?.percent;
+  const overflow = text.length > 1024 ? text.split("\n").flatMap((line) => clean(line).match(/.{1,55}/gu) || [""]) : [];
+  const height = 420 + overflow.length * 38;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="${height}" viewBox="0 0 1440 ${height}">
+      <rect width="1440" height="${height}" fill="white"/>
+      <defs><linearGradient id="purple" x2="0" y2="1"><stop stop-color="#A383FF"/><stop offset="1" stop-color="#8968F5"/></linearGradient></defs>
+      <rect width="1440" height="420" fill="#BAD3AF"/>
+      <rect x="20" y="20" width="1400" height="380" rx="64" fill="#FFFFFF"/>
+      <path d="M42 339 Q40 380 8 400 Q53 401 77 377" fill="#FFFFFF"/>
+      <rect x="78" y="82" width="144" height="152" rx="32" fill="url(#purple)"/>
+      <path d="M177 82 H198 Q222 82 222 106 V128 H194 Q177 128 177 111" fill="#DDD3FF"/>
+      <rect x="114" y="135" width="49" height="49" rx="9" fill="#FFFFFF"/>
+      <path d="M162 150 L186 137 V184 L162 171 Z" fill="#FFFFFF"/>
+      <g font-family="Noto Sans CJK SC, Microsoft YaHei, Arial, sans-serif">
+        <text x="280" y="129" font-size="42" font-weight="700" fill="#111827">${title}</text>
+        <text x="280" y="196" font-size="36" fill="#727B8D">${escape(data?.size || "")}</text>
+        <rect x="1190" y="96" width="174" height="72" rx="36" fill="#EBF2FF"/>
+        <text x="1277" y="145" text-anchor="middle" font-size="36" font-weight="600" fill="#5593FF">${percent2 == null ? "\u2014" : percent2 + "%"}</text>
+        <rect x="280" y="229" width="1084" height="26" rx="13" fill="#EBEDF2"/>
+        <rect x="280" y="229" width="${percent2 == null ? 80 : 1084 * percent2 / 100}" height="26" rx="13" fill="#5593FF"/>
+        <text x="280" y="337" font-size="30" fill="#374151">\u2193 ${escape(data?.speed || "\u2014")}</text>
+        <path d="M575 303 V343 M970 303 V343" stroke="#E1E5ED" stroke-width="2"/>
+        <circle cx="630" cy="322" r="19" fill="none" stroke="#74839B" stroke-width="4"/><path d="M630 309 V323 L640 330" stroke="#74839B" stroke-width="4" fill="none"/>
+        <text x="666" y="335" font-size="29" fill="#727B8D">\u5269\u4F59 ${escape(data?.eta || "\u2014")}</text>
+        <path d="M1010 302 H1027 L1040 315 V342 H1010 Z M1027 302 V315 H1040" stroke="#6389BE" stroke-width="3" fill="none"/>
+        <text x="1058" y="335" font-size="27" fill="#727B8D">${escape(shorten(data?.folder || "\u2014", 16))}</text>
+        ${overflow.map((line, i) => `<text x="60" y="${450 + i * 38}" font-size="28" fill="#374151">${escape(line)}</text>`).join("")}
+      </g></svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+// src/services/telegramUpload.ts
 import { Api as Api8 } from "telegram";
 init_db();
 import fs11 from "fs";
@@ -9640,7 +9730,7 @@ import bigInt from "big-integer";
 
 // src/utils/thumbnail.ts
 import path8 from "path";
-import sharp from "sharp";
+import sharp2 from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 import fs5 from "fs";
 import crypto9 from "crypto";
@@ -9668,7 +9758,7 @@ async function generateMediaPreview(filePath, storedName, mimeType) {
     if (mimeType.startsWith("image/") && mimeType !== "image/gif") {
       const previewName = `preview_${crypto9.randomUUID()}.webp`;
       const previewPath = path8.join(PREVIEW_DIR, previewName);
-      await sharp(absFilePath).rotate().resize(2048, 2048, { fit: "inside", withoutEnlargement: true }).webp({ quality: 86, effort: 4 }).toFile(previewPath);
+      await sharp2(absFilePath).rotate().resize(2048, 2048, { fit: "inside", withoutEnlargement: true }).webp({ quality: 86, effort: 4 }).toFile(previewPath);
       console.log(`[Preview] \u2705 Image preview created: ${previewName}`);
       return previewPath;
     }
@@ -9735,7 +9825,7 @@ async function generateThumbnail(filePath, storedName, mimeType) {
   try {
     if (mimeType.startsWith("image/")) {
       console.log(`[Thumbnail] \u{1F5BC}\uFE0F  Processing image with Sharp...`);
-      await sharp(absFilePath).resize(400, 300, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toFile(thumbPath);
+      await sharp2(absFilePath).resize(400, 300, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toFile(thumbPath);
       console.log(`[Thumbnail] \u2705 Image thumbnail created: ${thumbName}`);
       return thumbPath;
     } else if (mimeType.startsWith("video/")) {
@@ -9782,7 +9872,7 @@ async function getImageDimensions(filePath, mimeType) {
   console.log(`[Dimensions] \u{1F4CF} Getting dimensions for: ${absFilePath} (${mimeType})`);
   try {
     if (mimeType.startsWith("image/")) {
-      const metadata = await sharp(absFilePath).metadata();
+      const metadata = await sharp2(absFilePath).metadata();
       const result = { width: metadata.width || 0, height: metadata.height || 0 };
       console.log(`[Dimensions] \u2705 Image dimensions: ${result.width}x${result.height}`);
       return result;
@@ -12489,6 +12579,19 @@ async function waitForDiskWatermark(requiredBytes = 0, signal) {
 function shouldRefreshLargeTaskStatus(lastStatusRefresh, completed, force = false) {
   return force || completed <= 3 || completed % 20 === 0 || Date.now() - lastStatusRefresh >= TG_LARGE_TASK_REFRESH_INTERVAL_MS;
 }
+var downloadCardMessages = /* @__PURE__ */ new WeakMap();
+function cardMessages(client2) {
+  let messages = downloadCardMessages.get(client2);
+  if (!messages) {
+    messages = /* @__PURE__ */ new Set();
+    downloadCardMessages.set(client2, messages);
+  }
+  return messages;
+}
+async function cardFile(text) {
+  const buffer = await renderDownloadCard(text);
+  return new CustomFile("download-progress.png", buffer.length, "", buffer);
+}
 async function safeEditMessage(client2, chatId, params) {
   if (!canTelegramRequest(client2)) {
     console.warn(`[Telegram] \u23F3 \u8DF3\u8FC7\u7F16\u8F91\u6D88\u606F\uFF1A\u4ECD\u5728 FloodWait \u51B7\u5374\u4E2D chat=${chatId.toString()} msg=${params?.message}`);
@@ -12503,7 +12606,18 @@ async function safeEditMessage(client2, chatId, params) {
     const result = await cache.run(
       String(chatId) + ":" + String(params.message),
       JSON.stringify(params, (_key, value) => typeof value === "bigint" ? String(value) : value),
-      () => client2.editMessage(chatId, params)
+      async () => {
+        const key = String(chatId) + ":" + String(params.message);
+        const messages = cardMessages(client2);
+        if (typeof params.text === "string" && (downloadCardData(params.text) || messages.has(key))) {
+          const file = await cardFile(params.text);
+          const result2 = await client2.editMessage(chatId, { ...params, file, forceDocument: false, text: downloadCardCaption(params.text) });
+          messages.add(key);
+          if (messages.size > 1e3) messages.delete(messages.values().next().value);
+          return result2;
+        }
+        return client2.editMessage(chatId, params);
+      }
     );
     if (process.env.TG_STATUS_DEBUG === "1") {
       const chatIdStr = chatId.toString();
@@ -12621,7 +12735,13 @@ async function ensureSilentNotice(client2, chatId, fileCount, replyToMsg) {
 async function safeReply(message, params) {
   if (!canTelegramRequest(message.client)) return null;
   try {
-    const result = await message.reply(params);
+    const isCard = downloadCardData(params.message) !== null;
+    const result = await message.reply(isCard ? { ...params, file: await cardFile(params.message), forceDocument: false, message: downloadCardCaption(params.message) } : params);
+    if (isCard && result && message.client) {
+      const messages = cardMessages(message.client);
+      messages.add(String(message.chatId) + ":" + String(result.id));
+      if (messages.size > 1e3) messages.delete(messages.values().next().value);
+    }
     if (process.env.TG_STATUS_DEBUG === "1") {
       const chatIdStr = message.chatId?.toString() || "unknown";
       const isSilent = silentSessionMap.has(chatIdStr);
@@ -14436,7 +14556,8 @@ async function handleFileUpload(client2, event) {
       fileName: finalFileName,
       typeEmoji,
       phase: "queued",
-      total: totalSize
+      total: totalSize,
+      folder: previewFolder
     });
     let statusMsg;
     const useConsolidated = () => getActiveUploadCount(chatIdStr) >= 2 || getActiveBatchCount(chatIdStr) > 0;
@@ -14450,7 +14571,7 @@ async function handleFileUpload(client2, event) {
         } else {
           await deleteLastStatusMessage(client2, chatId);
           statusMsg = await safeReply(message, {
-            message: buildDownloadProgress(finalFileName, 0, totalSize, typeEmoji, void 0, locale)
+            message: buildDownloadProgress(finalFileName, 0, totalSize, typeEmoji, void 0, locale, void 0, previewFolder)
           });
           if (statusMsg) {
             updateLastStatusMessageId(chatId, statusMsg.id, false);
@@ -14490,7 +14611,7 @@ async function handleFileUpload(client2, event) {
         await runStatusAction(chatId, async () => {
           await safeEditMessage(client2, chatId, {
             message: statusMsg.id,
-            text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, void 0, locale, sample)
+            text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, void 0, locale, sample, previewFolder)
           });
         });
       }
@@ -18297,27 +18418,27 @@ function statusLabel(value, locale) {
 }
 function buildTelegramStatusPanel(input, locale = DEFAULT_LOCALE) {
   const used = Math.max(0, input.disk.totalBytes - input.disk.freeBytes);
-  const clean = (value) => sanitizeTelegramStatusText(value, locale);
+  const clean2 = (value) => sanitizeTelegramStatusText(value, locale);
   return [
     t(locale, "status.title"),
-    t(locale, "status.requestId", { requestId: clean(input.requestId) }),
+    t(locale, "status.requestId", { requestId: clean2(input.requestId) }),
     "",
     t(locale, "status.bot", { status: statusLabel(input.bot.status, locale), degraded: input.bot.degraded ? t(locale, "status.degraded") : "", reconnectCount: input.bot.reconnectCount || 0 }),
-    t(locale, "status.userClient", { status: statusLabel(input.userClient.status, locale), username: input.userClient.username ? ` \xB7 @${clean(input.userClient.username)}` : "" }),
-    input.userClient.action ? t(locale, "status.accountRecovery", { action: clean(input.userClient.action) }) : null,
+    t(locale, "status.userClient", { status: statusLabel(input.userClient.status, locale), username: input.userClient.username ? ` \xB7 @${clean2(input.userClient.username)}` : "" }),
+    input.userClient.action ? t(locale, "status.accountRecovery", { action: clean2(input.userClient.action) }) : null,
     "",
-    t(locale, "status.storage", { provider: input.target.provider, accountName: clean(input.target.accountName) }),
+    t(locale, "status.storage", { provider: input.target.provider, accountName: clean2(input.target.accountName) }),
     t(locale, "status.probe", { status: statusLabel(input.target.probeStatus, locale) }),
     input.target.cooldownUntil ? t(locale, "status.recoveryTime", { time: formatStatusDate(input.target.cooldownUntil, locale) }) : null,
-    input.target.probeError ? t(locale, "status.storageError", { error: clean(input.target.probeError) }) : null,
+    input.target.probeError ? t(locale, "status.storageError", { error: clean2(input.target.probeError) }) : null,
     "",
     t(locale, "status.disk", { free: formatBytes2(input.disk.freeBytes, locale), total: formatBytes2(input.disk.totalBytes, locale), usedPercent: percent(used, input.disk.totalBytes) }),
     t(locale, "status.queue", { active: input.queue.active, pending: input.queue.pending, failed: input.queue.failed, paused: input.queue.paused ? t(locale, "status.queuePaused") : "" }),
     t(locale, "status.subscriptions", { enabled: input.subscriptions.enabled, lastScan: input.subscriptions.lastScanAt ? formatStatusDate(input.subscriptions.lastScanAt, locale) : t(locale, "status.none") }),
-    input.subscriptions.lastError ? t(locale, "status.subscriptionError", { error: clean(input.subscriptions.lastError) }) : null,
+    input.subscriptions.lastError ? t(locale, "status.subscriptionError", { error: clean2(input.subscriptions.lastError) }) : null,
     t(locale, "status.reconciliation", { pending: input.reconciliation.pending, operatorRequired: input.reconciliation.operatorRequired }),
     "",
-    input.bot.action ? t(locale, "status.advice", { action: clean(input.bot.action) }) : t(locale, "status.defaultAdvice")
+    input.bot.action ? t(locale, "status.advice", { action: clean2(input.bot.action) }) : t(locale, "status.defaultAdvice")
   ].filter(Boolean).join("\n");
 }
 

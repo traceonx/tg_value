@@ -410,14 +410,15 @@ export function buildDownloadProgress(
     startTime?: number,
     locale: TelegramLocale = DEFAULT_LOCALE,
     sample?: TransferProgressSample,
+    folder?: string | null,
 ): string {
     const now = Date.now();
     const progress = sample || (startTime && now - startTime >= 1000 ? { downloaded, total, bytesPerSecond: downloaded * 1000 / (now - startTime), updatedAt: now } : undefined);
     return [
-        t(locale, 'upload.downloading'),
-        ``,
         `${typeEmoji} ${fileName}`,
+        ``,
         ...transferProgressLines(downloaded, total, progress, locale, now),
+        ...(folder ? [`📁 ${folder}`] : []),
     ].join('\n');
 }
 
@@ -557,6 +558,7 @@ export function buildSilentProgress(
             : currentFile && activeSingle?.phase === 'downloading'
                 ? transferProgressLines(activeSingle.downloaded || 0, activeSingle.total || 0, activeSingle.transferProgress) : []),
         ...(activeBatch ? [`📁 批次: ${activeBatch.folderName}`] : []),
+        ...(!activeBatch && activeSingle?.folder ? [`📁 ${activeSingle.folder}`] : []),
         ...(activeBatch?.queuePending ? [`🕒 队列等待: ${activeBatch.queuePending}`] : []),
         ``,
         ...buildTaskControlLines(taskId, queuePaused || queuePausing, pauseReason, systemPause),
@@ -785,8 +787,10 @@ export async function buildConsolidatedStatus(
                     icon = '🕒'; detail = '排队'; break;
             }
 
-            lines.push(`${icon} ${file.typeEmoji} ${file.fileName}`);
-            lines.push(`    └ ${detail}`);
+            lines.push(`${file.phase === 'downloading' ? file.typeEmoji : icon} ${file.fileName}`);
+            lines.push(file.phase === 'downloading' ? detail.replaceAll('\n    ', '\n') : `    └ ${detail}`);
+            if (file.phase === 'downloading' && file.folder) lines.push(`📁 ${file.folder}`);
+            lines.push('');
         });
     }
 

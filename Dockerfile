@@ -33,7 +33,7 @@ ARG SOURCE_URL=https://github.com/hicocos/tg-vault
 LABEL org.opencontainers.image.revision=$SOURCE_REVISION \
       org.opencontainers.image.version=$SOURCE_VERSION \
       org.opencontainers.image.source=$SOURCE_URL
-RUN apk add --no-cache postgresql17 postgresql17-contrib ffmpeg ca-certificates su-exec tini bash
+RUN apk add --no-cache postgresql17 postgresql17-contrib ffmpeg ca-certificates su-exec tini bash font-noto-cjk
 WORKDIR /app
 COPY backend/package*.json ./
 COPY --from=backend-deps /app/node_modules ./node_modules

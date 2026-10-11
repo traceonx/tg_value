@@ -19,7 +19,7 @@ test('speed samples exclude queue time, calculate byte deltas and reset on retry
 });
 
 test('progress bars represent actual bytes and never round unfinished transfers to 100 percent', () => {
-    const half = transferProgressLines(500, 1000, undefined, 'en', 0)[0];
+    const half = transferProgressLines(500, 1000, undefined, 'en', 0)[1];
     assert.equal((half.match(/▰/g) || []).length, 6);
     assert.match(half, /50%/);
     assert.doesNotMatch(transferProgressLines(9999, 10_000, undefined, 'en', 0).join('\n'), /100%|Saving/);

@@ -27,7 +27,7 @@ LABEL org.opencontainers.image.revision=$SOURCE_REVISION \
 WORKDIR /app
 
 # 安装 sharp 需要的依赖 和 ffmpeg (用于视频处理)
-RUN apk add --no-cache vips-dev ffmpeg ca-certificates curl
+RUN apk add --no-cache vips-dev ffmpeg ca-certificates curl font-noto-cjk
 
 # 复制依赖
 COPY package*.json ./

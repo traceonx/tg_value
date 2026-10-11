@@ -1,6 +1,8 @@
 import { TelegramDownloadCache, saveRetainingDownload, retainingProvider, isStoredDuplicate } from './telegramDownloadCache.js';
 import { canTelegramRequest } from './telegramRequestGate.js';
 import { TelegramEditCache } from './telegramEditCache.js';
+import { CustomFile } from 'telegram/client/uploads.js';
+import { downloadCardData, downloadCardCaption, renderDownloadCard } from '../utils/telegramDownloadCard.js';
 import { Api, TelegramClient } from 'telegram';
 import { classifyTelegramDownloadAccountError, finishTelegramDownloadAttempt, markTelegramAccountCooldown, markTelegramAccountSessionExpired, markTelegramAccountSourceAccess, selectTelegramDownloadAccount, startTelegramDownloadAttempt, telegramFloodWaitSeconds } from './telegramMultiAccountRuntime.js';
 import { NewMessageEvent } from 'telegram/events/index.js';
@@ -348,6 +350,16 @@ function shouldRefreshLargeTaskStatus(lastStatusRefresh: number, completed: numb
 /**
  * 安全编辑消息，捕获 FloodWaitError 并更新全局冷却状态
  */
+const downloadCardMessages = new WeakMap<TelegramClient, Set<string>>();
+function cardMessages(client: TelegramClient) {
+    let messages = downloadCardMessages.get(client);
+    if (!messages) { messages = new Set(); downloadCardMessages.set(client, messages); }
+    return messages;
+}
+async function cardFile(text: string) {
+    const buffer = await renderDownloadCard(text);
+    return new CustomFile('download-progress.png', buffer.length, '', buffer);
+}
 async function safeEditMessage(client: TelegramClient, chatId: Api.TypeEntityLike, params: any) {
     if (!canTelegramRequest(client)) {
         console.warn(`[Telegram] ⏳ 跳过编辑消息：仍在 FloodWait 冷却中 chat=${chatId.toString()} msg=${params?.message}`);
@@ -360,7 +372,18 @@ async function safeEditMessage(client: TelegramClient, chatId: Api.TypeEntityLik
         const result = await cache.run(
             String(chatId) + ':' + String(params.message),
             JSON.stringify(params, (_key, value) => typeof value === 'bigint' ? String(value) : value),
-            () => client.editMessage(chatId, params),
+            async () => {
+                const key = String(chatId) + ':' + String(params.message);
+                const messages = cardMessages(client);
+                if (typeof params.text === 'string' && (downloadCardData(params.text) || messages.has(key))) {
+                    const file = await cardFile(params.text);
+                    const result = await client.editMessage(chatId, { ...params, file, forceDocument: false, text: downloadCardCaption(params.text) });
+                    messages.add(key);
+                    if (messages.size > 1000) messages.delete(messages.values().next().value!);
+                    return result;
+                }
+                return client.editMessage(chatId, params);
+            },
         );
         if (process.env.TG_STATUS_DEBUG === '1') {
             const chatIdStr = chatId.toString();
@@ -491,7 +514,13 @@ async function safeReply(message: Api.Message, params: { message: string, button
     if (!canTelegramRequest(message.client)) return null;
 
     try {
-        const result = await message.reply(params);
+        const isCard = downloadCardData(params.message) !== null;
+        const result = await message.reply(isCard ? { ...params, file: await cardFile(params.message), forceDocument: false, message: downloadCardCaption(params.message) } : params);
+        if (isCard && result && message.client) {
+            const messages = cardMessages(message.client);
+            messages.add(String(message.chatId) + ':' + String(result.id));
+            if (messages.size > 1000) messages.delete(messages.values().next().value!);
+        }
         if (process.env.TG_STATUS_DEBUG === '1') {
             const chatIdStr = message.chatId?.toString() || 'unknown';
             const isSilent = silentSessionMap.has(chatIdStr);
@@ -2812,6 +2841,7 @@ export async function handleFileUpload(client: TelegramClient, event: NewMessage
             typeEmoji,
             phase: 'queued',
             total: totalSize,
+            folder: previewFolder,
         });
 
         let statusMsg: Api.Message | undefined;
@@ -2828,7 +2858,7 @@ export async function handleFileUpload(client: TelegramClient, event: NewMessage
                 } else {
                     await deleteLastStatusMessage(client, chatId);
                     statusMsg = await safeReply(message, {
-                        message: buildDownloadProgress(finalFileName, 0, totalSize, typeEmoji, undefined, locale),
+                        message: buildDownloadProgress(finalFileName, 0, totalSize, typeEmoji, undefined, locale, undefined, previewFolder),
                     }) as Api.Message;
                     if (statusMsg) {
                         updateLastStatusMessageId(chatId, statusMsg.id, false);
@@ -2872,7 +2902,7 @@ export async function handleFileUpload(client: TelegramClient, event: NewMessage
                 await runStatusAction(chatId, async () => {
                     await safeEditMessage(client, chatId, {
                         message: statusMsg!.id,
-                        text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, undefined, locale, sample),
+                        text: buildDownloadProgress(finalFileName, downloaded, total, typeEmoji, undefined, locale, sample, previewFolder),
                     });
                 });
             }

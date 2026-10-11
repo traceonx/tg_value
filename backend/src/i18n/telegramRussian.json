@@ -1,6 +1,6 @@
 {
   "progress.unknownSize": "Размер неизвестен",
-  "progress.speedEta": "⚡ Скорость {speed} ⏱ Осталось {eta}",
+  "progress.speedEta": "⬇ {speed} · ⏱ Осталось {eta}",
   "progress.waitingData": "Ожидание данных; скорость и оставшееся время пока неизвестны.",
   "progress.saving": "💾 Загрузка завершена. Сохраняем файл…",
   "bot.comments.title": "🎬 Видео в комментариях: {count} на странице (проверено {scanned} комментариев)",
