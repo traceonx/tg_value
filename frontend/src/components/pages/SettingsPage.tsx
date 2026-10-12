@@ -16,6 +16,7 @@ import { IndeterminateSpinner } from "../ui/IndeterminateSpinner";
 import { errorCode, errorMessage } from "../../services/unknownError";
 import { Dialog } from "../ui/Dialog";
 import { TelegramUserAccountsPanel } from "./TelegramUserAccountsPanel";
+import { DockerUpdate } from './DockerUpdate';
 
 interface SettingsPageProps {
     storageStats?: StorageStats | null;
@@ -1128,6 +1129,7 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                         </div>
                     }
                 />
+                <DockerUpdate />
             </SettingsSection>
             </>}
 
@@ -2533,8 +2535,8 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                         <div className="flex min-w-0 flex-1 items-center gap-3">
                             <div className="rounded-lg bg-muted p-2 text-muted-foreground"><Server className="h-4 w-4" /></div>
                             <div className="min-w-0 flex-1">
-                                <span className="ru-copy text-sm font-medium">{t('settings.openlist.accounts')}</span>
-                                <p className="ru-copy text-xs text-muted-foreground">{t('settings.openlist.description')}</p>
+                                <span className="text-sm font-medium">{t('settings.openlist.accounts')}</span>
+                                <p className="text-xs text-muted-foreground">{t('settings.openlist.description')}</p>
                             </div>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => setShowOpenListForm(!showOpenListForm)}>
@@ -2564,11 +2566,11 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                     {showOpenListForm && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-border/50 bg-muted/30">
                         <div className="space-y-5 p-6">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div className="space-y-2 md:col-span-2"><label className="ru-copy text-sm font-medium">{t('settings.openlist.accountName')}</label><input value={openlistAccountName} onChange={event => setOpenlistAccountName(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={t('settings.openlist.accountPlaceholder')} /></div>
-                                <div className="space-y-2 md:col-span-2"><label className="ru-copy text-sm font-medium">{t('settings.openlist.address')}</label><input type="url" value={openlistBaseUrl} onChange={event => setOpenlistBaseUrl(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="https://openlist.example.com" /></div>
-                                <div className="space-y-2 md:col-span-2"><label className="ru-copy text-sm font-medium">{t('settings.openlist.rootPath')}</label><input value={openlistRootPath} onChange={event => setOpenlistRootPath(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="/" /><p className="ru-copy text-xs text-muted-foreground">{t('settings.openlist.rootHint')}</p></div>
-                                <div className="space-y-2"><label className="ru-copy text-sm font-medium">{t('settings.openlist.username')}</label><input autoComplete="username" value={openlistUsername} onChange={event => setOpenlistUsername(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></div>
-                                <div className="space-y-2"><label className="ru-copy text-sm font-medium">{t('settings.openlist.password')}</label><input type="password" autoComplete="new-password" value={openlistPassword} onChange={event => setOpenlistPassword(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></div>
+                                <div className="space-y-2 md:col-span-2"><label className="text-sm font-medium">{t('settings.openlist.accountName')}</label><input value={openlistAccountName} onChange={event => setOpenlistAccountName(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={t('settings.openlist.accountPlaceholder')} /></div>
+                                <div className="space-y-2 md:col-span-2"><label className="text-sm font-medium">{t('settings.openlist.address')}</label><input type="url" value={openlistBaseUrl} onChange={event => setOpenlistBaseUrl(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="https://openlist.example.com" /></div>
+                                <div className="space-y-2 md:col-span-2"><label className="text-sm font-medium">{t('settings.openlist.rootPath')}</label><input value={openlistRootPath} onChange={event => setOpenlistRootPath(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="/" /><p className="text-xs text-muted-foreground">{t('settings.openlist.rootHint')}</p></div>
+                                <div className="space-y-2"><label className="text-sm font-medium">{t('settings.openlist.username')}</label><input autoComplete="username" value={openlistUsername} onChange={event => setOpenlistUsername(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></div>
+                                <div className="space-y-2"><label className="text-sm font-medium">{t('settings.openlist.password')}</label><input type="password" autoComplete="new-password" value={openlistPassword} onChange={event => setOpenlistPassword(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></div>
                             </div>
                             <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => { setShowOpenListForm(false); setOpenlistPassword(''); }}>{t('settings.openlist.cancel')}</Button><Button onClick={handleSaveOpenListConfig} disabled={isSaving || !openlistBaseUrl || !openlistUsername || !openlistPassword}>{isSaving ? t('settings.openlist.saving') : t('settings.openlist.save')}</Button></div>
                         </div>

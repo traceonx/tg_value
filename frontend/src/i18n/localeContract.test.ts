@@ -7,7 +7,7 @@ import { localizedApiError } from './errors';
 test('locale registry is config driven and Chinese is the safe default/fallback', () => {
   assert.equal(DEFAULT_LOCALE, 'zh-CN');
   assert.equal(FALLBACK_LOCALE, 'zh-CN');
-  assert.deepEqual(localeRegistry.map(locale => locale.code), ['zh-CN', 'en', 'ru']);
+  assert.deepEqual(localeRegistry.map(locale => locale.code), ['zh-CN', 'en']);
   assert.ok(localeRegistry.every(locale => locale.nativeName && locale.intlLocale && locale.direction && locale.aliases.length));
 });
 
@@ -16,6 +16,8 @@ test('locale aliases and unsupported values normalize safely', () => {
   assert.equal(normalizeLocale('zh-Hans-CN'), 'zh-CN');
   assert.equal(normalizeLocale('en-US'), 'en');
   assert.equal(normalizeLocale('fr-FR'), 'zh-CN');
+  assert.equal(normalizeLocale('ru-RU'), 'zh-CN');
+  assert.equal(resolveInitialLocale('ru', []), 'zh-CN');
   assert.equal(normalizeLocale(undefined), 'zh-CN');
 });
 

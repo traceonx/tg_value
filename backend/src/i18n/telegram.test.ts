@@ -25,21 +25,21 @@ test('every wizard confirmation translation renders in all supported locales', (
     const keys = [...new Set([...prompt.matchAll(/['"](bot\.wizard\.[\w.]+)['"]/g)].map(match => match[1]))];
     assert.ok(keys.includes('bot.wizard.confirmSource'));
     const values = { source: 'https://t.me/example/2104', startDate: '2026-09-10', endDate: '2026-09-10', days: 1, count: 200, folder: 'downloads', provider: 'local', account: 'local', tag: 'video', title: 'Download', value: 'included' };
-    for (const locale of ['zh-CN', 'en', 'ru'] as const) {
+    for (const locale of ['zh-CN', 'en'] as const) {
         for (const key of keys) assert.doesNotThrow(() => t(locale, key, values, { strict: true }), `${locale}:${key}`);
     }
 });
 const schema = fs.readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
 const migration = fs.readFileSync(new URL('../db/migrations/2026090101_telegram_user_locale.sql', import.meta.url), 'utf8');
-const russianMigration = fs.readFileSync(new URL('../db/migrations/2026090201_add_russian_locale.sql', import.meta.url), 'utf8');
+const removalMigration = fs.readFileSync(new URL('../db/migrations/2026101201_remove_russian_locale.sql', import.meta.url), 'utf8');
 const preferences = fs.readFileSync(new URL('../services/telegramLocalePreferences.ts', import.meta.url), 'utf8');
 
 test('Telegram locale registry defaults and falls back to Chinese', () => {
     assert.equal(DEFAULT_LOCALE, 'zh-CN');
     assert.equal(FALLBACK_LOCALE, 'zh-CN');
-    assert.deepEqual(Object.keys(TELEGRAM_LOCALES), ['zh-CN', 'en', 'ru']);
+    assert.deepEqual(Object.keys(TELEGRAM_LOCALES), ['zh-CN', 'en']);
     assert.equal(resolveLocale('en-US'), 'en');
-    assert.equal(resolveLocale('ru-RU'), 'ru');
+    assert.equal(resolveLocale('ru-RU'), 'zh-CN');
     assert.equal(resolveLocale('zh-Hans'), 'zh-CN');
     assert.equal(resolveLocale('fr'), 'zh-CN');
 });
@@ -62,11 +62,10 @@ test('locale formatting is locale aware', () => {
     assert.match(formatBytes(1536, 'en'), /1\.5 KB/);
     assert.match(formatBytes(1536, 'zh-CN'), /1\.5 KB/);
     assert.match(t('en', 'common.fileCount', { count: 2 }), /2 files/);
-    assert.equal(t('ru', 'language.changed'), '✅ Язык изменён на русский');
 });
 
 test('start keyboard translations are present in both locales', () => {
-    for (const locale of ['zh-CN', 'en', 'ru'] as const) {
+    for (const locale of ['zh-CN', 'en'] as const) {
         for (const key of ['keyboard.upload', 'keyboard.tasks', 'keyboard.storage', 'keyboard.more', 'keyboard.cancel']) {
             assert.notEqual(t(locale, key), key);
         }
@@ -85,9 +84,9 @@ test('localized command menus preserve command names and order', () => {
 
 test('locale preference is durable and existing users remain Chinese', () => {
     assert.match(schema, /CREATE TABLE IF NOT EXISTS telegram_user_locales/);
-    assert.match(schema, /locale VARCHAR\(10\) NOT NULL DEFAULT 'zh-CN' CHECK \(locale IN \('zh-CN', 'en', 'ru'\)\)/);
+    assert.match(schema, /locale VARCHAR\(10\) NOT NULL DEFAULT 'zh-CN' CHECK \(locale IN \('zh-CN', 'en'\)\)/);
     assert.match(migration, /DEFAULT 'zh-CN'/);
-    assert.match(russianMigration, /locale IN \('zh-CN', 'en', 'ru'\)/);
+    assert.match(removalMigration, /UPDATE telegram_user_locales SET locale = 'zh-CN' WHERE locale = 'ru'/);
     assert.match(preferences, /ON CONFLICT \(user_id\) DO UPDATE/);
 });
 
@@ -99,11 +98,11 @@ test('language flow is presentation-only and cannot activate account runtimes', 
     assert.match(bot, /\/language|\/lang/);
 });
 
-test('native default, Chinese, English and Russian command menus are non-critical', () => {
+test('native default, Chinese and English command menus are non-critical', () => {
     assert.match(bot, /langCode: ''/);
     assert.match(bot, /langCode: 'zh'/);
     assert.match(bot, /langCode: 'en'/);
-    assert.match(bot, /langCode: 'ru'/);
+    assert.match(bot, /ResetBotCommands/);
     assert.match(bot, /Bot 命令菜单同步失败[\s\S]*markTelegramBotReady\(\)/);
 });
 

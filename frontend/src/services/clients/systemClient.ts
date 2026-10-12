@@ -3,7 +3,30 @@ import { apiRequest } from '../httpClient';
 import { tr } from '../../i18n/runtime';
 import { getApiHeaders } from './clientHeaders';
 
+export interface DockerUpdateStatus {
+    enabled: boolean;
+    available: boolean;
+    phase: 'idle' | 'preparing' | 'running' | 'success' | 'unchanged' | 'failed';
+    startedAt?: string;
+}
+
 export class SystemClient {
+    async getDockerUpdate(signal?: AbortSignal): Promise<DockerUpdateStatus> {
+        const response = await apiRequest('/api/system/docker-update', {
+            cache: 'no-store', headers: getApiHeaders(), signal,
+        });
+        return response.json();
+    }
+
+    async startDockerUpdate(): Promise<DockerUpdateStatus> {
+        const response = await apiRequest('/api/system/docker-update', {
+            method: 'POST', cache: 'no-store',
+            headers: getApiHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ confirm: true }),
+            fallback: tr('updates.docker.requestFailed'),
+        });
+        return response.json();
+    }
     async getUpdateStatus(): Promise<UpdateStatus> {
         const response = await apiRequest('/api/system/update-status', {
             credentials: 'include',

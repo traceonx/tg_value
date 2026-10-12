@@ -1,5 +1,4 @@
-export type TelegramLocale = 'zh-CN' | 'en' | 'ru';
-import russianResources from './telegramRussian.json' with { type: 'json' };
+export type TelegramLocale = 'zh-CN' | 'en';
 export const DEFAULT_LOCALE: TelegramLocale = 'zh-CN';
 export const FALLBACK_LOCALE: TelegramLocale = 'zh-CN';
 
@@ -9,13 +8,12 @@ export interface TelegramLocaleDefinition {
     aliases: readonly string[];
     direction: 'ltr';
     intlLocale: string;
-    telegramLanguageCode: '' | 'zh' | 'en' | 'ru';
+    telegramLanguageCode: '' | 'zh' | 'en';
 }
 
 export const TELEGRAM_LOCALES: Record<TelegramLocale, TelegramLocaleDefinition> = {
     'zh-CN': { code: 'zh-CN', nativeName: '简体中文', aliases: ['zh', 'zh-cn', 'zh-hans', 'cn'], direction: 'ltr', intlLocale: 'zh-CN', telegramLanguageCode: 'zh' },
     en: { code: 'en', nativeName: 'English', aliases: ['en', 'en-us', 'en-gb'], direction: 'ltr', intlLocale: 'en', telegramLanguageCode: 'en' },
-    ru: { code: 'ru', nativeName: 'Русский', aliases: ['ru', 'ru-ru'], direction: 'ltr', intlLocale: 'ru-RU', telegramLanguageCode: 'ru' },
 };
 
 export const resources = {
@@ -1905,7 +1903,6 @@ export const resources = {
         'commands.pathInvalidDirect': '❌ Invalid path: {error}',
         'commands.pathClearedDirect': '🧹 Cleared custom next-download and chat-session folders. Automatic categorization is active again.',
     },
-    ru: russianResources,
 } as const;
 
 export type TelegramTranslationKey = keyof typeof resources['zh-CN'];

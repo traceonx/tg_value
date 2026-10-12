@@ -13,6 +13,10 @@ test('update API requires Web authentication and never caches status', () => {
     assert.match(route, /router\.get\('\/update-status', requireAuth/);
     assert.match(route, /router\.post\('\/update-check', requireAuth, manualCheckLimiter/);
     assert.match(route, /Cache-Control', 'no-store'/);
+    assert.match(route, /router\.get\('\/docker-update', requireAuth/);
+    assert.match(route, /router\.post\('\/docker-update', requireAuth, manualCheckLimiter/);
+    assert.match(route, /req\.is\('application\/json'\)/);
+    assert.match(route, /req\.body\?\.confirm !== true/);
 });
 
 test('update checker is optional infrastructure and never participates in readiness', () => {

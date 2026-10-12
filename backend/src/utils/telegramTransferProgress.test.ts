@@ -35,7 +35,7 @@ test('unknown lengths animate without inventing percentages and stalled samples 
     const sample = { downloaded: 500, total: 1000, bytesPerSecond: 100, updatedAt: 1000 };
     const stalled = transferProgressLines(500, 1000, sample, 'en', 16_000).join('\n');
     assert.match(stalled, /Waiting for data/); assert.doesNotMatch(stalled, /100 B\/s|00:00:05/);
-    for (const locale of ['zh-CN', 'en', 'ru'] as const) {
+    for (const locale of ['zh-CN', 'en'] as const) {
         assert.doesNotMatch(transferProgressLines(NaN, Infinity, undefined, locale, 0).join('\n'), /NaN|Infinity/);
     }
 });

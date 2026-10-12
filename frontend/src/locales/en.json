@@ -184,6 +184,24 @@
     "retry": "Retry"
   },
   "updates": {
+    "docker": {
+      "title": "Docker upgrade",
+      "upgrade": "Upgrade now",
+      "upgrading": "Upgrading",
+      "loading": "Loading upgrade status…",
+      "disabled": "Not enabled. Follow the deployment guide to enable Docker upgrades and mount the Docker socket.",
+      "unavailable": "Upgrade service unavailable. Check the Docker socket, default container hostname and persistent data directory.",
+      "idle": "Pull the current image tag and upgrade this container with one click.",
+      "preparing": "Preparing the updater. First use downloads Watchtower.",
+      "running": "Checking the image and upgrading. Waiting for the service to return.",
+      "success": "Upgrade complete. The new image is running and passed the container health check.",
+      "unchanged": "No image update is available.",
+      "failed": "Upgrade failed or could not be verified. Check the container and Docker logs before retrying.",
+      "reconnecting": "The service is restarting or temporarily unreachable. Reconnecting…",
+      "requestFailed": "Unable to confirm upgrade status. Check again shortly; avoid starting repeated upgrades.",
+      "confirmTitle": "Upgrade TG Vault?",
+      "confirm": "This updates the current image tag and restarts the service. Active uploads and downloads may be interrupted; let them finish first. Data mounts, ports and environment settings will be preserved."
+    },
     "bannerTitle": "TG Vault v{{latest}} is available",
     "bannerCurrent": "You are using v{{current}}",
     "viewRelease": "View release",

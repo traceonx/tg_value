@@ -1,4 +1,4 @@
-export type AppLocale = 'zh-CN' | 'en' | 'ru';
+export type AppLocale = 'zh-CN' | 'en';
 
 export interface LocaleDefinition {
   code: AppLocale;
@@ -29,14 +29,6 @@ export const localeRegistry: readonly LocaleDefinition[] = [
     direction: 'ltr',
     intlLocale: 'en-US',
     load: async () => (await import('../locales/en/index.ts')).default,
-  },
-  {
-    code: 'ru',
-    nativeName: 'Русский',
-    aliases: ['ru', 'ru-ru'],
-    direction: 'ltr',
-    intlLocale: 'ru-RU',
-    load: async () => (await import('../locales/ru/index.ts')).default,
   },
 ] as const;
 

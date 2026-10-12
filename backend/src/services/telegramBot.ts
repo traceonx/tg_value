@@ -1103,7 +1103,7 @@ async function renderStartAfterLocale(update: Api.UpdateBotCallbackQuery, userId
 
 async function handleLanguageSelection(update: Api.UpdateBotCallbackQuery, data: string): Promise<void> {
     const userId = update.userId.toJSNumber();
-    const locale: TelegramLocale = data === 'lang_en' ? 'en' : data === 'lang_ru' ? 'ru' : 'zh-CN';
+    const locale: TelegramLocale = data === 'lang_en' ? 'en' : 'zh-CN';
     await getTelegramUserLocale(userId);
     await setTelegramUserLocale(userId, locale);
     await renderStartAfterLocale(update, userId, locale);
@@ -1660,7 +1660,6 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                 { locale: DEFAULT_LOCALE, langCode: '' },
                 { locale: 'zh-CN', langCode: 'zh' },
                 { locale: 'en', langCode: 'en' },
-                { locale: 'ru', langCode: 'ru' },
             ];
             const commandMenuFingerprint = crypto.createHash('sha256').update(JSON.stringify({
                 tokenOwner: botToken.split(':', 1)[0],
@@ -1674,6 +1673,10 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                         scope: new Api.BotCommandScopeDefault(), langCode, commands,
                     })), 10_000, 'Telegram Bot 命令菜单注册超时，请稍后重试');
                 }
+                // Remove the retired language menu so Telegram falls back to the default.
+                await withTelegramClientDeadline(client.invoke(new Api.bots.ResetBotCommands({
+                    scope: new Api.BotCommandScopeDefault(), langCode: 'ru',
+                })), 10_000, 'Telegram Bot legacy command menu cleanup timed out');
                 await setSetting(TELEGRAM_BOT_COMMAND_MENU_FINGERPRINT_SETTING, commandMenuFingerprint);
                 console.log('🤖 Bot 命令菜单已更新');
             } else {

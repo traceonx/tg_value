@@ -63,8 +63,8 @@ test('large lists are bounded with an explicit omission notice', () => {
     assert.match(text, /500 个文件/);
 });
 
-test('English and Russian status text preserve locale', () => {
-    for (const locale of ['en', 'ru'] as const) {
+test('English status text preserve locale', () => {
+    for (const locale of ['en'] as const) {
         const text = buildTransferStatus([file('a.iso', 'downloading')], { locale });
         assert.doesNotMatch(text, /[\u3400-\u9fff]/);
         assert.equal(text.split('\n').filter(line => line.startsWith('⚡')).length, 1);
@@ -75,7 +75,7 @@ test('English and Russian status text preserve locale', () => {
 test('batch, silent completion and pause controls use the requested locale', async () => {
     const files = [file('a.iso', 'downloading')];
     const batch = { id: 'b', folderName: 'album', files, totalFiles: 1, completed: 0, successful: 0, failed: 0 };
-    for (const locale of ['en', 'ru'] as const) {
+    for (const locale of ['en'] as const) {
         const messages = [
             await buildConsolidatedStatus([], [batch], locale),
             buildSilentProgress(1, [batch], [], 0, 0, 'task', false, undefined, false, undefined, locale),
@@ -90,12 +90,9 @@ test('batch, silent completion and pause controls use the requested locale', asy
     }
 });
 
-test('file counts follow English and Russian plural rules', () => {
+test('file counts follow English plural rules', () => {
     assert.match(buildTransferStatus([file('a', 'success')], { locale: 'en' }), /1 file\n/);
-    for (const [count, label] of [[1, 'файл'], [2, 'файла'], [5, 'файлов']] as const) {
-        const text = buildTransferStatus(Array.from({ length: count }, () => file('a', 'success')), { locale: 'ru' });
-        assert.ok(text.startsWith(`✅ Все загрузки завершены · ${count} ${label}\n`));
-    }
+    assert.match(buildTransferStatus([file('a', 'success'), file('b', 'success')], { locale: 'en' }), /2 files\n/);
 });
 
 test('production status transport uses plain text and no generated media', () => {

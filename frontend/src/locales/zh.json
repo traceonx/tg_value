@@ -184,6 +184,24 @@
     "retry": "重试"
   },
   "updates": {
+    "docker": {
+      "title": "Docker 一键升级",
+      "upgrade": "一键升级",
+      "upgrading": "正在升级",
+      "loading": "正在读取升级状态…",
+      "disabled": "未启用。请按部署说明开启 Docker 升级并挂载 Docker socket。",
+      "unavailable": "无法使用升级服务，请检查 Docker socket、容器默认主机名和持久化数据目录。",
+      "idle": "点击后自动拉取当前镜像标签并升级此容器。",
+      "preparing": "正在准备更新服务，首次使用需要下载 Watchtower。",
+      "running": "正在检查镜像并升级，请等待服务恢复。",
+      "success": "升级完成，新镜像已启动并通过容器健康检查。",
+      "unchanged": "当前镜像没有更新。",
+      "failed": "升级未完成或结果无法确认，请检查容器和 Docker 日志后重试。",
+      "reconnecting": "服务正在重启或暂时不可达，正在重新连接…",
+      "requestFailed": "暂时无法确认升级状态，请稍后查看；请勿反复点击升级。",
+      "confirmTitle": "升级 TG Vault？",
+      "confirm": "将更新当前镜像标签并重启服务，进行中的上传和下载可能中断。建议先等待任务完成。数据目录、端口和环境配置将保留。"
+    },
     "bannerTitle": "TG Vault v{{latest}} 已发布",
     "bannerCurrent": "你当前使用 v{{current}}",
     "viewRelease": "查看更新",

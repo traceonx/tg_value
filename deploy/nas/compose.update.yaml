@@ -1,0 +1,7 @@
+# Optional: docker compose -f compose.yaml -f compose.update.yaml up -d
+services:
+  tg-vault:
+    environment:
+      DOCKER_UPDATE_ENABLED: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

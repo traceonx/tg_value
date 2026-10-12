@@ -2,9 +2,11 @@ import { Router, type Request, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { requireAuth } from './auth.js';
 import type { UpdateChecker } from '../services/updateChecker.js';
+import { createDockerUpdater, DockerError } from '../services/dockerUpdater.js';
 
 export function createSystemRouter(checker: UpdateChecker): Router {
     const router = Router();
+    const updater = createDockerUpdater();
     const manualCheckLimiter = rateLimit({
         windowMs: 60_000,
         max: 3,
@@ -34,6 +36,22 @@ export function createSystemRouter(checker: UpdateChecker): Router {
         }
     });
 
+    router.get('/docker-update', requireAuth, async (_req: Request, res: Response) => {
+        noStore(res);
+        res.json(await updater.status());
+    });
+    router.post('/docker-update', requireAuth, manualCheckLimiter, async (req: Request, res: Response) => {
+        noStore(res);
+        if (!req.is('application/json') || req.body?.confirm !== true) {
+            return res.status(400).json({ code: 'DOCKER_UPDATE_CONFIRM_REQUIRED' });
+        }
+        try {
+            res.status(202).json(await updater.start());
+        } catch (error) {
+            const status = error instanceof DockerError && [403, 409].includes(error.status) ? error.status : 503;
+            res.status(status).json({ code: 'DOCKER_UPDATE_UNAVAILABLE' });
+        }
+    });
     return router;
 }
 

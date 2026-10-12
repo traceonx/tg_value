@@ -32,9 +32,7 @@ export const formatDuration = (seconds?: number | null, locale?: AppLocale | str
   const rest = rounded % 60;
   const units = language === 'en'
     ? [[hours, hours === 1 ? 'hour' : 'hours'], [minutes, minutes === 1 ? 'minute' : 'minutes'], [rest, rest === 1 ? 'second' : 'seconds']] as const
-    : language === 'ru'
-      ? [[hours, 'ч'], [minutes, 'мин'], [rest, 'с']] as const
-      : [[hours, '小时'], [minutes, '分钟'], [rest, '秒']] as const;
+    : [[hours, '小时'], [minutes, '分钟'], [rest, '秒']] as const;
   const parts = units.filter(([value]) => value > 0).slice(0, 2).map(([value, unit]) => `${formatInteger(value, language)} ${unit}`);
-  return parts.join(language === 'zh-CN' ? '' : ' ') || (language === 'en' ? '0 seconds' : language === 'ru' ? '0 с' : '0 秒');
+  return parts.join(language === 'zh-CN' ? '' : ' ') || (language === 'en' ? '0 seconds' : '0 秒');
 };

@@ -446,7 +446,7 @@ CREATE OR REPLACE TRIGGER telegram_channel_subscriptions_updated_at
 
 CREATE TABLE IF NOT EXISTS telegram_user_locales (
     user_id BIGINT PRIMARY KEY,
-    locale VARCHAR(10) NOT NULL DEFAULT 'zh-CN' CHECK (locale IN ('zh-CN', 'en', 'ru')),
+    locale VARCHAR(10) NOT NULL DEFAULT 'zh-CN' CHECK (locale IN ('zh-CN', 'en')),
     explicit BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

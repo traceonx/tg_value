@@ -8,7 +8,7 @@ import { callbackActorMessage } from './telegramCallbackMessage.js';
 import { TELEGRAM_LOCALES } from '../i18n/telegram.js';
 
 test('seven public entries have localized menus and retain legacy commands', () => {
-    for (const locale of ['zh-CN', 'en', 'ru'] as const) {
+    for (const locale of ['zh-CN', 'en'] as const) {
         const menu = buildBotCommandMenu(locale);
         assert.equal(menu.length, 7);
         assert.equal(menu.find(item => item.command === 'settings')?.description, (menuLabels[locale] || menuLabels.zh).settings);

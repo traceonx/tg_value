@@ -96,7 +96,7 @@ test('selection is scoped, validated, expires and cannot submit duplicate downlo
 });
 
 test('menu presents file size, page navigation, post and cancel in all locales', () => {
-    for (const locale of ['zh-CN', 'en', 'ru'] as const) {
+    for (const locale of ['zh-CN', 'en'] as const) {
         const view = commentVideoMenu(page, 'a'.repeat(32), locale);
         assert.equal(view.parseMode, false);
         assert.match(view.message, /clip.mp4/); assert.match(view.message, /1[.,]5/);
