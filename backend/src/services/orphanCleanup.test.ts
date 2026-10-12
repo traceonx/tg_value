@@ -5,7 +5,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { cleanupOrphanFiles, isAutoCleanupEnabled } from './orphanCleanup.js';
 
-test('legacy enabled cleanup preserves old unindexed torrent files and empty folders', async () => {
+test('legacy enabled cleanup preserves old unindexed torrent files and empty folders', async (t) => {
+    // Node 22 can misparse non-ASCII stdout as test IPC (nodejs/node#65934).
+    // Capture this expected log and assert it instead of writing it to the pipe.
+    const log = t.mock.method(console, 'log', () => undefined);
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'orphan-safety-'));
     const previousDir = process.env.UPLOAD_DIR;
     const previousEnabled = process.env.AUTO_CLEANUP_ORPHANS;
@@ -18,6 +21,8 @@ test('legacy enabled cleanup preserves old unindexed torrent files and empty fol
         await fs.writeFile(file, 'external download');
         await fs.utimes(file, new Date(0), new Date(0));
         const result = await cleanupOrphanFiles();
+        assert.equal(log.mock.callCount(), 1);
+        assert.match(String(log.mock.calls[0].arguments[0]), /已跳过孤儿文件删除/);
         assert.equal(result.deletedCount, 0);
         assert.equal(result.freedBytes, 0);
         assert.equal(await fs.readFile(file, 'utf8'), 'external download');
