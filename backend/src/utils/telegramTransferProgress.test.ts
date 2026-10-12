@@ -19,8 +19,8 @@ test('speed samples exclude queue time, calculate byte deltas and reset on retry
 });
 
 test('progress bars represent actual bytes and never round unfinished transfers to 100 percent', () => {
-    const half = transferProgressLines(500, 1000, undefined, 'en', 0)[1];
-    assert.equal((half.match(/▰/g) || []).length, 6);
+    const half = transferProgressLines(500, 1000, undefined, 'en', 0)[0];
+    assert.equal((half.match(/▰/g) || []).length, 5);
     assert.match(half, /50%/);
     assert.doesNotMatch(transferProgressLines(9999, 10_000, undefined, 'en', 0).join('\n'), /100%|Saving/);
     const done = transferProgressLines(10_000, 10_000, undefined, 'en', 0).join('\n');
@@ -50,7 +50,7 @@ test('single, consolidated and silent cards include current file byte progress',
         await buildConsolidatedStatus([{ fileName: 'clip.mp4', typeEmoji: '🎬', phase: 'downloading', downloaded: 500, total: 1000, transferProgress: sample }], []),
         buildSilentProgress(2, [batch]),
     ]) {
-        assert.match(text, /clip.mp4/); assert.match(text, /▰{6}▱{6} 50%/);
+        assert.match(text, /clip.mp4/); assert.match(text, /▰{5}▱{5} 50%/);
         assert.match(text, /100 B\/s/); assert.match(text, /00:00:05/);
     }
     const paused = buildSilentProgress(2, [batch], [], 0, 0, undefined, true);

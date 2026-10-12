@@ -37,7 +37,7 @@ export function transferProgressLines(downloaded: number, total: number, sample?
     const complete = size > 0 && bytes >= size;
     const stale = sample !== undefined && now - sample.updatedAt >= 15_000;
     const speed = !stale && Number.isFinite(sample?.bytesPerSecond) && sample!.bytesPerSecond! > 0 ? sample!.bytesPerSecond! : undefined;
-    const cells = 12;
+    const cells = 10;
     const ratio = size > 0 ? Math.min(1, bytes / size) : 0;
     const percentage = complete ? '100' : (Math.floor(ratio * 1000) / 10).toFixed(1).replace(/\.0$/, '');
     const filled = Math.floor(ratio * cells);
@@ -45,13 +45,14 @@ export function transferProgressLines(downloaded: number, total: number, sample?
         ? '▰'.repeat(filled) + '▱'.repeat(cells - filled)
         : '▱'.repeat(Math.floor(now / 1000) % cells) + '▰' + '▱'.repeat(cells - 1 - Math.floor(now / 1000) % cells);
     const lines = [
-        `${formatBytes(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes(size, locale) : '—'}`,
-        `${bar} ${size > 0 ? `${percentage}%` : t(locale, 'progress.unknownSize')}`,
+        `📊 ${bar} ${size > 0 ? `${percentage}%` : t(locale, 'progress.unknownSize')}`,
+        `💾 ${formatBytes(size > 0 ? Math.min(bytes, size) : bytes, locale)} / ${size > 0 ? formatBytes(size, locale) : '—'}`,
     ];
     if (complete) return [...lines, t(locale, 'progress.saving')];
     const etaSeconds = speed && size > bytes ? Math.ceil((size - bytes) / speed) : undefined;
     const eta = etaSeconds === undefined ? '—' : `${String(Math.floor(etaSeconds / 3600)).padStart(2, '0')}:${String(Math.floor(etaSeconds / 60) % 60).padStart(2, '0')}:${String(etaSeconds % 60).padStart(2, '0')}`;
-    lines.push(t(locale, 'progress.speedEta', { speed: speed ? `${formatBytes(speed, locale)}/s` : '—', eta }));
-    if (stale) lines.push(t(locale, 'progress.waitingData'));
+    lines.push(t(locale, 'progress.speed', { speed: speed ? `${formatBytes(speed, locale)}/s` : t(locale, 'progress.calculating') }));
+    lines.push(t(locale, 'progress.eta', { eta: etaSeconds === undefined ? t(locale, 'progress.calculating') : eta }));
+    if (stale) lines.push(`🕓 ${t(locale, 'progress.waitingData')}`);
     return lines;
 }

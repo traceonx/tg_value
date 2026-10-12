@@ -331,7 +331,7 @@ function testActiveProgressUsesCanonicalStoredDisplayName() {
         currentFileName: '雅儿贝德_01.jpg',
         currentFileActive: true,
     }], [], 0, 0, 'task', false);
-    assert.match(text, /📄 当前: 雅儿贝德_01\.jpg/);
+    assert.match(text, /📄 雅儿贝德_01\.jpg/);
     assert.doesNotMatch(text, /image_1041\.jpg/);
 }
 

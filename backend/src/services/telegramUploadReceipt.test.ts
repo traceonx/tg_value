@@ -25,7 +25,7 @@ test('production single-upload receipt includes the actual indexed file id and f
 
 test('upload receipt builders honor the recipient locale', () => {
     const text = buildUploadSuccess('photo.jpg', 1536, 'image', 's3', 'photos', '12345678-1234-4000-8000-123456789abc', 'copied', 'en');
-    assert.match(text, /Upload complete/);
+    assert.match(text, /All downloads completed/);
     assert.match(text, /1\.5 KB/);
     assert.match(text, /copy created/);
     assert.doesNotMatch(text, /上传成功|已生成副本/);

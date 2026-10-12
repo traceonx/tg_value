@@ -1,3 +1,4 @@
+import { buildTransferStatus, transferName } from './transferStatus.js';
 /**
  * telegramMessages.ts - 统一消息模板模块
  * 
@@ -21,33 +22,18 @@ interface TaskSystemPauseView {
     retryAt?: string;
 }
 
-function buildTaskControlLines(taskId?: string, queuePaused = false, pauseReason?: string, systemPause?: TaskSystemPauseView): string[] {
+function buildTaskControlLines(taskId?: string, queuePaused = false, pauseReason?: string, systemPause?: TaskSystemPauseView, locale: TelegramLocale = DEFAULT_LOCALE, queuePausing = false): string[] {
     if (!taskId) return [];
-    if (queuePaused) {
-        const systemPaused = Boolean(systemPause);
-        const pausing = !systemPause && /随后暂停|完成当前文件/.test(pauseReason || '');
-        const recoveryLine = systemPause
-            ? systemPause.autoResume
-                ? systemPause.retryAt
-                    ? `♻️ 预计在 ${systemPause.retryAt} 后自动恢复`
-                    : systemPause.recheckMs
-                        ? `♻️ 每 ${Math.max(1, Math.round(systemPause.recheckMs / 1_000))} 秒重新检查，条件满足后自动恢复`
-                        : `♻️ 条件满足后自动恢复`
-                : `⚠️ 处理原因后可重试`
-            : pausing
-                ? `点击“继续”可撤销暂停`
-                : `点击“继续”恢复任务`;
-        return [
-            systemPaused
-                ? `当前状态：系统保护暂停`
-                : pausing
-                    ? `⏸️ 正在暂停`
-                    : `当前状态：用户暂停`,
-            pauseReason ? `原因：${pauseReason}` : '',
-            recoveryLine,
-        ].filter(Boolean);
-    }
-    return ['👇 使用下方按钮管理此任务。'];
+    if (!queuePaused) return [t(locale, 'transfer.control.hint')];
+    const pausing = queuePausing || (!systemPause && /随后暂停|完成当前文件/.test(pauseReason || ''));
+    const state = systemPause ? 'system' : pausing ? 'pausing' : 'user';
+    const reason = pauseReason && (locale === 'zh-CN' || !/[\u3400-\u9fff]/.test(pauseReason)) ? pauseReason
+        : systemPause ? t(locale, 'transfer.control.' + (systemPause.kind === 'disk_pressure' ? 'disk' : systemPause.kind === 'storage_cooldown' ? 'storage' : 'telegram')) : undefined;
+    const recovery = systemPause ? !systemPause.autoResume ? t(locale, 'transfer.control.fix')
+        : systemPause.retryAt ? t(locale, 'transfer.control.resumeAt', { time: formatDate(systemPause.retryAt, locale) })
+        : systemPause.recheckMs ? t(locale, 'transfer.control.check', { seconds: Math.max(1, Math.round(systemPause.recheckMs / 1000)) })
+        : t(locale, 'transfer.control.auto') : t(locale, pausing ? 'transfer.control.undo' : 'transfer.control.resume');
+    return [t(locale, 'transfer.control.' + state), ...(reason ? [t(locale, 'transfer.control.reason', { reason })] : []), recovery];
 }
 
 export function buildTaskControlButtons(taskId?: string, queuePaused = false, systemPause?: TaskSystemPauseView, queuePausing = false, userPaused = queuePaused && !systemPause, failedCount = 0, locale: TelegramLocale = DEFAULT_LOCALE): Api.ReplyInlineMarkup | undefined {
@@ -354,25 +340,11 @@ export function buildUploadSuccess(
     fileId?: string | null,
     duplicateOutcome?: 'copied' | 'skipped' | null,
     locale: TelegramLocale = DEFAULT_LOCALE,
+    startedAt?: number,
 ): string {
-    const typeEmoji = getTypeEmoji(
-        fileType === 'image' ? 'image/' :
-            fileType === 'video' ? 'video/' :
-                fileType === 'audio' ? 'audio/' : 'other'
-    );
-    const bar = generateProgressBar(1, 1);
-    return [
-        t(locale, 'upload.success'),
-        `${bar}`,
-        ``,
-        `${typeEmoji} ${fileName}`,
-        `📦 ${formatLocalizedBytes(size, locale)}`,
-        `📍 ${getProviderDisplayName(providerName)}`,
-        ...(folder ? [`📁 ${folder}`] : []),
-        ...(fileId ? [`🆔 ${fileId.slice(0, 13)}`] : []),
+    return [buildTransferStatus([{ fileName, size, fileType, providerName, folder, typeEmoji: '📄', phase: 'success', startedAt, endedAt: Date.now() }], { locale }),
         ...(duplicateOutcome ? [t(locale, duplicateOutcome === 'copied' ? 'upload.duplicateCopiedOutcome' : 'upload.duplicateSkippedOutcome')] : []),
-        ``,
-        ...(fileId ? [t(locale, 'upload.manageHint')] : []),
+        ...(fileId ? [`🆔 ${fileId.slice(0, 13)}`, t(locale, 'upload.manageHint')] : []),
     ].join('\n');
 }
 
@@ -414,12 +386,7 @@ export function buildDownloadProgress(
 ): string {
     const now = Date.now();
     const progress = sample || (startTime && now - startTime >= 1000 ? { downloaded, total, bytesPerSecond: downloaded * 1000 / (now - startTime), updatedAt: now } : undefined);
-    return [
-        `${typeEmoji} ${fileName}`,
-        ``,
-        ...transferProgressLines(downloaded, total, progress, locale, now),
-        ...(folder ? [`📁 ${folder}`] : []),
-    ].join('\n');
+    return ['📄 ' + transferName(fileName), ...transferProgressLines(downloaded, total, progress, locale, now)].join('\n');
 }
 
 /** 文件保存中 */
@@ -480,6 +447,9 @@ export function buildSilentModeNotice(fileCount: number, taskId?: string, queueP
 }
 
 interface SilentProgressBatch {
+    files?: ConsolidatedUploadFile[];
+    startedAt?: number;
+    endedAt?: number;
     currentDownloaded?: number;
     currentTotal?: number;
     transferProgress?: TransferProgressSample;
@@ -496,6 +466,9 @@ interface SilentProgressBatch {
 }
 
 interface SilentProgressFile {
+    size?: number;
+    startedAt?: number;
+    endedAt?: number;
     transferProgress?: TransferProgressSample;
     fileName: string;
     phase: ConsolidatedUploadFile['phase'];
@@ -516,53 +489,15 @@ export function buildSilentProgress(
     pauseReason?: string,
     queuePausing = false,
     systemPause?: TaskSystemPauseView,
+    locale: TelegramLocale = DEFAULT_LOCALE,
 ): string {
-    const totalBatchFiles = batches.reduce((sum, batch) => sum + batch.totalFiles, 0);
-    const completedBatchFiles = batches.reduce((sum, batch) => sum + batch.completed, 0);
-    const successfulBatchFiles = batches.reduce((sum, batch) => sum + batch.successful, 0);
-    const failedBatchFiles = batches.reduce((sum, batch) => sum + batch.failed, 0);
-    const completedSingleFiles = singleFiles.filter(file => file.phase === 'success' || file.phase === 'failed').length;
-    const failedSingleFiles = singleFiles.filter(file => file.phase === 'failed').length;
-    const totalFiles = Math.max(sessionTotal, totalBatchFiles + singleFiles.length, completedBatchFiles + completedSingleFiles, sessionCompleted);
-    const completedFiles = Math.max(sessionCompleted, completedBatchFiles + completedSingleFiles);
-    const failedFiles = Math.max(sessionFailed, failedBatchFiles + failedSingleFiles);
-    const successfulFiles = Math.max(0, completedFiles - failedFiles);
-    const remainingFiles = Math.max(0, totalFiles - completedFiles);
-    const isComplete = totalFiles > 0 && remainingFiles === 0;
-    const activeBatch = batches.find(batch => batch.completed < batch.totalFiles);
-    const activeSingle = singleFiles.find(file => !['success', 'failed'].includes(file.phase));
-    const currentFile = queuePaused || queuePausing
-        ? undefined
-        : activeBatch?.currentFileActive
-            ? activeBatch.currentFileName
-            : activeSingle?.phase === 'downloading' || activeSingle?.phase === 'saving'
-                ? activeSingle.fileName
-                : undefined;
-    const progress = generateProgressBar(completedFiles, Math.max(totalFiles, 1));
-    if (isComplete) {
-        return buildSilentAllTasksComplete(totalFiles, failedFiles, taskId, singleFiles, batches);
-    }
-
+    const total = Math.max(sessionTotal, singleFiles.length + batches.reduce((sum, b) => sum + b.totalFiles, 0));
+    const completed = Math.max(sessionCompleted, singleFiles.filter(f => ['success', 'failed', 'cancelled'].includes(f.phase)).length + batches.reduce((sum, b) => sum + b.completed, 0));
+    const failed = Math.max(sessionFailed, singleFiles.filter(f => f.phase === 'failed').length + batches.reduce((sum, b) => sum + b.failed, 0));
+    if (total > 0 && completed >= total) return buildSilentAllTasksComplete(total, failed, taskId, singleFiles, batches, locale);
     return [
-        queuePaused
-            ? (systemPause ? `⏸️ **系统保护暂停**` : `⏸️ **后台下载已暂停**`)
-            : queuePausing
-                ? `⏸️ **正在完成当前文件，随后暂停**`
-                : `🤐 **后台批量处理中**`,
-        `${progress} (${completedFiles}/${totalFiles})`,
-        ``,
-        `✅ 成功: ${successfulFiles}　❌ 失败: ${failedFiles}　⏳ 剩余: ${remainingFiles}`,
-        ...(currentFile ? [`📄 当前: ${currentFile}`] : []),
-        ...(currentFile && activeBatch?.currentFileActive && activeBatch.currentDownloaded !== undefined
-            ? transferProgressLines(activeBatch.currentDownloaded, activeBatch.currentTotal || 0, activeBatch.transferProgress)
-            : currentFile && activeSingle?.phase === 'downloading'
-                ? transferProgressLines(activeSingle.downloaded || 0, activeSingle.total || 0, activeSingle.transferProgress) : []),
-        ...(activeBatch ? [`📁 批次: ${activeBatch.folderName}`] : []),
-        ...(!activeBatch && activeSingle?.folder ? [`📁 ${activeSingle.folder}`] : []),
-        ...(activeBatch?.queuePending ? [`🕒 队列等待: ${activeBatch.queuePending}`] : []),
-        ``,
-        ...buildTaskControlLines(taskId, queuePaused || queuePausing, pauseReason, systemPause),
-        ...(taskId && failedFiles > 0 && remainingFiles === 0 ? [`🔄 检测到失败任务，可发送 /tg_retry ${taskId} 重试最近失败项`] : []),
+        buildTransferStatus(transferFiles(singleFiles, batches), { total, complete: false, failed, paused: queuePaused, pausing: queuePausing, locale }),
+        ...buildTaskControlLines(taskId, queuePaused || queuePausing, pauseReason, systemPause, locale, queuePausing),
     ].join('\n');
 }
 
@@ -582,36 +517,18 @@ export function buildSilentAllTasksComplete(
     taskId?: string,
     singleFiles: SilentProgressFile[] = [],
     batches: SilentProgressBatch[] = [],
+    locale: TelegramLocale = DEFAULT_LOCALE,
 ): string {
-    const successCount = Math.max(0, totalCount - failedCount);
-    const providers = new Set<string>();
-    singleFiles.filter(f => f.phase === 'success' && f.providerName).forEach(f => providers.add(f.providerName!));
-    batches.filter(b => b.providerName).forEach(b => providers.add(b.providerName!));
-    const folders = collectCompletedFolders(singleFiles, batches);
-    const detailLines = [
-        ...(providers.size > 0 ? [`📍 存储: ${Array.from(providers).map(p => getProviderDisplayName(p)).join(', ')}`] : []),
-        ...formatFolderSummary(folders),
-    ];
-
-    if (failedCount > 0) {
-        return [
-            `⚠️ **后台任务部分完成**`,
-            ``,
-            ...(taskId ? [`🆔 任务：\`${taskId}\``] : []),
-            `✅ 成功: ${successCount} 个文件`,
-            `❌ 失败: ${failedCount} 个文件`,
-            `📊 总计: ${totalCount} 个文件`,
-            ...detailLines,
-            ``,
-            ...(taskId ? [`🔄 检测到失败任务，发送 /tg_retry ${taskId} 重试最近失败项`] : []),
-        ].join('\n');
-    }
-    return [`✅ **后台任务全部完成**`, ``, ...(taskId ? [`🆔 任务：\`${taskId}\``] : []), `📊 总计: ${totalCount} 个文件`, ...detailLines].join('\n');
+    return [buildTransferStatus(transferFiles(singleFiles, batches), { total: totalCount, complete: true, failed: failedCount, locale }),
+        ...(failedCount > 0 && taskId ? ['🔄 /tg_retry ' + taskId] : []),
+    ].join('\n');
 }
 
 // ─── 合并状态（单文件 + 批量） ──────────────────────────────
 
 export interface ConsolidatedUploadFile {
+    startedAt?: number;
+    endedAt?: number;
     transferProgress?: TransferProgressSample;
     id?: string;
     fileName: string;
@@ -627,6 +544,10 @@ export interface ConsolidatedUploadFile {
 }
 
 export interface ConsolidatedBatchEntry {
+    userId?: number;
+    files?: ConsolidatedUploadFile[];
+    startedAt?: number;
+    endedAt?: number;
     transferProgress?: TransferProgressSample;
     currentDownloaded?: number;
     currentTotal?: number;
@@ -654,216 +575,22 @@ export function isConsolidatedBatchDone(batch: ConsolidatedBatchEntry): boolean 
 
 export async function buildConsolidatedStatus(
     singleFiles: ConsolidatedUploadFile[],
-    batches: ConsolidatedBatchEntry[]
+    batches: ConsolidatedBatchEntry[],
+    locale: TelegramLocale = DEFAULT_LOCALE,
 ): Promise<string> {
-    const totalSingle = singleFiles.length;
-    const totalBatches = batches.length;
-    const totalTasks = totalSingle + totalBatches;
+    return buildTransferStatus(transferFiles(singleFiles, batches), {
+        locale,
+        total: singleFiles.length + batches.reduce((sum, b) => sum + b.totalFiles, 0),
+        complete: singleFiles.every(f => ['success', 'failed', 'cancelled'].includes(f.phase)) && batches.every(isConsolidatedBatchDone),
+        failed: singleFiles.filter(f => f.phase === 'failed').length + batches.reduce((sum, b) => sum + b.failed, 0),
+    });
+}
 
-    // 计算总体状态 for icon
-    const singleCompleted = singleFiles.filter(f => f.phase === 'success' || f.phase === 'failed').length;
-    const batchCompleted = batches.filter(isConsolidatedBatchDone).length;
-    const allCompleted = (singleCompleted + batchCompleted) === totalTasks;
-
-    let statusIcon = '📦';
-    let statusText = `正在处理 ${totalTasks} 个任务...`;
-
-    if (allCompleted && totalTasks > 0) {
-        // 计算完成统计
-        const successfulSingles = singleFiles.filter(f => f.phase === 'success').length;
-        const failedSingles = singleFiles.filter(f => f.phase === 'failed').length;
-        const successfulBatches = batches.reduce((sum, b) => sum + (b.successful || 0), 0);
-        const failedBatches = batches.reduce((sum, b) => sum + (b.failed || 0), 0);
-
-        const totalSuccessful = successfulSingles + successfulBatches;
-        const totalFailed = failedSingles + failedBatches;
-        const totalSize = [...singleFiles.filter(f => f.phase === 'success'), ...batches.flatMap(b => [])]
-            .reduce((sum, f) => sum + (f.size || 0), 0);
-
-        statusIcon = totalFailed === 0 ? '🎉' : '⚠️';
-        statusText = totalFailed === 0 ? '任务全部完成！' : `任务完成 (${totalFailed} 个失败)`;
-    }
-
-    const lines: string[] = [
-        `${statusIcon} **${statusText}**`,
-        '',
-    ];
-
-    // 添加完成统计摘要
-    if (allCompleted && totalTasks > 0) {
-        const successfulSingles = singleFiles.filter(f => f.phase === 'success').length;
-        const failedSingles = singleFiles.filter(f => f.phase === 'failed').length;
-        const successfulBatches = batches.reduce((sum, b) => sum + (b.successful || 0), 0);
-        const failedBatches = batches.reduce((sum, b) => sum + (b.failed || 0), 0);
-
-        const totalSuccessful = successfulSingles + successfulBatches;
-        const totalFailed = failedSingles + failedBatches;
-        const totalSize = [...singleFiles.filter(f => f.phase === 'success'), ...batches.flatMap(b => [])]
-            .reduce((sum, f) => sum + (f.size || 0), 0);
-
-        lines.push('📊 **完成摘要**');
-        lines.push(LINE);
-        lines.push(`✅ 成功: ${totalSuccessful} 个文件`);
-        if (totalFailed > 0) {
-            lines.push(`❌ 失败: ${totalFailed} 个文件`);
-        }
-        if (totalSize > 0) {
-            lines.push(`📦 总大小: ${formatBytes(totalSize)}`);
-        }
-
-        // 显示存储提供商
-        const providers = new Set<string>();
-        singleFiles.filter(f => f.phase === 'success' && f.providerName).forEach(f => providers.add(f.providerName!));
-        batches.filter(b => b.providerName).forEach(b => providers.add(b.providerName!));
-        if (providers.size > 0) {
-            lines.push(`📍 存储: ${Array.from(providers).map(p => getProviderDisplayName(p)).join(', ')}`);
-        }
-
-        const folders = collectCompletedFolders(singleFiles, batches);
-        lines.push(...formatFolderSummary(folders));
-
-        lines.push('');
-        lines.push(`⏰ 完成时间: ${new Date().toLocaleString('zh-CN', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        })}`);
-
-        // 添加失败提醒（不自动清理，避免误删）
-        if (totalFailed > 0) {
-            lines.push('');
-            lines.push('🧹 **自动清理已关闭**');
-            lines.push('  失败产生的本地临时文件不会在这里自动删除。');
-            lines.push('  如需清理，请先确认文件状态后手动处理。');
-        }
-
-        lines.push('');
-
-        // 添加友好的结束消息
-        if (totalFailed === 0) {
-            lines.push('🎊 所有文件已安全上传到云端！');
-            lines.push('💡 您可以随时使用 /list 查看上传记录');
-        } else {
-            lines.push('💡 部分文件上传失败，未自动清理服务器缓存');
-            lines.push('🔄 您可以重新发送失败的文件');
-        }
-        lines.push('');
-    }
-
-    const activeSingles = singleFiles.filter(f => f.phase === 'downloading' || f.phase === 'saving' || f.phase === 'retrying');
-    const queuedSingles = singleFiles.filter(f => f.phase === 'queued');
-    const doneSingles = singleFiles.filter(f => f.phase === 'success' || f.phase === 'failed');
-
-    const activeBatches = batches.filter(b => !isConsolidatedBatchDone(b));
-    const doneBatches = batches.filter(isConsolidatedBatchDone);
-
-    // 1. 渲染正在进行的单文件任务
-    if (activeSingles.length > 0) {
-        activeSingles.forEach(file => {
-            let icon: string;
-            let detail: string;
-
-            switch (file.phase) {
-                case 'downloading':
-                    icon = '⬇️';
-                    detail = transferProgressLines(file.downloaded || 0, file.total || 0, file.transferProgress).join('\n    ');
-                    break;
-                case 'saving':
-                    icon = '💾'; detail = '保存...'; break;
-                case 'success':
-                    icon = '✅';
-                    const parts: string[] = [];
-                    if (file.size) parts.push(formatBytes(file.size));
-                    if (file.folder) parts.push(`📁 ${file.folder}`);
-                    detail = parts.join(' · ') || '完成';
-                    break;
-                case 'failed':
-                    icon = '❌'; detail = file.error || '失败'; break;
-                case 'retrying':
-                    icon = '🔄'; detail = '重试...'; break;
-                case 'queued':
-                default:
-                    icon = '🕒'; detail = '排队'; break;
-            }
-
-            lines.push(`${file.phase === 'downloading' ? file.typeEmoji : icon} ${file.fileName}`);
-            lines.push(file.phase === 'downloading' ? detail.replaceAll('\n    ', '\n') : `    └ ${detail}`);
-            if (file.phase === 'downloading' && file.folder) lines.push(`📁 ${file.folder}`);
-            lines.push('');
-        });
-    }
-
-    // 2. 渲染批量任务 (文件夹)
-    if ((activeBatches.length > 0 || doneBatches.length > 0) && !allCompleted) {
-        if (activeSingles.length > 0) lines.push('');
-
-        [...activeBatches, ...doneBatches].forEach(batch => {
-            const isDone = isConsolidatedBatchDone(batch);
-            const icon = isDone ? (batch.failed === 0 ? '✅' : '⚠️') : '📂';
-            lines.push(`${icon} 📁 ${batch.folderName}`);
-            if (!isDone) {
-                const progress = generateProgressBar(batch.completed, batch.totalFiles);
-                lines.push(`    ${progress} (${batch.completed}/${batch.totalFiles})`);
-                if (batch.currentFileActive && batch.currentFileName) {
-                    lines.push(`    📄 当前: ${batch.currentFileName}`);
-                    if (batch.currentDownloaded !== undefined) {
-                        lines.push(...transferProgressLines(batch.currentDownloaded, batch.currentTotal || 0, batch.transferProgress).map(line => `    ${line}`));
-                    }
-                }
-            } else {
-                lines.push(`    ✅ ${batch.successful}  ❌ ${batch.failed}`);
-            }
-
-            if (batch.queuePending && batch.queuePending > 0 && !isDone) {
-                lines.push(`    ⏳ 队列: ${batch.queuePending}`);
-            }
-            if (batch.providerName && isDone) {
-                lines.push(`    📍 ${getProviderDisplayName(batch.providerName)}`);
-            }
-            if (batch.folderPath) {
-                lines.push(`    📁 ${batch.folderPath}`);
-            }
-        });
-    }
-
-    // 3. 渲染排队中的单文件任务（必须在正在进行任务下面）
-    if (queuedSingles.length > 0) {
-        if (activeSingles.length > 0 || totalBatches > 0) lines.push('');
-        queuedSingles.forEach(file => {
-            lines.push(`🕒 ${file.typeEmoji} ${file.fileName}`);
-            lines.push(`    └ 排队`);
-        });
-    }
-
-    // 4. 渲染已完成的单文件任务 (仅在部分失败时显示详情)
-    if (doneSingles.length > 0 && !allCompleted) {
-        if (activeSingles.length > 0 || totalBatches > 0 || queuedSingles.length > 0) lines.push('');
-        doneSingles.forEach(file => {
-            let icon: string;
-            let detail: string;
-
-            switch (file.phase) {
-                case 'success':
-                    icon = '✅';
-                    const parts: string[] = [];
-                    if (file.size) parts.push(formatBytes(file.size));
-                    if (file.folder) parts.push(`📁 ${file.folder}`);
-                    detail = parts.join(' · ') || '完成';
-                    break;
-                case 'failed':
-                default:
-                    icon = '❌';
-                    detail = file.error || '失败';
-                    break;
-            }
-
-            lines.push(`${icon} ${file.typeEmoji} ${file.fileName}`);
-            lines.push(`    └ ${detail}`);
-        });
-    }
-
-    return lines.join('\n');
+function transferFiles(singleFiles: SilentProgressFile[], batches: SilentProgressBatch[]): ConsolidatedUploadFile[] {
+    return [...singleFiles.map(f => ({ typeEmoji: '📄', ...f })), ...batches.flatMap(batch => batch.files || (batch.currentFileName && batch.currentFileActive ? [{
+        fileName: batch.currentFileName, typeEmoji: '📄', phase: 'downloading' as const,
+        downloaded: batch.currentDownloaded, total: batch.currentTotal, transferProgress: batch.transferProgress,
+    }] : []))];
 }
 
 /** 系统启动清理通知 */
@@ -899,54 +626,8 @@ interface BatchStatusData {
 }
 
 export function buildBatchStatus(data: BatchStatusData): string {
-    const total = data.files.length;
-    const completed = data.files.filter(f => f.status === 'success' || f.status === 'failed').length;
-    const successful = data.files.filter(f => f.status === 'success').length;
-    const failed = data.files.filter(f => f.status === 'failed').length;
-
-    // 标题和状态
-    let statusIcon: string;
-    let statusText: string;
-
-    if (completed === total) {
-        if (failed === 0) { statusIcon = '✅'; statusText = '多文件上传完成！'; }
-        else if (successful === 0) { statusIcon = '❌'; statusText = '多文件上传失败'; }
-        else { statusIcon = '⚠️'; statusText = `多文件上传部分完成 (${failed} 个失败)`; }
-    } else {
-        statusIcon = '⏳'; statusText = '正在处理多文件上传...';
-    }
-
-    const lines: string[] = [
-        `${statusIcon} **${statusText}**`,
-    ];
-
-    // 文件夹名
-    if (data.folderName) {
-        lines.push(`📁 ${data.folderName}`);
-    }
-
-    // 进度
-    lines.push(`📊 进度: ${completed}/${total}  ✅ ${successful}  ❌ ${failed}`);
-    lines.push(generateProgressBar(completed, total));
-
-    // 排队提示
-    if (completed < total && (data.queuePending > 0 || data.queueActive >= 2)) {
-        lines.push(`⏳ 队列排队: ${data.queuePending}`);
-    }
-
-    // 类型和存储
-    if (successful > 0 || completed === total) {
-        const successFiles = data.files.filter(f => f.status === 'success');
-        const types = Array.from(new Set(successFiles.map(f => getTypeEmoji(f.mimeType)))).join(' ') || '❓';
-        const totalSize = successFiles.reduce((sum, f) => sum + (f.size || 0), 0);
-        lines.push(`🏷️ ${types}  📦 ${formatBytes(totalSize)}`);
-        if (data.providerName) {
-            lines.push(`📍 ${getProviderDisplayName(data.providerName)}`);
-        }
-        if (data.folderPath) {
-            lines.push(`📁 保存路径：${data.folderPath}`);
-        }
-    }
-
-    return lines.join('\n');
+    return buildTransferStatus(data.files.map(file => ({
+        ...file, typeEmoji: '📄', total: file.size,
+        phase: file.status === 'pending' ? 'queued' : file.status === 'uploading' ? 'downloading' : file.status,
+    })));
 }
