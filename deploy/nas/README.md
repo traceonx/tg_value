@@ -23,6 +23,8 @@ volumes:
 
 首次启用需要手动拉取包含此功能的新镜像，并重新创建容器；普通 `docker restart` 不会应用新增挂载。后续可直接在网页升级。`UPDATE_CHECK_ENABLED` 是 GitHub 版本提示的独立开关，设为 `false` 不影响这里的一键升级。
 
+版本提示默认检查本项目 `traceonx/tg_value` 的 GitHub Release，并隔离其他仓库的旧缓存，避免原项目的发行版导致误报。Docker 镜像版本标签取自构建代码的 `backend/package.json`；分支提交也可更新镜像，是否存在新镜像以一键升级检查为准。`UPDATE_CHECK_REPOSITORY` 仅用于明确指定其他发行来源，使用 `sunqz/tg-vault` 时请不要配置为原项目 `hicocos/tg-vault`。
+
 要求 Linux Docker、默认容器 hostname（不要自定义 `hostname`）、标准 Docker socket 和可写的持久化 `/data` 挂载。支持自定义 `container_name`，自动识别当前容器。使用可更新的标签；固定 digest、Swarm 服务或禁用 Watchtower 更新的标签不支持。镜像拉取使用 Docker 守护进程的网络配置；应用内的 Telegram 代理不等同于 Docker 镜像代理。私有仓库凭据暂不支持。
 
 Docker socket 授予应用控制宿主机 Docker 的权限，请仅向可信管理员开放网页。升级接口要求登录和明确确认。升级会重启服务，可能中断上传、下载，请先等待任务完成。建议定期备份 `/data`。

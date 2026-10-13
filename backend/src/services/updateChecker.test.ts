@@ -10,6 +10,24 @@ import {
 
 const NOW = new Date('2026-09-01T09:00:00.000Z');
 
+test('fork release checks discard upstream cache and handle an unpublished release without upgrade prompts', async () => {
+    const store = createStore();
+    store.state = { repository: 'hicocos/tg-vault', etag: 'upstream', checkedAt: NOW.toISOString(),
+        release: { version: '2.4.7', tag: 'v2.4.7', name: 'Upstream', url: 'https://github.com/hicocos/tg-vault/releases/tag/v2.4.7' } };
+    const checker = createUpdateChecker({ currentVersion: '2.4.3', store, fetch: async (input, init) => {
+        assert.equal(String(input), 'https://api.github.com/repos/traceonx/tg_value/releases/latest');
+        assert.equal(new Headers(init?.headers).has('if-none-match'), false);
+        return new Response(null, { status: 404 });
+    } });
+    assert.equal((await checker.getStatus()).latestVersion, null);
+    const status = await checker.checkNow();
+    assert.equal(status.updateAvailable, false);
+    assert.equal(status.latestVersion, null);
+    assert.equal(status.stale, false);
+    assert.ok(status.checkedAt);
+    assert.equal(store.state.repository, 'traceonx/tg_value');
+});
+
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
     return new Response(JSON.stringify(body), {
         status: init.status || 200,
@@ -52,7 +70,7 @@ test('version normalization and comparison follow release semantics without down
 test('checker uses GitHub ETag, stores successful status and detects a newer stable release', async () => {
     const requests: Array<{ url: string; headers: Headers }> = [];
     const store = createStore();
-    store.state = { etag: '"old"', checkedAt: null, release: null };
+    store.state = { repository: 'hicocos/tg-vault', etag: '"old"', checkedAt: null, release: null };
     const checker = createUpdateChecker({
         currentVersion: '2.1.1',
         repository: 'hicocos/tg-vault',
@@ -79,7 +97,7 @@ test('checker uses GitHub ETag, stores successful status and detects a newer sta
 
 test('304 and fetch failures preserve the last successful release instead of claiming latest', async () => {
     const store = createStore();
-    store.state = {
+    store.state = { repository: 'hicocos/tg-vault',
         etag: '"same"', checkedAt: '2026-09-01T08:00:00.000Z',
         release: { version: '2.2.0', tag: 'v2.2.0', name: 'TG Vault v2.2.0', url: 'https://example.test/v2.2.0', publishedAt: null, notes: null },
     };

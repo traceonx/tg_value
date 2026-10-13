@@ -1,7 +1,7 @@
 import type { QueryResult } from 'pg';
 import { query } from '../db/index.js';
 
-export const DEFAULT_UPDATE_REPOSITORY = 'hicocos/tg-vault';
+export const DEFAULT_UPDATE_REPOSITORY = 'traceonx/tg_value';
 export const UPDATE_STATE_KEY = 'update_checker_state_v1';
 const MAX_RELEASE_NOTES_LENGTH = 600;
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -16,6 +16,7 @@ export interface ReleaseInfo {
 }
 
 export interface PersistedUpdateState {
+    repository?: string;
     etag: string | null;
     checkedAt: string | null;
     release: ReleaseInfo | null;
@@ -87,6 +88,7 @@ export function createPostgresUpdateCheckStore(runQuery: RunQuery = query): Upda
             try {
                 const parsed = JSON.parse(String(result.rows[0].value));
                 return {
+                    repository: typeof parsed.repository === 'string' ? parsed.repository : undefined,
                     etag: typeof parsed.etag === 'string' ? parsed.etag : null,
                     checkedAt: typeof parsed.checkedAt === 'string' ? parsed.checkedAt : null,
                     release: parsed.release && typeof parsed.release === 'object' ? parsed.release as ReleaseInfo : null,
@@ -196,11 +198,15 @@ export function createUpdateChecker(options: UpdateCheckerOptions): UpdateChecke
     let transientError: string | null = null;
     let inFlight: Promise<UpdateStatus> | null = null;
 
-    const getStatus = async () => buildStatus(currentVersion, enabled, await store.loadState(), Boolean(transientError), transientError);
+    const loadState = async () => {
+        const state = await store.loadState();
+        return state?.repository === repository ? state : null;
+    };
+    const getStatus = async () => buildStatus(currentVersion, enabled, await loadState(), Boolean(transientError), transientError);
 
     const deliverPendingBotNotifications = async (): Promise<number> => {
         if (!enabled || !options.sendBotMessage) return 0;
-        const state = await store.loadState();
+        const state = await loadState();
         if (!state?.release || compareVersions(state.release.version, currentVersion) <= 0) return 0;
         let delivered = 0;
         for (const recipient of await store.listEligibleRecipients()) {
@@ -219,7 +225,7 @@ export function createUpdateChecker(options: UpdateCheckerOptions): UpdateChecke
 
     const runCheck = async (): Promise<UpdateStatus> => {
         if (!enabled) return getStatus();
-        const previous = await store.loadState();
+        const previous = await loadState();
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -239,13 +245,15 @@ export function createUpdateChecker(options: UpdateCheckerOptions): UpdateChecke
             }
             const checkedAt = now().toISOString();
             let stateAfterCheck: PersistedUpdateState;
-            if (response.status === 304 && previous?.release) {
+            if (response.status === 404) {
+                stateAfterCheck = { repository, etag: null, checkedAt, release: null };
+            } else if (response.status === 304 && previous?.release) {
                 stateAfterCheck = { ...previous, checkedAt };
             } else {
                 if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
                 const release = parseRelease(await response.json());
                 if (!release) throw new Error('latest release is not a valid stable release');
-                stateAfterCheck = { etag: response.headers.get('etag'), checkedAt, release };
+                stateAfterCheck = { repository, etag: response.headers.get('etag'), checkedAt, release };
             }
             await store.saveState(stateAfterCheck);
             transientError = null;

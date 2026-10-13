@@ -29,7 +29,7 @@ RUN npm ci --omit=dev --include=optional \
 FROM node:22-alpine3.22
 ARG SOURCE_REVISION=unknown
 ARG SOURCE_VERSION=worktree
-ARG SOURCE_URL=https://github.com/hicocos/tg-vault
+ARG SOURCE_URL=https://github.com/traceonx/tg_value
 LABEL org.opencontainers.image.revision=$SOURCE_REVISION \
       org.opencontainers.image.version=$SOURCE_VERSION \
       org.opencontainers.image.source=$SOURCE_URL

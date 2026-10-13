@@ -44,7 +44,7 @@ const PORT = process.env.PORT || 51947;
 const updateCheckEnabled = !/^(0|false|no|off)$/i.test(process.env.UPDATE_CHECK_ENABLED || 'true');
 const updateChecker = createUpdateChecker({
     currentVersion: APP_VERSION,
-    repository: process.env.UPDATE_CHECK_REPOSITORY || 'hicocos/tg-vault',
+    repository: process.env.UPDATE_CHECK_REPOSITORY,
     enabled: updateCheckEnabled,
     sendBotMessage: sendUpdateNotificationToUser,
 });
