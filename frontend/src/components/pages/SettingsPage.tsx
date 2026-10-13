@@ -1578,7 +1578,7 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                     <p className="text-xs text-muted-foreground">
                         {t('settings.remaining.shared.guidePrefix')}{" "}
                         <a
-                            href="https://hicocos.github.io/tg-vault/storage.html"
+                            href="https://github.com/traceonx/tg_value/blob/docker-hub/docs/storage.md"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 font-medium hover:underline"

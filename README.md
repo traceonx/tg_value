@@ -23,6 +23,8 @@
 
 ## 项目简介
 
+本仓库是基于开源 TG Vault 改进的独立维护版本，项目地址为 [traceonx/tg_value](https://github.com/traceonx/tg_value)，NAS 镜像为 `sunqz/tg-vault`。文档、问题反馈和版本检查均以本仓库为准。
+
 TG Vault 将 Telegram 中的文件保存到本地磁盘或配置的云存储，适合在 NAS 上归档视频、图片和文档。你可以给 Bot 发送文件或消息链接，也可以按日期、标签批量下载频道内容，并通过网页或 Bot 查看任务进度。
 
 ## 功能概览
