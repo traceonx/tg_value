@@ -184,6 +184,8 @@
     "retry": "Retry"
   },
   "updates": {
+    "noUpdate": "No new version found",
+    "checkFailed": "Check failed. Try again.",
     "docker": {
       "title": "Docker upgrade",
       "upgrade": "Upgrade now",

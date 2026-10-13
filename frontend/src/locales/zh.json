@@ -184,6 +184,8 @@
     "retry": "重试"
   },
   "updates": {
+    "noUpdate": "未发现新版本",
+    "checkFailed": "检查失败，请重试",
     "docker": {
       "title": "Docker 一键升级",
       "upgrade": "一键升级",

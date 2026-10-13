@@ -17,6 +17,7 @@ import { errorCode, errorMessage } from "../../services/unknownError";
 import { Dialog } from "../ui/Dialog";
 import { TelegramUserAccountsPanel } from "./TelegramUserAccountsPanel";
 import { DockerUpdate } from './DockerUpdate';
+import { updateStatusKey } from '../../services/updateStatus';
 
 interface SettingsPageProps {
     storageStats?: StorageStats | null;
@@ -540,6 +541,8 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
             window.dispatchEvent(new CustomEvent('tgvault:update-status', { detail: status }));
             await showNotice(status.updateAvailable
                 ? t('updates.found', { version: status.latestVersion })
+                : status.stale || status.error ? t('updates.checkFailed')
+                : !status.latestVersion ? t('updates.noUpdate')
                 : t('updates.alreadyLatest', { version: status.currentVersion }));
         } catch (error: unknown) {
             await showNotice(errorMessage(error) || t('settings.remaining.copy.175'), t('settings.remaining.copy.176'));
@@ -1115,7 +1118,7 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                             <span className="text-xs text-muted-foreground">{t('updates.current', { version: updateStatus?.currentVersion || '—' })}</span>
                             <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", updateStatus?.updateAvailable ? "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200" : "bg-muted text-muted-foreground")}>
-                                {updateStatus?.updateAvailable ? t('updates.latest', { version: updateStatus.latestVersion }) : updateStatus?.latestVersion ? t('updates.upToDate') : t('updates.waiting')}
+                                {t(updateStatusKey(updateStatus, isCheckingUpdates), { version: updateStatus?.latestVersion })}
                             </span>
                             {updateStatus?.releaseUrl && (
                                 <a href={updateStatus.releaseUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2.5 text-xs font-medium hover:bg-muted">
