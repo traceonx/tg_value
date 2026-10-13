@@ -68,7 +68,17 @@ if [[ "$(su-exec postgres psql -d postgres -Atc "SELECT 1 FROM pg_database WHERE
     su-exec postgres createdb -O tgvault tgvault
 fi
 
-su-exec node node /app/dist/index.js &
+# su-exec resets supplementary groups, so use the socket's numeric group as
+# the app's primary group. UID stays node; data files remain owned by node.
+resolve_app_user() {
+    if [[ "${DOCKER_UPDATE_ENABLED:-false}" == true && -S /var/run/docker.sock ]]; then
+        printf 'node:%s\n' "$(stat -c '%g' /var/run/docker.sock)"
+    else
+        printf 'node\n'
+    fi
+}
+app_user="$(resolve_app_user)"
+su-exec "$app_user" node /app/dist/index.js &
 app_pid=$!
 # Failure of either service stops the container so restart policies can recover it.
 set +e

@@ -9,6 +9,43 @@ cleanup() {
     docker volume rm "$volume" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+# Exercise the production user resolver against a synthetic socket, without
+# mounting the host Docker socket or granting the test access to the daemon.
+docker run --rm --entrypoint bash "$image" -Eeuo pipefail -c '
+    eval "$(sed -n "/^resolve_app_user()/,/^}/p" /usr/local/bin/tg-vault-entrypoint)"
+    export DOCKER_UPDATE_ENABLED=false
+    [[ "$(resolve_app_user)" == node ]]
+    export DOCKER_UPDATE_ENABLED=true
+    [[ "$(resolve_app_user)" == node ]]
+    node -e '\''
+        const fs = require("fs");
+        require("net").createServer().listen("/var/run/docker.sock", () => {
+            fs.chmodSync("/var/run/docker.sock", 0o660);
+        });
+    '\'' &
+    socket_pid=$!
+    trap "kill $socket_pid" EXIT
+    for ((i=0; i<50; i++)); do
+        if [[ -S /var/run/docker.sock ]]; then break; fi
+        sleep 0.1
+    done
+    [[ -S /var/run/docker.sock ]]
+    for gid in 0 42424; do
+        chown "0:$gid" /var/run/docker.sock
+        chmod 660 /var/run/docker.sock
+        if su-exec node node -e '\''require("fs").accessSync("/var/run/docker.sock", 6)'\'' 2>/dev/null; then
+            echo "Expected plain node user to lack socket access" >&2
+            exit 1
+        fi
+        [[ "$(resolve_app_user)" == "node:$gid" ]]
+        su-exec "$(resolve_app_user)" node -e '\''
+            if (process.getuid() !== 1000) throw new Error("App must retain node UID");
+            require("fs").accessSync("/var/run/docker.sock", 6);
+        '\''
+    done
+    export DOCKER_UPDATE_ENABLED=false
+    [[ "$(resolve_app_user)" == node ]]
+'
 docker volume create "$volume" >/dev/null
 docker run -d --name "$container" -p 127.0.0.1:18080:51947 \
     -e UPDATE_CHECK_ENABLED=false -v "$volume:/data" "$image"
