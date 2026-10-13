@@ -10,7 +10,7 @@ function fixture(t: test.TestContext) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vault-update-'));
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
     const target = { Id: hostname + '0'.repeat(52), Name: '/tg-vault', Image: 'sha256:old',
-        Config: { Image: 'sunqz/tg-vault:latest', Labels: {} as Record<string, string> },
+        Config: { Image: 'sunqz/tg-vault:latest', Hostname: hostname, Labels: {} as Record<string, string> },
         Mounts: [{ Destination: '/data', Source: '/nas/data', RW: true },
             { Destination: '/var/run/docker.sock', Source: '/var/run/docker.sock', RW: true }],
         State: { Running: true, Status: 'running', ExitCode: 0, Health: { Status: 'healthy' } } };
@@ -20,9 +20,11 @@ function fixture(t: test.TestContext) {
     let imageMissing = false;
     let pull = '{"status":"Downloaded"}\n';
     let startTimeout = false;
+    let replaced = false;
     const calls: { method: string; route: string }[] = [];
     const request: DockerRequest = async (method, route, body) => {
         calls.push({ method, route });
+        if (replaced && route === `/containers/${hostname}/json`) throw new DockerError(404);
         if (route === '/version') return '{"ApiVersion":"1.54"}';
         if (method === 'GET' && (route === `/containers/${hostname}/json` || route === '/containers/tg-vault/json')) return JSON.stringify(target);
         if (route.startsWith('/images/') && route.endsWith('/json')) {
@@ -32,7 +34,7 @@ function fixture(t: test.TestContext) {
         if (route.startsWith('/images/create?')) return pull;
         if (route.startsWith('/containers/create?')) {
             payload = body as Record<string, any>;
-            helper = { ...target, Config: { Image: payload.Image, Labels: payload.Labels },
+            helper = { ...target, Config: { Image: payload.Image, Hostname: 'helper', Labels: payload.Labels },
                 State: { Running: false, Status: 'created', ExitCode: 0, Health: { Status: 'healthy' } } };
             return '{"Id":"helper"}';
         }
@@ -59,6 +61,7 @@ function fixture(t: test.TestContext) {
         setLogs(value: string) { logs = value; },
         setPull(value: string) { imageMissing = true; pull = value; },
         timeoutStart() { startTimeout = true; },
+        replaceContainer() { replaced = true; target.Id = 'fedcba654321' + '0'.repeat(52); },
     };
 }
 
@@ -88,6 +91,18 @@ test('unchanged image is not reported as upgraded; helper is cleaned and retry i
     assert.equal(f.calls.filter(call => call.method === 'DELETE').length, 1);
     await f.updater.start(); await f.settle();
     assert.equal((await f.updater.status()).phase, 'running');
+});
+
+test('Watchtower replacement keeps upgrade available even when hostname still contains the removed ID', async t => {
+    const f = fixture(t);
+    await f.updater.start(); await f.settle(); f.exit(1);
+    f.target.Image = 'sha256:new';
+    f.replaceContainer();
+    const restored = createDockerUpdater(f.options);
+    assert.equal((await restored.status()).phase, 'success');
+    assert.equal((await restored.status()).available, true);
+    await restored.start(); await f.settle();
+    assert.equal((await restored.status()).phase, 'running');
 });
 
 test('new process recovers update record and waits for the new image health check', async t => {

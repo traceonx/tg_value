@@ -20,7 +20,7 @@ interface Container {
     Id: string;
     Name: string;
     Image: string;
-    Config: { Image: string; Labels?: Record<string, string> };
+    Config: { Image: string; Hostname?: string; Labels?: Record<string, string> };
     Mounts?: { Destination: string; Source: string; RW: boolean }[];
     State: { Running: boolean; Status: string; ExitCode: number; Health?: { Status: string } };
 }
@@ -85,6 +85,7 @@ export function createDockerUpdater(options: {
     let corrupt = false;
     let preparing = false;
     let checking: Promise<void> | undefined;
+    let lastError = '';
     if (enabled && fs.existsSync(stateFile)) {
         // Fail closed on a corrupt record instead of risking a second updater.
         try {
@@ -102,8 +103,16 @@ export function createDockerUpdater(options: {
     const busy = () => job.phase === 'preparing' || job.phase === 'running';
     const self = async () => {
         if (!/^[a-f0-9]{12,64}$/.test(hostname)) throw new Error('Default Docker hostname required');
-        const container = await inspect(hostname);
-        if (!container.Id.startsWith(hostname) || !container.State.Running || !container.Name.startsWith('/')) throw new Error('Cannot identify this container');
+        let container: Container;
+        try { container = await inspect(hostname); }
+        catch (error) {
+            // Watchtower preserves the old hostname when it replaces our ID.
+            // Only use the target recorded by our own previous update job.
+            if (!(error instanceof DockerError) || error.status !== 404 || !job.target) throw error;
+            container = await inspect(job.target);
+        }
+        const recordedSelf = job.target && container.Name === `/${job.target}` && container.Config.Hostname === hostname;
+        if ((!container.Id.startsWith(hostname) && !recordedSelf) || !container.State.Running || !container.Name.startsWith('/')) throw new Error('Cannot identify this container');
         if (container.Config.Image.includes('@sha256:') || container.Config.Image.startsWith('sha256:')) throw new Error('A mutable image tag is required');
         if (!container.Mounts?.some(mount => mount.Destination === '/data' && mount.RW)) throw new Error('Persistent /data required');
         if (!container.Mounts?.some(mount => mount.Destination === SOCKET && mount.Source === SOCKET)) throw new Error('Standard Docker socket mount required');
@@ -159,8 +168,12 @@ export function createDockerUpdater(options: {
         try {
             await refresh();
             await self();
+            lastError = '';
             return { enabled, available: true, phase: job.phase, startedAt: job.startedAt };
-        } catch {
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (message !== lastError) console.warn('Docker upgrade unavailable:', message);
+            lastError = message;
             return { enabled, available: false, phase: job.phase, startedAt: job.startedAt };
         }
     };
