@@ -55,6 +55,8 @@ export interface SelectedTelegramDownloadAccount<C extends TelegramPooledClient 
 
 export interface TelegramAccountSelectionOptions extends TelegramAccountSchedulingOptions {
     scope?: TelegramAccountSourceScope;
+    waitForCapacity?: boolean;
+    signal?: AbortSignal;
 }
 
 export type PublicTelegramUserAccount = Omit<TelegramUserAccountRecord, 'session'> & {
@@ -158,10 +160,12 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
     }
 
     async select(sourceKey: string, options: TelegramAccountSelectionOptions = {}): Promise<SelectedTelegramDownloadAccount<C> | null> {
+        for (;;) {
+        options.signal?.throwIfAborted();
         const scope = options.scope || 'download';
         const access = await this.deps.repository.listSourceAccess(sourceKey, scope);
         const accessByAccount = new Map<string, TelegramAccountSourceAccessRecord>(access.map(row => [row.accountId, row]));
-        const selected = selectWeightedLeastConnectedTelegramAccount([...this.entries.values()].map(entry => ({
+        const candidates = [...this.entries.values()].map(entry => ({
             accountId: entry.account.id,
             enabled: this.isRunnable(entry),
             healthState: entry.account.healthState,
@@ -171,8 +175,22 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
             activeConnections: entry.activeConnections,
             maxConnections: entry.account.maxConnections,
             sourceAccessState: accessByAccount.get(entry.account.id)?.accessState || 'unknown',
-        })), options);
-        if (!selected) return null;
+        }));
+        const selected = selectWeightedLeastConnectedTelegramAccount(candidates, options);
+        options.signal?.throwIfAborted();
+        if (!selected) {
+            // Only capacity exhaustion is waitable. Never bypass permission,
+            // session, connection, exclusion or server cooldown checks.
+            const available = selectWeightedLeastConnectedTelegramAccount(candidates.map(candidate => ({ ...candidate, activeConnections: 0 })), options);
+            if (!options.waitForCapacity || !available) return null;
+            await new Promise<void>((resolve, reject) => {
+                const abort = () => { clearTimeout(timer); options.signal?.removeEventListener('abort', abort); reject(options.signal?.reason); };
+                const timer = setTimeout(() => { options.signal?.removeEventListener('abort', abort); resolve(); }, 250);
+                options.signal?.addEventListener('abort', abort, { once: true });
+                if (options.signal?.aborted) abort();
+            });
+            continue;
+        }
         const entry = this.entries.get(selected.accountId);
         if (!entry) return null;
         entry.activeConnections += 1;
@@ -186,6 +204,7 @@ export class TelegramUserClientPool<C extends TelegramPooledClient = TelegramPoo
                 entry.activeConnections = Math.max(0, entry.activeConnections - 1);
             },
         };
+        }
     }
 
     getDefaultClient(): C | null {

@@ -249,8 +249,8 @@ async function showCommentVideos(message: Api.Message, senderId: number, link: T
     await assertTelegramSourceAllowed(link.source, [], locale);
     const folderName = telegramMessageLinkFolderName(link);
     if (link.fileName !== undefined) telegramDownloadFileName(link.fileName, '');
-    const selected = await selectTelegramDownloadAccount(link.source);
-    if (!selected) throw new Error('Telegram 用户账号下载器未就绪');
+    const selected = await selectTelegramDownloadAccount(link.source, { waitForCapacity: true });
+    if (!selected) throw new Error(t(locale, 'channels.errors.downloaderNotReady'));
     try {
         const page = await scanCommentVideos(selected.client, link.source, link.messageId, offsetId);
         if (!page) return false;
@@ -296,8 +296,8 @@ async function handleCommentVideoChoice(update: Api.UpdateBotCallbackQuery, data
 async function downloadAllCommentVideos(message: Api.Message, senderId: number, link: TelegramMessageLink, locale: TelegramLocale) {
     try {
         await assertTelegramSourceAllowed(link.source, [], locale);
-        const selected = await selectTelegramDownloadAccount(link.source);
-        if (!selected) throw new Error('Telegram 用户账号下载器未就绪');
+        const selected = await selectTelegramDownloadAccount(link.source, { waitForCapacity: true });
+        if (!selected) throw new Error(t(locale, 'channels.errors.downloaderNotReady'));
         let videos;
         try {
             videos = await collectAllCommentVideos(offset => scanCommentVideos(selected.client, link.source, link.messageId, offset));

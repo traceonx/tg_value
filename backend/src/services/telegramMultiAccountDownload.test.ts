@@ -7,7 +7,7 @@ const jobs = fs.readFileSync(new URL('./telegramChannelJobs.ts', import.meta.url
 const schema = fs.readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
 
 test('channel downloads select an account for the source and keep the selected client for a claimed batch', () => {
-    assert.match(upload, /selectTelegramDownloadAccount\(String\(source\)\)/);
+    assert.match(upload, /selectTelegramDownloadAccount\(String\(source\), \{ waitForCapacity: true, signal: taskSignal \}\)/);
     assert.match(upload, /selectedDownloadAccount\?\.client/);
     assert.match(upload, /finally[\s\S]*selectedDownloadAccount\?\.release\(\)/);
     assert.doesNotMatch(upload, /Promise\.all\([^)]*selectTelegramDownloadAccount/);

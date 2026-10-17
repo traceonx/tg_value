@@ -66,6 +66,51 @@ function createPool(rows: any[], createClient: (session: string, credentials: an
     });
 }
 
+test('more than two waiting downloads acquire released slots without exceeding the account limit', async () => {
+    const pool = createPool([account('a')], () => ({
+        connected: true, async connect() {}, async getMe() { return {}; }, async disconnect() {}, async destroy() {},
+    }));
+    await pool.initialize({ apiId: 1, apiHash: 'fake' });
+    const first = await pool.select('@source');
+    const second = await pool.select('@source');
+    assert.ok(first && second);
+    assert.equal(await pool.select('@source'), null, 'non-waiting callers retain existing behavior');
+    let finished = 0;
+    const waiting = Array.from({ length: 4 }, async () => {
+        const lease = await pool.select('@source', { waitForCapacity: true });
+        assert.ok(lease);
+        assert.ok(pool.getActiveConnections('a') <= 2);
+        lease.release();
+        finished++;
+    });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.equal(finished, 0);
+    first.release(); second.release();
+    await Promise.all(waiting);
+    assert.equal(finished, 4);
+    assert.equal(pool.getActiveConnections('a'), 0);
+});
+
+test('capacity waits are cancellable and do not wait for denied or disabled accounts', async () => {
+    const rows = [account('a')];
+    const pool = createPool(rows, () => ({
+        connected: true, async connect() {}, async getMe() { return {}; }, async disconnect() {}, async destroy() {},
+    }), { listSourceAccess: async (source: string) => source === '@denied' ? [{ accountId: 'a', accessState: 'denied' }] : [] });
+    await pool.initialize({ apiId: 1, apiHash: 'fake' });
+    const first = pool.acquireAccount('a')!;
+    const second = pool.acquireAccount('a')!;
+    assert.equal(await pool.select('@denied', { waitForCapacity: true }), null);
+    assert.equal(await pool.select('@source', { waitForCapacity: true, excludeAccountIds: ['a'] }), null);
+    const controller = new AbortController();
+    const waiting = pool.select('@source', { waitForCapacity: true, signal: controller.signal });
+    setTimeout(() => controller.abort(new Error('cancelled')), 10);
+    await assert.rejects(waiting, /cancelled/);
+    assert.equal(pool.getActiveConnections('a'), 2);
+    first.release(); second.release();
+    await pool.expireAccount('a');
+    assert.equal(await pool.select('@source', { waitForCapacity: true }), null);
+});
+
 test('restart during network failure retains persisted account and reconnects on the next initialization', async () => {
     let offline = true;
     const rows = [account('persisted')];

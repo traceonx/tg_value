@@ -2344,7 +2344,7 @@ export async function downloadTelegramChannelRange(
     fileNameOverride?: string,
     commentId?: number,
 ): Promise<{ requested: number; found: number; skipped: number; failed: number; successful: number; successfulMessageIds: number[]; failedMessageIds: number[]; skippedMessageIds: number[]; firstId: number; lastId: number }> {
-    const selectedDownloadAccount = await selectTelegramDownloadAccount(String(source));
+    const selectedDownloadAccount = await selectTelegramDownloadAccount(String(source), { waitForCapacity: true, signal: taskSignal });
     if (selectedDownloadAccount) (selectedDownloadAccount.client as any).__tgVaultAccountId = selectedDownloadAccount.accountId;
     const userClient = selectedDownloadAccount?.client;
     if (!userClient) {
