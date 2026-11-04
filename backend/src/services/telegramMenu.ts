@@ -11,7 +11,7 @@ export const menuPanels: Record<string, string[][]> = {
     settings: [
         ['storage', 'storage_switch'], ['target', 'path_rules'],
         ['download_workers', 'file_concurrency'], ['duplicate_mode', 'notifications'],
-        ['status', 'language'], ['setup_2fa', 'logout'],
+        ['status', 'update'], ['language', 'setup_2fa'], ['logout'],
     ],
 };
 

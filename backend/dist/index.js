@@ -3616,8 +3616,8 @@ function buildStorageStatsPayload(input) {
 
 // src/routes/files.ts
 init_db();
-import fs15 from "fs";
-import path22 from "path";
+import fs16 from "fs";
+import path23 from "path";
 
 // src/middleware/signedUrl.ts
 import crypto21 from "crypto";
@@ -4771,6 +4771,27 @@ var resources = {
     "menu.target": "\u8BBE\u7F6E\u5F53\u524D\u804A\u5929\u5B58\u50A8\u76EE\u6807",
     "menu.help": "\u67E5\u770B\u5B8C\u6574\u5E2E\u52A9",
     "menu.status": "\u7CFB\u7EDF\u8BCA\u65AD\u72B6\u6001",
+    "menu.update": "\u68C0\u67E5\u66F4\u65B0",
+    "bot.update.title": "\u{1F504} **\u68C0\u67E5\u66F4\u65B0**",
+    "bot.update.current": "\u5F53\u524D\u7248\u672C\uFF1Av{version}",
+    "bot.update.available": "\u{1F195} Docker Hub \u4E0A\u6709\u65B0\u955C\u50CF\uFF0C\u53EF\u4EE5\u7ACB\u5373\u66F4\u65B0\u3002",
+    "bot.update.latest": "\u2705 \u5DF2\u662F\u6700\u65B0\u955C\u50CF\u3002",
+    "bot.update.busy": "\u23F3 \u5DF2\u6709\u5347\u7EA7\u6B63\u5728\u8FDB\u884C\uFF0C\u8BF7\u7A0D\u540E\u518D\u67E5\u770B\u3002",
+    "bot.update.disabled": "\u26A0\uFE0F \u672A\u542F\u7528 Docker \u5347\u7EA7\u3002\u8BF7\u5728 compose \u4E2D\u8BBE\u7F6E DOCKER_UPDATE_ENABLED=true \u5E76\u6302\u8F7D /var/run/docker.sock\u3002",
+    "bot.update.unavailable": "\u26A0\uFE0F \u5347\u7EA7\u670D\u52A1\u6682\u4E0D\u53EF\u7528\uFF0C\u8BF7\u68C0\u67E5 Docker socket\u3001\u5BB9\u5668\u9ED8\u8BA4\u4E3B\u673A\u540D\u548C /data \u6302\u8F7D\u3002",
+    "bot.update.error": "\u274C \u68C0\u67E5\u5931\u8D25\uFF1A\u65E0\u6CD5\u8BBF\u95EE\u955C\u50CF\u4ED3\u5E93\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002",
+    "bot.update.recheck": "\u{1F504} \u91CD\u65B0\u68C0\u67E5",
+    "bot.update.checking": "\u{1F50D} \u6B63\u5728\u68C0\u67E5\u66F4\u65B0\u2026",
+    "bot.update.apply": "\u2B06\uFE0F \u7ACB\u5373\u66F4\u65B0",
+    "bot.update.confirmTitle": "\u2B06\uFE0F **\u786E\u8BA4\u66F4\u65B0 TG Vault\uFF1F**",
+    "bot.update.confirm": "\u5C06\u62C9\u53D6\u65B0\u955C\u50CF\u5E76\u91CD\u542F\u670D\u52A1\uFF0C\u8FDB\u884C\u4E2D\u7684\u4E0A\u4F20\u548C\u4E0B\u8F7D\u53EF\u80FD\u4E2D\u65AD\u3002\u6570\u636E\u76EE\u5F55\u3001\u7AEF\u53E3\u548C\u73AF\u5883\u914D\u7F6E\u4F1A\u4FDD\u7559\u3002",
+    "bot.update.confirmButton": "\u2705 \u786E\u8BA4\u66F4\u65B0",
+    "bot.update.cancel": "\u53D6\u6D88",
+    "bot.update.cancelled": "\u5DF2\u53D6\u6D88\u66F4\u65B0\u3002",
+    "bot.update.started": "\u{1F680} \u5DF2\u5F00\u59CB\u66F4\u65B0\uFF0C\u670D\u52A1\u5C06\u5728\u51E0\u5206\u949F\u5185\u91CD\u542F\u3002\u5B8C\u6210\u540E\u4F1A\u5728\u8FD9\u91CC\u901A\u77E5\u4F60\u3002",
+    "bot.update.result.success": "\u2705 \u66F4\u65B0\u5B8C\u6210\uFF0C\u5F53\u524D\u7248\u672C v{version}\u3002",
+    "bot.update.result.unchanged": "\u2139\uFE0F \u66F4\u65B0\u5DF2\u7ED3\u675F\uFF0C\u955C\u50CF\u6CA1\u6709\u53D8\u5316\u3002",
+    "bot.update.result.failed": "\u274C \u66F4\u65B0\u672A\u5B8C\u6210\u6216\u65E0\u6CD5\u786E\u8BA4\u7ED3\u679C\uFF0C\u8BF7\u5728\u7F51\u9875\u6216 NAS \u4E0A\u68C0\u67E5\u5BB9\u5668\u4E0E Docker \u65E5\u5FD7\u3002",
     "menu.notifications": "\u901A\u77E5\u504F\u597D",
     "bot.link.reuseFolder": "10 \u5206\u949F\u5185\u4F60\u4F7F\u7528\u8FC7\u76EE\u5F55\u300C{folder}\u300D\u3002\u662F\u5426\u6CBF\u7528\uFF1F\n\u9009\u62E9\u201C\u5426\u201D\u5C06\u4FDD\u5B58\u5230\u65E5\u671F\u76EE\u5F55\u300C{date}\u300D\u3002",
     "bot.link.folderYes": "\u662F\uFF0C\u6CBF\u7528\u4E0A\u6B21\u76EE\u5F55",
@@ -5775,6 +5796,27 @@ var resources = {
     "menu.target": "Set this chat\u2019s storage target",
     "menu.help": "View full help",
     "menu.status": "System diagnostics",
+    "menu.update": "Check for updates",
+    "bot.update.title": "\u{1F504} **Check for updates**",
+    "bot.update.current": "Current version: v{version}",
+    "bot.update.available": "\u{1F195} A new image is available on Docker Hub. You can update now.",
+    "bot.update.latest": "\u2705 Already on the latest image.",
+    "bot.update.busy": "\u23F3 An upgrade is already running. Check again shortly.",
+    "bot.update.disabled": "\u26A0\uFE0F Docker upgrade is not enabled. Set DOCKER_UPDATE_ENABLED=true and mount /var/run/docker.sock in compose.",
+    "bot.update.unavailable": "\u26A0\uFE0F Upgrade service unavailable. Check the Docker socket, default container hostname and /data mount.",
+    "bot.update.error": "\u274C Check failed: the registry was unreachable. Try again later.",
+    "bot.update.recheck": "\u{1F504} Check again",
+    "bot.update.checking": "\u{1F50D} Checking for updates\u2026",
+    "bot.update.apply": "\u2B06\uFE0F Update now",
+    "bot.update.confirmTitle": "\u2B06\uFE0F **Update TG Vault?**",
+    "bot.update.confirm": "This pulls the new image and restarts the service. Active uploads and downloads may be interrupted. Data mounts, ports and environment settings are preserved.",
+    "bot.update.confirmButton": "\u2705 Confirm update",
+    "bot.update.cancel": "Cancel",
+    "bot.update.cancelled": "Update cancelled.",
+    "bot.update.started": "\u{1F680} Update started. The service will restart within a few minutes and you will be notified here.",
+    "bot.update.result.success": "\u2705 Update complete. Now running v{version}.",
+    "bot.update.result.unchanged": "\u2139\uFE0F Update finished; the image did not change.",
+    "bot.update.result.failed": "\u274C Update failed or could not be verified. Check the container and Docker logs on the web page or NAS.",
     "menu.notifications": "Notification preferences",
     "bot.link.reuseFolder": "You used \u201C{folder}\u201D within the last 10 minutes. Reuse it?\nChoose No to use the date folder \u201C{date}\u201D.",
     "bot.link.folderYes": "Yes, reuse folder",
@@ -8404,8 +8446,9 @@ var menuPanels = {
     ["target", "path_rules"],
     ["download_workers", "file_concurrency"],
     ["duplicate_mode", "notifications"],
-    ["status", "language"],
-    ["setup_2fa", "logout"]
+    ["status", "update"],
+    ["language", "setup_2fa"],
+    ["logout"]
   ]
 };
 var menuLabels = {
@@ -8446,6 +8489,7 @@ var BOT_COMMANDS = [
   { command: "download_workers", description: "\u5355\u6587\u4EF6\u5206\u7247\u5E76\u53D1", helpDescription: "\u8BBE\u7F6E\u5355\u6587\u4EF6\u5206\u7247\u4E0B\u8F7D\u5E76\u53D1", category: "settings", aliases: ["workers"], help: true },
   { command: "file_concurrency", description: "\u6587\u4EF6\u7EA7\u4E0B\u8F7D\u5E76\u53D1", helpDescription: "\u8BBE\u7F6E 1 / 2 / 3 / 4 \u4E2A\u6587\u4EF6\u5E76\u884C\uFF0C\u907F\u514D\u628A\u5206\u7247\u5E76\u53D1\u548C\u6587\u4EF6\u7EA7\u5E76\u53D1\u6DF7\u6DC6", category: "settings", aliases: ["file_workers", "download_files"], menu: false, help: true },
   { command: "status", description: "\u7CFB\u7EDF\u8BCA\u65AD\u72B6\u6001", helpDescription: "\u67E5\u770B Bot\u3001\u8D26\u53F7\u4E0B\u8F7D\u5668\u3001\u5B58\u50A8\u3001\u78C1\u76D8\u3001\u961F\u5217\u3001\u8BA2\u9605\u548C\u5BF9\u8D26\u72B6\u6001", category: "settings", menu: true, help: true },
+  { command: "update", description: "\u68C0\u67E5\u66F4\u65B0", helpDescription: "\u68C0\u67E5 Docker \u65B0\u955C\u50CF\uFF0C\u6709\u66F4\u65B0\u65F6\u53EF\u4E00\u952E\u5347\u7EA7", category: "settings", aliases: ["upgrade"], menu: false, help: true },
   { command: "notifications", description: "\u901A\u77E5\u504F\u597D", helpDescription: "\u8BBE\u7F6E\u6210\u529F/\u5931\u8D25/\u8BA2\u9605\u6458\u8981\u3001\u65F6\u533A\u548C\u5B89\u9759\u65F6\u6BB5\uFF1B\u5B89\u5168\u544A\u8B66\u59CB\u7EC8\u5373\u65F6", category: "settings", menu: true, help: true },
   { command: "duplicate_mode", description: "\u91CD\u590D\u6587\u4EF6\u5904\u7406", helpDescription: "\u8BBE\u7F6E\u91CD\u590D\u6587\u4EF6\u5904\u7406\u7B56\u7565", category: "settings", aliases: ["duplicate", "dup"], help: true },
   { command: "cleanup_settings", description: "\u81EA\u52A8\u6E05\u7406\u672A\u7D22\u5F15\u4E34\u65F6\u6587\u4EF6", helpDescription: "\u8BBE\u7F6E\u81EA\u52A8\u6E05\u7406\u672A\u767B\u8BB0\u4E34\u65F6\u6587\u4EF6\u7684\u5F00\u5173", category: "settings", aliases: ["cleanup"], help: true },
@@ -19886,8 +19930,8 @@ init_storage();
 init_telegramState();
 import { NewMessage } from "telegram/events/index.js";
 import { Raw as Raw2 } from "telegram/events/index.js";
-import fs14 from "fs";
-import path21 from "path";
+import fs15 from "fs";
+import path22 from "path";
 import crypto20 from "crypto";
 init_db();
 init_authSettings();
@@ -20074,6 +20118,729 @@ function buildSubscriptionManagePanel(rows, page, locale = DEFAULT_LOCALE) {
 
 // src/services/telegramBot.ts
 init_settings();
+
+// src/services/dockerUpdater.ts
+import http from "node:http";
+import fs14 from "node:fs";
+import path21 from "node:path";
+import os3 from "node:os";
+import { createHash as createHash2, randomUUID as randomUUID4 } from "node:crypto";
+var SOCKET = "/var/run/docker.sock";
+var IMAGE = "containrrr/watchtower:1.7.1";
+var LABEL = "io.tg-vault.update-job";
+var DockerError = class extends Error {
+  constructor(status) {
+    super(`Docker API returned ${status}`);
+    this.status = status;
+  }
+  status;
+};
+var dockerRequest = (method, route, body, timeout = 1e4) => new Promise((resolve, reject) => {
+  const payload = body === void 0 ? void 0 : JSON.stringify(body);
+  const req = http.request({
+    socketPath: SOCKET,
+    path: route,
+    method,
+    headers: payload ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } : {}
+  }, (res) => {
+    const chunks = [];
+    let size = 0;
+    res.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > 8 * 1024 * 1024) {
+        req.destroy(new Error("Docker response too large"));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    res.on("error", reject);
+    res.on("end", () => {
+      const status = res.statusCode || 500;
+      if (status < 200 || status >= 300) reject(new DockerError(status));
+      else resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+  });
+  const timer = setTimeout(() => req.destroy(new Error("Docker request timed out")), timeout);
+  req.on("close", () => clearTimeout(timer));
+  req.on("error", reject);
+  req.end(payload);
+});
+function readSummary(logs) {
+  for (const line of logs.split("\n").reverse()) {
+    try {
+      const row = JSON.parse(line);
+      if (row.msg !== "Session done") continue;
+      const values = [row.Scanned, row.Updated, row.Failed].map(Number);
+      if (!values.every((value) => Number.isInteger(value) && value >= 0)) return null;
+      return { scanned: values[0], updated: values[1], failed: values[2] };
+    } catch {
+    }
+  }
+  return null;
+}
+function createDockerUpdater(options = {}) {
+  const enabled = options.enabled ?? process.env.DOCKER_UPDATE_ENABLED === "true";
+  const stateFile = options.stateFile ?? "/data/docker-update.json";
+  const hostname = options.hostname ?? os3.hostname();
+  const request = options.request ?? dockerRequest;
+  let job = { phase: "idle" };
+  let corrupt = false;
+  let preparing = false;
+  let checking;
+  let lastError = "";
+  if (enabled && fs14.existsSync(stateFile)) {
+    try {
+      job = JSON.parse(fs14.readFileSync(stateFile, "utf8"));
+      if (!job || !["idle", "preparing", "running", "success", "unchanged", "failed"].includes(job.phase)) throw new Error("Invalid Docker update state");
+      if (["preparing", "running"].includes(job.phase) && (!job.id || !job.helper || !job.target || !job.image)) throw new Error("Incomplete Docker update state");
+    } catch {
+      corrupt = true;
+      job = { phase: "failed" };
+    }
+  }
+  const save = () => {
+    fs14.mkdirSync(path21.dirname(stateFile), { recursive: true });
+    fs14.writeFileSync(`${stateFile}.tmp`, JSON.stringify(job), { mode: 384 });
+    fs14.renameSync(`${stateFile}.tmp`, stateFile);
+  };
+  const inspect = async (name) => JSON.parse(await request("GET", `/containers/${encodeURIComponent(name)}/json`));
+  const busy = () => job.phase === "preparing" || job.phase === "running";
+  const self = async () => {
+    if (!/^[a-f0-9]{12,64}$/.test(hostname)) throw new Error("Default Docker hostname required");
+    let container;
+    try {
+      container = await inspect(hostname);
+    } catch (error) {
+      if (!(error instanceof DockerError) || error.status !== 404 || !job.target) throw error;
+      container = await inspect(job.target);
+    }
+    const recordedSelf = job.target && container.Name === `/${job.target}` && container.Config.Hostname === hostname;
+    if (!container.Id.startsWith(hostname) && !recordedSelf || !container.State.Running || !container.Name.startsWith("/")) throw new Error("Cannot identify this container");
+    if (container.Config.Image.includes("@sha256:") || container.Config.Image.startsWith("sha256:")) throw new Error("A mutable image tag is required");
+    if (!container.Mounts?.some((mount) => mount.Destination === "/data" && mount.RW)) throw new Error("Persistent /data required");
+    if (!container.Mounts?.some((mount) => mount.Destination === SOCKET && mount.Source === SOCKET)) throw new Error("Standard Docker socket mount required");
+    const labels = container.Config.Labels || {};
+    if (labels["com.docker.swarm.service.name"] || labels["com.centurylinklabs.watchtower.enable"] === "false" || labels["com.centurylinklabs.watchtower.monitor-only"] === "true") throw new Error("Container does not permit updates");
+    return container;
+  };
+  const reconcile = async () => {
+    if (preparing && busy() || !job.helper || !job.id) return;
+    let helper;
+    try {
+      helper = await inspect(job.helper);
+    } catch (error) {
+      if (error instanceof DockerError && error.status === 404) {
+        if (busy()) job.phase = "failed";
+        delete job.helper;
+        save();
+        return;
+      }
+      throw error;
+    }
+    if (helper.Config.Labels?.[LABEL] !== job.id) throw new Error("Updater identity mismatch");
+    if (helper.State.Running) return;
+    if (busy()) {
+      const logs = await request("GET", `/containers/${encodeURIComponent(job.helper)}/logs?stdout=1&stderr=1&tail=200`);
+      fs14.writeFileSync(path21.join(path21.dirname(stateFile), "docker-update.log"), logs.slice(-32768), { mode: 384 });
+      const summary = readSummary(logs);
+      if (helper.State.Status !== "exited" || helper.State.ExitCode !== 0 || !summary || summary.failed || summary.scanned !== 1) {
+        job.phase = "failed";
+      } else {
+        const target = await inspect(job.target);
+        if (!target.State.Running || target.State.Health?.Status === "unhealthy") job.phase = "failed";
+        else if (target.State.Health?.Status === "starting") return;
+        else if (target.State.Health?.Status !== "healthy") job.phase = "failed";
+        else if (summary.updated === 1 && target.Image !== job.image) job.phase = "success";
+        else if (summary.updated === 0 && target.Image === job.image) job.phase = "unchanged";
+        else job.phase = "failed";
+      }
+      save();
+    }
+    await request("DELETE", `/containers/${encodeURIComponent(job.helper)}`);
+    delete job.helper;
+    save();
+  };
+  const refresh = () => {
+    if (!checking) checking = reconcile().finally(() => {
+      checking = void 0;
+    });
+    return checking;
+  };
+  const status = async () => {
+    if (!enabled) return { enabled: false, available: false, phase: "idle" };
+    if (corrupt) return { enabled, available: false, phase: "failed" };
+    try {
+      await refresh();
+      await self();
+      lastError = "";
+      return { enabled, available: true, phase: job.phase, startedAt: job.startedAt };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message !== lastError) console.warn("Docker upgrade unavailable:", message);
+      lastError = message;
+      return { enabled, available: false, phase: job.phase, startedAt: job.startedAt };
+    }
+  };
+  const prepare = async (apiVersion, socket) => {
+    try {
+      try {
+        await request("GET", `/images/${encodeURIComponent(IMAGE)}/json`);
+      } catch (error) {
+        if (!(error instanceof DockerError) || error.status !== 404) throw error;
+        const pull = await request("POST", `/images/create?fromImage=${encodeURIComponent("containrrr/watchtower")}&tag=1.7.1`, void 0, 6e5);
+        for (const line of pull.split("\n").filter(Boolean)) {
+          const row = JSON.parse(line);
+          if (row.error || row.errorDetail) throw new Error("Updater image pull failed");
+        }
+      }
+      await request("POST", `/containers/create?name=${encodeURIComponent(job.helper)}`, {
+        Image: IMAGE,
+        Cmd: ["--run-once", "--log-format", "JSON", "--stop-timeout", "60s", job.target],
+        Env: [`DOCKER_API_VERSION=${apiVersion}`, `DOCKER_HOST=unix://${SOCKET}`],
+        Tty: true,
+        Labels: { [LABEL]: job.id, "com.centurylinklabs.watchtower.enable": "false" },
+        HostConfig: {
+          Binds: [`${socket}:${SOCKET}`],
+          RestartPolicy: { Name: "no" },
+          LogConfig: { Type: "json-file", Config: { "max-size": "1m", "max-file": "1" } }
+        }
+      });
+      job.phase = "running";
+      save();
+      await request("POST", `/containers/${encodeURIComponent(job.helper)}/start`);
+    } catch (error) {
+      console.error("Docker update preparation failed:", error);
+      if (job.phase !== "running") {
+        job.phase = "failed";
+        save();
+      }
+    } finally {
+      preparing = false;
+    }
+  };
+  const start = async () => {
+    if (!enabled) throw new DockerError(403);
+    if (corrupt) throw new DockerError(503);
+    if (preparing || busy()) throw new DockerError(409);
+    preparing = true;
+    try {
+      await refresh();
+      const target = await self();
+      const version2 = JSON.parse(await request("GET", "/version"));
+      if (!/^1\.\d+$/.test(version2.ApiVersion)) throw new Error("Invalid Docker API version");
+      const name = target.Name.slice(1);
+      job = {
+        phase: "preparing",
+        id: randomUUID4(),
+        target: name,
+        image: target.Image,
+        helper: `tg-vault-update-${createHash2("sha256").update(name).digest("hex").slice(0, 16)}`,
+        startedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      save();
+      void prepare(version2.ApiVersion, SOCKET).catch((error) => console.error("Could not persist Docker update result:", error));
+      return { enabled, available: true, phase: job.phase, startedAt: job.startedAt };
+    } catch (error) {
+      preparing = false;
+      throw error;
+    }
+  };
+  const hasRemoteUpdate = async () => {
+    if (!enabled) throw new DockerError(403);
+    if (corrupt) throw new DockerError(503);
+    const target = await self();
+    const image = target.Config.Image;
+    const local = JSON.parse(await request("GET", `/images/${encodeURIComponent(image)}/json`));
+    const remote = JSON.parse(await request("GET", `/distribution/${image.split("/").map(encodeURIComponent).join("/")}/json`, void 0, 3e4));
+    const digest = remote.Descriptor?.digest;
+    if (!digest || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error("Registry returned no image digest");
+    return !(local.RepoDigests || []).some((entry) => entry.endsWith(`@${digest}`));
+  };
+  const busyNow = () => preparing || busy();
+  const lastJob = () => ({ phase: job.phase, startedAt: job.startedAt });
+  const timer = enabled && options.monitor !== false ? setInterval(() => {
+    if (job.helper && !preparing) void refresh().catch(() => void 0);
+  }, 5e3) : void 0;
+  timer?.unref();
+  return { enabled, status, start, hasRemoteUpdate, isBusy: busyNow, lastJob, close: () => {
+    if (timer) clearInterval(timer);
+  } };
+}
+
+// src/services/dockerAutoUpdate.ts
+init_settings();
+var DOCKER_AUTO_UPDATE_INTERVALS = [5, 10, 15, 30, 60, 180, 360, 720, 1440];
+var DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL = 5;
+var ENABLED_KEY = "docker_auto_update_enabled";
+var INTERVAL_KEY = "docker_auto_update_interval_minutes";
+var RETRY_BACKOFF_MS = 60 * 6e4;
+function normalizeDockerAutoUpdateInterval(value) {
+  const minutes = Number(value);
+  if (!DOCKER_AUTO_UPDATE_INTERVALS.includes(minutes)) {
+    throw new Error(`Interval must be one of ${DOCKER_AUTO_UPDATE_INTERVALS.join("/")} minutes`);
+  }
+  return minutes;
+}
+var settingsDockerAutoUpdateStore = {
+  async load() {
+    const enabled = await getSetting(ENABLED_KEY, "false");
+    const interval = await getSetting(INTERVAL_KEY, String(DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL));
+    let intervalMinutes = DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL;
+    try {
+      intervalMinutes = normalizeDockerAutoUpdateInterval(interval);
+    } catch {
+    }
+    return { enabled: enabled === "true", intervalMinutes };
+  },
+  async save(config) {
+    await setSettings([[ENABLED_KEY, String(config.enabled)], [INTERVAL_KEY, String(config.intervalMinutes)]]);
+  }
+};
+function createDockerAutoUpdater(options) {
+  const { updater: updater2 } = options;
+  const store = options.store ?? settingsDockerAutoUpdateStore;
+  const now = options.now ?? Date.now;
+  const log = options.log ?? console;
+  let config = null;
+  let lastCheckedAt;
+  let lastResult;
+  let running = null;
+  const getConfig = async () => {
+    if (!config) config = await store.load();
+    return config;
+  };
+  const check = async () => {
+    if (updater2.isBusy()) return "busy";
+    const job = updater2.lastJob();
+    const startedAt = job.startedAt ? Date.parse(job.startedAt) : NaN;
+    if ((job.phase === "failed" || job.phase === "unchanged") && now() - startedAt < RETRY_BACKOFF_MS) return "backoff";
+    if (!(await updater2.status()).available) return "unavailable";
+    if (!await updater2.hasRemoteUpdate()) return "latest";
+    log.log("[Docker auto update] New image found, starting upgrade");
+    await updater2.start();
+    return "started";
+  };
+  const tick = () => {
+    if (running) return running;
+    running = (async () => {
+      if (!updater2.enabled) return null;
+      const current3 = await getConfig();
+      if (!current3.enabled) return null;
+      if (lastCheckedAt !== void 0 && now() - lastCheckedAt < current3.intervalMinutes * 6e4) return null;
+      lastCheckedAt = now();
+      try {
+        lastResult = await check();
+      } catch (error) {
+        lastResult = "error";
+        log.warn("[Docker auto update] Check failed:", error instanceof Error ? error.message : error);
+      }
+      return lastResult;
+    })().finally(() => {
+      running = null;
+    });
+    return running;
+  };
+  const state = async () => {
+    const current3 = await getConfig();
+    const available = updater2.enabled && (await updater2.status()).available;
+    const next = current3.enabled && lastCheckedAt !== void 0 ? lastCheckedAt + current3.intervalMinutes * 6e4 : void 0;
+    return {
+      ...current3,
+      available,
+      intervals: DOCKER_AUTO_UPDATE_INTERVALS,
+      lastCheckedAt: lastCheckedAt === void 0 ? void 0 : new Date(lastCheckedAt).toISOString(),
+      lastResult,
+      nextCheckAt: next === void 0 ? void 0 : new Date(next).toISOString()
+    };
+  };
+  const configure = async (input) => {
+    if (typeof input.enabled !== "boolean") throw new Error("enabled must be a boolean");
+    const next = { enabled: input.enabled, intervalMinutes: normalizeDockerAutoUpdateInterval(input.intervalMinutes) };
+    await store.save(next);
+    config = next;
+    lastCheckedAt = void 0;
+    log.log(`[Docker auto update] ${next.enabled ? `enabled, every ${next.intervalMinutes} min` : "disabled"}`);
+    return state();
+  };
+  const timer = updater2.enabled && options.monitor !== false ? setInterval(() => {
+    void tick().catch(() => void 0);
+  }, options.tickMs ?? 6e4) : void 0;
+  timer?.unref();
+  return { tick, state, configure, close: () => {
+    if (timer) clearInterval(timer);
+  } };
+}
+
+// src/services/dockerUpdateRuntime.ts
+var updater;
+var autoUpdater;
+function getDockerUpdater() {
+  updater ??= createDockerUpdater();
+  return updater;
+}
+function getDockerAutoUpdater() {
+  autoUpdater ??= createDockerAutoUpdater({ updater: getDockerUpdater() });
+  return autoUpdater;
+}
+
+// package.json
+var package_default = {
+  name: "tg-vault-backend",
+  version: "2.4.3",
+  type: "module",
+  scripts: {
+    dev: "tsx watch src/index.ts",
+    test: "tsx --test src/**/*.test.ts",
+    "test:queue": "tsx --test src/services/downloadTaskQueue.test.ts",
+    typecheck: "tsc --noEmit --pretty false",
+    build: "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --packages=external && esbuild src/scripts/login_telegram_user.ts --bundle --platform=node --format=esm --outfile=dist/scripts/login_telegram_user.js --packages=external && node scripts/sync_dist_schema.mjs && node scripts/sync_dist_schema.mjs --check",
+    start: "node dist/index.js",
+    "login:telegram-user": "node dist/scripts/login_telegram_user.js",
+    "schema:generate-init": "python3 scripts/generate_init_sql.py",
+    "schema:check": "python3 scripts/generate_init_sql.py --check",
+    "schema:check-dist": "node scripts/sync_dist_schema.mjs --check"
+  },
+  dependencies: {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
+    "ali-oss": "^6.23.0",
+    axios: "^1.18.1",
+    "check-disk-space": "^3.4.0",
+    cors: "^2.8.5",
+    dotenv: "^16.4.7",
+    express: "^4.22.2",
+    "express-rate-limit": "^8.5.2",
+    "fluent-ffmpeg": "^2.1.3",
+    googleapis: "^171.4.0",
+    helmet: "^8.2.0",
+    input: "^1.0.1",
+    multer: "^1.4.5-lts.1",
+    otplib: "^13.4.1",
+    pg: "^8.22.0",
+    qrcode: "^1.5.4",
+    sharp: "^0.35.3",
+    telegram: "^2.26.22",
+    "ua-parser-js": "^2.0.10",
+    undici: "^7.29.0",
+    uuid: "^11.1.1",
+    webdav: "^5.10.0"
+  },
+  devDependencies: {
+    "@types/ali-oss": "^6.23.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.25",
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "@types/qrcode": "^1.5.6",
+    "@types/ua-parser-js": "^0.7.39",
+    "@types/uuid": "^10.0.0",
+    esbuild: "^0.28.1",
+    tsx: "^4.22.4",
+    typescript: "^6.0.3"
+  }
+};
+
+// src/services/updateChecker.ts
+init_db();
+var DEFAULT_UPDATE_REPOSITORY = "traceonx/tg_value";
+var UPDATE_STATE_KEY = "update_checker_state_v1";
+var MAX_RELEASE_NOTES_LENGTH = 600;
+var REQUEST_TIMEOUT_MS = 5e3;
+function normalizeVersion(input) {
+  const match = String(input || "").trim().match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
+  return match ? `${match[1]}.${match[2]}.${match[3]}` : null;
+}
+function compareVersions(left, right) {
+  const a = normalizeVersion(left);
+  const b = normalizeVersion(right);
+  if (!a || !b) throw new Error("invalid stable semantic version");
+  const leftParts = a.split(".").map(Number);
+  const rightParts = b.split(".").map(Number);
+  for (let index = 0; index < 3; index += 1) {
+    if (leftParts[index] > rightParts[index]) return 1;
+    if (leftParts[index] < rightParts[index]) return -1;
+  }
+  return 0;
+}
+function createPostgresUpdateCheckStore(runQuery = query) {
+  return {
+    async loadState() {
+      const result = await runQuery("SELECT value FROM system_settings WHERE key = $1", [UPDATE_STATE_KEY]);
+      if (!result.rows[0]?.value) return null;
+      try {
+        const parsed = JSON.parse(String(result.rows[0].value));
+        return {
+          repository: typeof parsed.repository === "string" ? parsed.repository : void 0,
+          etag: typeof parsed.etag === "string" ? parsed.etag : null,
+          checkedAt: typeof parsed.checkedAt === "string" ? parsed.checkedAt : null,
+          release: parsed.release && typeof parsed.release === "object" ? parsed.release : null
+        };
+      } catch {
+        return null;
+      }
+    },
+    async saveState(state) {
+      await runQuery(
+        `INSERT INTO system_settings (key, value) VALUES ($1, $2)
+                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [UPDATE_STATE_KEY, JSON.stringify(state)]
+      );
+    },
+    async listEligibleRecipients() {
+      const { getConfiguredTelegramAllowedUsers: getConfiguredTelegramAllowedUsers2 } = await Promise.resolve().then(() => (init_authSettings(), authSettings_exports));
+      const allowed = await getConfiguredTelegramAllowedUsers2();
+      if (allowed.length === 0) return [];
+      const result = await runQuery(
+        `SELECT user_id FROM telegram_auth
+                 WHERE user_id = ANY($1::bigint[])
+                 ORDER BY user_id`,
+        [allowed]
+      );
+      return result.rows.map((row) => Number(row.user_id)).filter((id) => Number.isSafeInteger(id) && id > 0);
+    },
+    async claimDelivery(version2, recipientId) {
+      const result = await runQuery(
+        `INSERT INTO update_notification_deliveries (version, channel, recipient_id, status, attempt_count, last_attempt_at, last_error)
+                 VALUES ($1, 'telegram', $2, 'sending', 1, NOW(), NULL)
+                 ON CONFLICT (version, channel, recipient_id) DO UPDATE SET
+                    status = 'sending', attempt_count = update_notification_deliveries.attempt_count + 1,
+                    last_attempt_at = NOW(), last_error = NULL
+                 WHERE update_notification_deliveries.status = 'failed'
+                    OR (update_notification_deliveries.status = 'sending' AND update_notification_deliveries.last_attempt_at < NOW() - INTERVAL '10 minutes')
+                 RETURNING recipient_id`,
+        [version2, String(recipientId)]
+      );
+      return Boolean(result.rowCount);
+    },
+    async markDeliverySucceeded(version2, recipientId) {
+      await runQuery(
+        `UPDATE update_notification_deliveries
+                 SET status = 'delivered', delivered_at = NOW(), last_error = NULL
+                 WHERE version = $1 AND channel = 'telegram' AND recipient_id = $2`,
+        [version2, String(recipientId)]
+      );
+    },
+    async markDeliveryFailed(version2, recipientId, error) {
+      await runQuery(
+        `UPDATE update_notification_deliveries
+                 SET status = 'failed', last_error = $3
+                 WHERE version = $1 AND channel = 'telegram' AND recipient_id = $2`,
+        [version2, String(recipientId), error.slice(0, 500)]
+      );
+    }
+  };
+}
+function buildStatus(currentVersion, enabled, state, stale, error) {
+  const release = state?.release || null;
+  return {
+    enabled,
+    currentVersion,
+    latestVersion: release?.version || null,
+    updateAvailable: Boolean(release && compareVersions(release.version, currentVersion) > 0),
+    releaseName: release?.name || null,
+    releaseUrl: release?.url || null,
+    publishedAt: release?.publishedAt || null,
+    checkedAt: state?.checkedAt || null,
+    stale,
+    error
+  };
+}
+function parseRelease(payload) {
+  if (!payload || payload.draft === true || payload.prerelease === true) return null;
+  const version2 = normalizeVersion(payload.tag_name);
+  const url = typeof payload.html_url === "string" && /^https:\/\/github\.com\//.test(payload.html_url) ? payload.html_url : null;
+  if (!version2 || !url) return null;
+  return {
+    version: version2,
+    tag: String(payload.tag_name),
+    name: typeof payload.name === "string" && payload.name.trim() ? payload.name.trim().slice(0, 160) : `TG Vault v${version2}`,
+    url,
+    publishedAt: typeof payload.published_at === "string" ? payload.published_at : null,
+    notes: typeof payload.body === "string" && payload.body.trim() ? payload.body.trim().slice(0, MAX_RELEASE_NOTES_LENGTH) : null
+  };
+}
+function botMessage(currentVersion, release) {
+  const published = release.publishedAt ? `
+\u53D1\u5E03\u65F6\u95F4\uFF1A${release.publishedAt.slice(0, 10)}` : "";
+  const notes = release.notes ? `
+
+${release.notes}` : "";
+  return `\u{1F195} **TG Vault \u65B0\u7248\u672C\u5DF2\u53D1\u5E03**
+
+\u5F53\u524D\u7248\u672C\uFF1Av${currentVersion}
+\u6700\u65B0\u7248\u672C\uFF1Av${release.version}${published}${notes}
+
+\u67E5\u770B\u53D1\u5E03\u8BF4\u660E\uFF1A
+${release.url}`;
+}
+function createUpdateChecker(options) {
+  const currentVersion = normalizeVersion(options.currentVersion);
+  if (!currentVersion) throw new Error(`invalid current version: ${options.currentVersion}`);
+  const repository = options.repository || DEFAULT_UPDATE_REPOSITORY;
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error("invalid GitHub repository");
+  const enabled = options.enabled ?? true;
+  const store = options.store || createPostgresUpdateCheckStore();
+  const request = options.fetch || globalThis.fetch;
+  const now = options.now || (() => /* @__PURE__ */ new Date());
+  let transientError = null;
+  let inFlight = null;
+  const loadState = async () => {
+    const state = await store.loadState();
+    return state?.repository === repository ? state : null;
+  };
+  const getStatus = async () => buildStatus(currentVersion, enabled, await loadState(), Boolean(transientError), transientError);
+  const deliverPendingBotNotifications = async () => {
+    if (!enabled || !options.sendBotMessage) return 0;
+    const state = await loadState();
+    if (!state?.release || compareVersions(state.release.version, currentVersion) <= 0) return 0;
+    let delivered = 0;
+    for (const recipient of await store.listEligibleRecipients()) {
+      if (!await store.claimDelivery(state.release.version, String(recipient))) continue;
+      try {
+        await options.sendBotMessage(recipient, botMessage(currentVersion, state.release));
+        await store.markDeliverySucceeded(state.release.version, String(recipient));
+        delivered += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await store.markDeliveryFailed(state.release.version, String(recipient), message);
+      }
+    }
+    return delivered;
+  };
+  const runCheck = async () => {
+    if (!enabled) return getStatus();
+    const previous = await loadState();
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      timeout.unref?.();
+      let response;
+      try {
+        response = await request(`https://api.github.com/repos/${repository}/releases/latest`, {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/vnd.github+json",
+            "User-Agent": `tg-vault/${currentVersion}`,
+            ...previous?.etag ? { "If-None-Match": previous.etag } : {}
+          }
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+      const checkedAt = now().toISOString();
+      let stateAfterCheck;
+      if (response.status === 404) {
+        stateAfterCheck = { repository, etag: null, checkedAt, release: null };
+      } else if (response.status === 304 && previous?.release) {
+        stateAfterCheck = { ...previous, checkedAt };
+      } else {
+        if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
+        const release = parseRelease(await response.json());
+        if (!release) throw new Error("latest release is not a valid stable release");
+        stateAfterCheck = { repository, etag: response.headers.get("etag"), checkedAt, release };
+      }
+      await store.saveState(stateAfterCheck);
+      transientError = null;
+      const status = buildStatus(currentVersion, enabled, stateAfterCheck, false, null);
+      await deliverPendingBotNotifications().catch((error) => {
+        console.warn("\u7248\u672C\u901A\u77E5\u6295\u9012\u5931\u8D25:", error instanceof Error ? error.message : String(error));
+      });
+      return status;
+    } catch (error) {
+      console.warn("\u7248\u672C\u68C0\u67E5\u5931\u8D25:", error instanceof Error ? error.message : String(error));
+      transientError = "\u6682\u65F6\u65E0\u6CD5\u68C0\u67E5\u65B0\u7248\u672C\uFF0C\u7EE7\u7EED\u663E\u793A\u4E0A\u6B21\u6210\u529F\u7ED3\u679C";
+      return getStatus();
+    }
+  };
+  return {
+    getStatus,
+    checkNow() {
+      if (!inFlight) inFlight = runCheck().finally(() => {
+        inFlight = null;
+      });
+      return inFlight;
+    },
+    deliverPendingBotNotifications
+  };
+}
+
+// src/services/appVersion.ts
+var packageVersion = normalizeVersion(package_default.version);
+if (!packageVersion) throw new Error(`backend/package.json contains an invalid release version: ${package_default.version}`);
+var APP_VERSION = packageVersion;
+
+// src/services/telegramDockerUpdate.ts
+var TELEGRAM_UPDATE_CALLBACK_PREFIX = "upd_";
+function parseTelegramUpdateAction(data) {
+  const action = data.startsWith(TELEGRAM_UPDATE_CALLBACK_PREFIX) ? data.slice(TELEGRAM_UPDATE_CALLBACK_PREFIX.length) : "";
+  return ["check", "apply", "confirm", "cancel"].find((value) => value === action) ?? null;
+}
+async function checkTelegramDockerUpdate(updater2) {
+  if (!updater2.enabled) return { kind: "disabled" };
+  try {
+    const status = await updater2.status();
+    if (!status.enabled) return { kind: "disabled" };
+    if (updater2.isBusy() || status.phase === "preparing" || status.phase === "running") return { kind: "busy" };
+    if (!status.available) return { kind: "unavailable" };
+    return { kind: await updater2.hasRemoteUpdate() ? "available" : "latest" };
+  } catch (error) {
+    console.warn("Telegram update check failed:", error instanceof Error ? error.message : error);
+    return { kind: "error" };
+  }
+}
+var recheck = (locale) => [t(locale, "bot.update.recheck"), "upd_check"];
+function buildTelegramUpdateView(check, locale) {
+  const header = `${t(locale, "bot.update.title")}
+${t(locale, "bot.update.current", { version: APP_VERSION })}
+
+`;
+  switch (check.kind) {
+    case "available":
+      return {
+        text: header + t(locale, "bot.update.available"),
+        buttons: [[[t(locale, "bot.update.apply"), "upd_apply"]], [recheck(locale)]]
+      };
+    case "latest":
+      return { text: header + t(locale, "bot.update.latest"), buttons: [[recheck(locale)]] };
+    case "busy":
+      return { text: header + t(locale, "bot.update.busy"), buttons: [[recheck(locale)]] };
+    case "disabled":
+      return { text: header + t(locale, "bot.update.disabled"), buttons: [] };
+    case "unavailable":
+      return { text: header + t(locale, "bot.update.unavailable"), buttons: [[recheck(locale)]] };
+    default:
+      return { text: header + t(locale, "bot.update.error"), buttons: [[recheck(locale)]] };
+  }
+}
+function buildTelegramUpdateConfirmView(locale) {
+  return {
+    text: `${t(locale, "bot.update.confirmTitle")}
+
+${t(locale, "bot.update.confirm")}`,
+    buttons: [[[t(locale, "bot.update.confirmButton"), "upd_confirm"], [t(locale, "bot.update.cancel"), "upd_cancel"]]]
+  };
+}
+async function startTelegramDockerUpdate(updater2, locale) {
+  const check = await checkTelegramDockerUpdate(updater2);
+  if (check.kind !== "available") return { started: false, view: buildTelegramUpdateView(check, locale) };
+  try {
+    await updater2.start();
+    return { started: true, view: { text: t(locale, "bot.update.started"), buttons: [] } };
+  } catch (error) {
+    const busy = error instanceof DockerError && error.status === 409;
+    return { started: false, view: buildTelegramUpdateView({ kind: busy ? "busy" : "error" }, locale) };
+  }
+}
+function buildTelegramUpdateResultText(phase, locale) {
+  if (phase === "success") return t(locale, "bot.update.result.success", { version: APP_VERSION });
+  if (phase === "unchanged") return t(locale, "bot.update.result.unchanged");
+  if (phase === "failed") return t(locale, "bot.update.result.failed");
+  return null;
+}
+
+// src/services/telegramBot.ts
 var TELEGRAM_BOT_COMMAND_MENU_FINGERPRINT_SETTING = "telegram_bot_command_menu_fingerprint";
 var TELEGRAM_BOT_USER_ISOLATION_MIN_MS = 6e4;
 var TELEGRAM_BOT_USER_ISOLATION_MAX_MS = 12e4;
@@ -20200,6 +20967,7 @@ ${t(locale, "bot.link.renameHelp")}`, parseMode: false });
   if (command === "list") return handleList(message, [], locale);
   if (command === "find") return handleFind(message, [], locale);
   if (command === "status") return handleStatus(message, locale);
+  if (command === "update") return handleUpdateCheck(message, locale);
   if (command === "notifications") return handleNotifications(message, [], locale);
   if (command === "tasks") return handleTasks(message, locale);
   if (command === "task_pause") return handlePauseTasks(message, []);
@@ -20235,6 +21003,81 @@ ${t(locale, "bot.link.renameHelp")}`, parseMode: false });
   await client.sendMessage(update.peer, {
     message: definition ? t(locale, "bot.home.followPrompt", { description: t(locale, `menu.${definition.command}`) }) : t(locale, "bot.home.unavailable")
   });
+}
+function updateViewKeyboard(view) {
+  if (!view.buttons.length) return void 0;
+  return new Api16.ReplyInlineMarkup({ rows: view.buttons.map((row) => new Api16.KeyboardButtonRow({
+    buttons: row.map(([text, data]) => new Api16.KeyboardButtonCallback({ text, data: Buffer.from(data) }))
+  })) });
+}
+async function handleUpdateCheck(message, locale) {
+  const pending = await message.reply({ message: t(locale, "bot.update.checking") });
+  const view = buildTelegramUpdateView(await checkTelegramDockerUpdate(getDockerUpdater()), locale);
+  if (pending && client) {
+    await client.editMessage(pending.peerId, { message: pending.id, text: view.text, buttons: updateViewKeyboard(view) });
+  } else {
+    await message.reply({ message: view.text, buttons: updateViewKeyboard(view) });
+  }
+}
+var TELEGRAM_UPDATE_NOTIFY_SETTING = "telegram_docker_update_notify_user";
+var updateResultWatcher = null;
+function watchTelegramUpdateResult() {
+  if (updateResultWatcher) return;
+  const deadline = Date.now() + 20 * 6e4;
+  const poll = async () => {
+    updateResultWatcher = null;
+    const userId = Number(await getSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, "0")) || 0;
+    if (!userId) return;
+    const status = await getDockerUpdater().status();
+    const locale = await getTelegramUserLocaleOrDefault(userId);
+    const text = status.phase === "preparing" || status.phase === "running" ? null : buildTelegramUpdateResultText(status.phase, locale);
+    if (!text) {
+      if (Date.now() < deadline) {
+        updateResultWatcher = setTimeout(() => void poll().catch(() => void 0), 15e3);
+        updateResultWatcher.unref?.();
+      } else {
+        await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, "");
+      }
+      return;
+    }
+    if (!client || !client.connected) {
+      updateResultWatcher = setTimeout(() => void poll().catch(() => void 0), 15e3);
+      updateResultWatcher.unref?.();
+      return;
+    }
+    await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, "");
+    await client.sendMessage(userId, { message: text });
+  };
+  updateResultWatcher = setTimeout(() => void poll().catch((error) => console.warn("\u{1F916} \u66F4\u65B0\u7ED3\u679C\u901A\u77E5\u5931\u8D25:", error)), 15e3);
+  updateResultWatcher.unref?.();
+}
+async function handleUpdateCallback(update, data) {
+  const userId = update.userId.toJSNumber();
+  if (!await isAuthenticatedAsync(userId)) {
+    await client.invoke(new Api16.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+    return;
+  }
+  const action = parseTelegramUpdateAction(data);
+  const locale = await getTelegramUserLocaleOrDefault(userId);
+  await client.invoke(new Api16.messages.SetBotCallbackAnswer({
+    queryId: update.queryId,
+    ...action === "check" ? { message: t(locale, "bot.update.checking") } : {}
+  }));
+  if (!action) return;
+  const show = (view) => client.editMessage(update.peer, {
+    message: Number(update.msgId),
+    text: view.text,
+    buttons: updateViewKeyboard(view)
+  });
+  if (action === "check") return void await show(buildTelegramUpdateView(await checkTelegramDockerUpdate(getDockerUpdater()), locale));
+  if (action === "apply") return void await show(buildTelegramUpdateConfirmView(locale));
+  if (action === "cancel") return void await show({ text: t(locale, "bot.update.cancelled"), buttons: [] });
+  const result = await startTelegramDockerUpdate(getDockerUpdater(), locale);
+  await show(result.view);
+  if (result.started) {
+    await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, String(userId));
+    watchTelegramUpdateResult();
+  }
 }
 var client = null;
 var linkFolderChoices = new TelegramLinkFolderChoices();
@@ -21550,8 +22393,8 @@ async function initTelegramBot(credentialsOverride) {
             const qrDataUrl = await generateOTPAuthUrl();
             const base64Data = qrDataUrl.replace(/^data:image\/png;base64,/, "");
             const buffer = Buffer.from(base64Data, "base64");
-            tempPath = path21.join(process.cwd(), `temp_qr_${senderId}_${Date.now()}_${crypto20.randomBytes(8).toString("hex")}.png`);
-            fs14.writeFileSync(tempPath, buffer, { mode: 384 });
+            tempPath = path22.join(process.cwd(), `temp_qr_${senderId}_${Date.now()}_${crypto20.randomBytes(8).toString("hex")}.png`);
+            fs15.writeFileSync(tempPath, buffer, { mode: 384 });
             const qrMessage = await client.sendFile(chatId, {
               file: tempPath,
               caption: build2FASetupCaption()
@@ -21564,7 +22407,7 @@ async function initTelegramBot(credentialsOverride) {
             console.error("\u751F\u6210 2FA \u4E8C\u7EF4\u7801\u5931\u8D25:", e);
             await client.sendMessage(chatId, { message: MSG.AUTH_2FA_QR_FAIL });
           } finally {
-            if (tempPath && fs14.existsSync(tempPath)) fs14.unlinkSync(tempPath);
+            if (tempPath && fs15.existsSync(tempPath)) fs15.unlinkSync(tempPath);
           }
           return;
         }
@@ -21890,6 +22733,14 @@ ${buildPathPreviewLine(appliedPath.folder)}
           await handleStatus(message, await getTelegramUserLocaleOrDefault(senderId));
           return;
         }
+        if (text === "/update" || text === "/upgrade") {
+          if (!await isAuthenticatedAsync(senderId)) {
+            await message.reply({ message: MSG.AUTH_REQUIRED });
+            return;
+          }
+          await handleUpdateCheck(message, await getTelegramUserLocaleOrDefault(senderId));
+          return;
+        }
         if (text === "/tasks" || text === "/task") {
           if (!await isAuthenticatedAsync(senderId)) {
             await message.reply({ message: MSG.AUTH_REQUIRED });
@@ -22076,6 +22927,10 @@ ${buildPathPreviewLine(appliedPath.folder)}
           await handleBotHomeCallback(callbackUpdate, data);
           return;
         }
+        if (data.startsWith("upd_")) {
+          await handleUpdateCallback(callbackUpdate, data);
+          return;
+        }
         if (data.startsWith("pwd_")) {
           await handlePasswordCallback(callbackUpdate);
           return;
@@ -22168,6 +23023,7 @@ ${buildPathPreviewLine(appliedPath.folder)}
       displayName: [me?.firstName, me?.lastName].filter(Boolean).join(" ") || null
     });
     markTelegramBotReady();
+    watchTelegramUpdateResult();
     digestTimer = setInterval(() => {
       if (!client) return;
       void listTelegramNotificationDigestScopes().then((scopes) => Promise.all(scopes.map(
@@ -22746,26 +23602,26 @@ function buildCloudMediaResponse(input) {
 // src/routes/files.ts
 import { pipeline } from "node:stream/promises";
 var router2 = Router2();
-var UPLOAD_DIR4 = path22.resolve(process.env.UPLOAD_DIR || "./data/uploads");
-var THUMBNAIL_DIR4 = path22.resolve(process.env.THUMBNAIL_DIR || "./data/thumbnails");
-var PREVIEW_DIR3 = path22.resolve(process.env.PREVIEW_DIR || "./data/previews");
+var UPLOAD_DIR4 = path23.resolve(process.env.UPLOAD_DIR || "./data/uploads");
+var THUMBNAIL_DIR4 = path23.resolve(process.env.THUMBNAIL_DIR || "./data/thumbnails");
+var PREVIEW_DIR3 = path23.resolve(process.env.PREVIEW_DIR || "./data/previews");
 async function getSafeLocalFilePath(file) {
-  const candidate = file.path || path22.join(UPLOAD_DIR4, file.stored_name);
-  const resolved = path22.resolve(candidate);
+  const candidate = file.path || path23.join(UPLOAD_DIR4, file.stored_name);
+  const resolved = path23.resolve(candidate);
   if (!isPathInside(UPLOAD_DIR4, resolved)) {
     throw new Error("Unsafe local file path");
   }
-  if (!fs15.existsSync(resolved)) {
+  if (!fs16.existsSync(resolved)) {
     return resolved;
   }
-  const real = await fs15.promises.realpath(resolved);
+  const real = await fs16.promises.realpath(resolved);
   if (!isPathInside(UPLOAD_DIR4, real)) {
     throw new Error("Unsafe local file path");
   }
   return real;
 }
 async function serveLocalPathWithRange(req, res, filePath, mimeType, cacheControl, etag) {
-  const stat = fs15.statSync(filePath);
+  const stat = fs16.statSync(filePath);
   res.set({
     "Content-Type": mimeType || "application/octet-stream",
     "Cache-Control": cacheControl,
@@ -22791,13 +23647,13 @@ async function serveLocalPathWithRange(req, res, filePath, mimeType, cacheContro
       "Content-Range": `bytes ${start}-${end}/${stat.size}`,
       "Content-Length": String(chunkSize)
     });
-    const stream2 = fs15.createReadStream(filePath, { start, end });
+    const stream2 = fs16.createReadStream(filePath, { start, end });
     req.once("aborted", () => stream2.destroy());
     await pipeline(stream2, res);
     return;
   }
   res.set("Content-Length", String(stat.size));
-  const stream = fs15.createReadStream(filePath);
+  const stream = fs16.createReadStream(filePath);
   req.once("aborted", () => stream.destroy());
   await pipeline(stream, res);
 }
@@ -23088,14 +23944,14 @@ router2.get("/:id([0-9a-fA-F-]{36})/media-status", async (req, res) => {
     const file = await getScopedFileById(req.params.id);
     if (!file) return res.status(404).json({ code: "FILE_NOT_FOUND", error: "\u6587\u4EF6\u8BB0\u5F55\u4E0D\u5B58\u5728" });
     if (file.preview_path && (file.type === "image" || file.type === "video")) {
-      const localPreviewPath = path22.join(PREVIEW_DIR3, path22.basename(file.preview_path));
-      if (fs15.existsSync(localPreviewPath)) {
+      const localPreviewPath = path23.join(PREVIEW_DIR3, path23.basename(file.preview_path));
+      if (fs16.existsSync(localPreviewPath)) {
         return res.json({ available: true, source: "local_preview" });
       }
     }
     if (file.source === "local" || file.source === "web") {
       const filePath = await getSafeLocalFilePath(file);
-      return fs15.existsSync(filePath) ? res.json({ available: true, source: "local" }) : res.status(410).json({ code: "MEDIA_SOURCE_MISSING", error: "\u670D\u52A1\u5668\u4E2D\u7684\u6E90\u6587\u4EF6\u5DF2\u4E0D\u5B58\u5728\u3002", reason: "not_found" });
+      return fs16.existsSync(filePath) ? res.json({ available: true, source: "local" }) : res.status(410).json({ code: "MEDIA_SOURCE_MISSING", error: "\u670D\u52A1\u5668\u4E2D\u7684\u6E90\u6587\u4EF6\u5DF2\u4E0D\u5B58\u5728\u3002", reason: "not_found" });
     }
     const { storageManager: storageManager2 } = await Promise.resolve().then(() => (init_storage(), storage_exports));
     const provider = storageManager2.getProvider(`${file.source}:${file.storage_account_id}`);
@@ -23120,8 +23976,8 @@ router2.get("/:id([0-9a-fA-F-]{36})/preview", async (req, res) => {
     if (!file) {
       return res.status(404).json({ error: "\u6587\u4EF6\u4E0D\u5B58\u5728" });
     }
-    const localPreviewPath = file.preview_path && (file.type === "image" || file.type === "video") ? path22.join(PREVIEW_DIR3, path22.basename(file.preview_path)) : null;
-    if (localPreviewPath && fs15.existsSync(localPreviewPath)) {
+    const localPreviewPath = file.preview_path && (file.type === "image" || file.type === "video") ? path23.join(PREVIEW_DIR3, path23.basename(file.preview_path)) : null;
+    if (localPreviewPath && fs16.existsSync(localPreviewPath)) {
       await serveLocalPathWithRange(
         req,
         res,
@@ -23157,31 +24013,31 @@ router2.get("/:id([0-9a-fA-F-]{36})/preview", async (req, res) => {
       }
     }
     const filePath = await getSafeLocalFilePath(file);
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       return res.status(404).json({ error: "\u6587\u4EF6\u4E0D\u5B58\u5728\u4E8E\u670D\u52A1\u5668" });
     }
     let previewPath = file.preview_path;
-    let preferredPreviewPath = previewPath && (file.type === "image" || file.type === "video") ? path22.join(PREVIEW_DIR3, path22.basename(previewPath)) : null;
-    if (file.type === "image" && (!preferredPreviewPath || !fs15.existsSync(preferredPreviewPath))) {
+    let preferredPreviewPath = previewPath && (file.type === "image" || file.type === "video") ? path23.join(PREVIEW_DIR3, path23.basename(previewPath)) : null;
+    if (file.type === "image" && (!preferredPreviewPath || !fs16.existsSync(preferredPreviewPath))) {
       try {
         const generatedPreview = await generateMediaPreview(filePath, file.stored_name || file.name, file.mime_type || "application/octet-stream");
         if (generatedPreview) {
-          previewPath = path22.basename(generatedPreview);
-          preferredPreviewPath = path22.join(PREVIEW_DIR3, previewPath);
+          previewPath = path23.basename(generatedPreview);
+          preferredPreviewPath = path23.join(PREVIEW_DIR3, previewPath);
           await query("UPDATE files SET preview_path = $1, updated_at = NOW() WHERE id = $2", [previewPath, file.id]);
         }
       } catch (previewError) {
         console.error("\u61D2\u751F\u6210\u56FE\u7247\u9884\u89C8\u5931\u8D25:", previewError);
       }
-    } else if (file.type === "video" && (!preferredPreviewPath || !fs15.existsSync(preferredPreviewPath))) {
+    } else if (file.type === "video" && (!preferredPreviewPath || !fs16.existsSync(preferredPreviewPath))) {
       void generateMediaPreview(filePath, file.stored_name || file.name, file.mime_type || "application/octet-stream").then(async (generatedPreview) => {
         if (!generatedPreview) return;
-        const generatedPreviewName = path22.basename(generatedPreview);
+        const generatedPreviewName = path23.basename(generatedPreview);
         await query("UPDATE files SET preview_path = $1, updated_at = NOW() WHERE id = $2", [generatedPreviewName, file.id]);
         console.log(`[Preview] \u{1F39E}\uFE0F Lazy video preview cached for ${file.id}: ${generatedPreviewName}`);
       }).catch((previewError) => console.error("\u61D2\u751F\u6210\u89C6\u9891\u9884\u89C8\u5931\u8D25:", previewError));
     }
-    const servedPath = preferredPreviewPath && fs15.existsSync(preferredPreviewPath) ? preferredPreviewPath : filePath;
+    const servedPath = preferredPreviewPath && fs16.existsSync(preferredPreviewPath) ? preferredPreviewPath : filePath;
     const servedMime = preferredPreviewPath && servedPath === preferredPreviewPath ? file.type === "video" ? "video/mp4" : "image/webp" : file.mime_type || "application/octet-stream";
     await serveLocalPathWithRange(
       req,
@@ -23226,7 +24082,7 @@ router2.get("/:id([0-9a-fA-F-]{36})/original", async (req, res) => {
       }
     }
     const filePath = await getSafeLocalFilePath(file);
-    if (!fs15.existsSync(filePath)) return res.status(404).json({ error: "\u6587\u4EF6\u4E0D\u5B58\u5728\u4E8E\u670D\u52A1\u5668" });
+    if (!fs16.existsSync(filePath)) return res.status(404).json({ error: "\u6587\u4EF6\u4E0D\u5B58\u5728\u4E8E\u670D\u52A1\u5668" });
     await serveLocalPathWithRange(req, res, filePath, file.mime_type || "application/octet-stream", "public, max-age=86400", `"${file.id}-${file.updated_at}-original"`);
   } catch (error) {
     console.error("\u83B7\u53D6\u539F\u59CB\u6587\u4EF6\u5931\u8D25:", error);
@@ -23292,7 +24148,7 @@ router2.get("/:id([0-9a-fA-F-]{36})/download", async (req, res) => {
     }
     const filePath = await getSafeLocalFilePath(file);
     console.log(`[Download] Serving local file: ${filePath}`);
-    if (!fs15.existsSync(filePath)) {
+    if (!fs16.existsSync(filePath)) {
       console.log(`[Download] File system path not found: ${filePath}`);
       return res.status(404).json({ error: "\u6587\u4EF6\u4E0D\u5B58\u5728\u4E8E\u670D\u52A1\u5668" });
     }
@@ -23316,8 +24172,8 @@ router2.get("/:id([0-9a-fA-F-]{36})/thumbnail", async (req, res) => {
     if (!file.thumbnail_path) {
       return res.status(404).json({ error: "\u65E0\u7F29\u7565\u56FE" });
     }
-    const thumbPath = path22.join(THUMBNAIL_DIR4, path22.basename(file.thumbnail_path));
-    if (!fs15.existsSync(thumbPath)) {
+    const thumbPath = path23.join(THUMBNAIL_DIR4, path23.basename(file.thumbnail_path));
+    if (!fs16.existsSync(thumbPath)) {
       return res.status(404).json({ error: "\u7F29\u7565\u56FE\u6587\u4EF6\u4E0D\u5B58\u5728" });
     }
     await serveLocalPathWithRange(req, res, thumbPath, "image/webp", "public, max-age=604800");
@@ -23913,14 +24769,14 @@ init_db();
 import { Router as Router4 } from "express";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
-import path24 from "path";
-import fs17 from "fs";
+import path25 from "path";
+import fs18 from "fs";
 
 // src/middleware/apiKey.ts
 init_db();
-import { createHash as createHash2, randomBytes, timingSafeEqual } from "crypto";
+import { createHash as createHash3, randomBytes, timingSafeEqual } from "crypto";
 function hashApiKey(apiKey) {
-  return createHash2("sha256").update(apiKey).digest("hex");
+  return createHash3("sha256").update(apiKey).digest("hex");
 }
 function safeEqualHex(a, b) {
   try {
@@ -24009,8 +24865,8 @@ function buildUploadCapabilities(env = process.env) {
 
 // src/services/mediaDerivatives.ts
 init_db();
-import fs16 from "node:fs/promises";
-import path23 from "node:path";
+import fs17 from "node:fs/promises";
+import path24 from "node:path";
 var concurrency = Math.max(1, Math.min(4, Number.parseInt(process.env.MEDIA_DERIVATIVE_CONCURRENCY || "2", 10) || 2));
 var timeoutMs = Math.max(1e4, Number.parseInt(process.env.MEDIA_DERIVATIVE_TIMEOUT_MS || "120000", 10) || 12e4);
 var queue = [];
@@ -24072,7 +24928,7 @@ async function processJob(job) {
                  derivative_source_path = NULL, derivative_cleanup_source = FALSE,
                  derivative_started_at = NULL, updated_at = NOW()
              WHERE id = $5`,
-      [path23.basename(thumbnail), path23.basename(preview), dimensions.width, dimensions.height, job.fileId]
+      [path24.basename(thumbnail), path24.basename(preview), dimensions.width, dimensions.height, job.fileId]
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -24085,7 +24941,7 @@ async function processJob(job) {
     ).catch(() => void 0);
     console.error(`[MediaDerivatives] ${job.fileId} \u5904\u7406\u5931\u8D25:`, error);
   } finally {
-    if (job.cleanupSource) await fs16.rm(job.sourcePath, { force: true }).catch(() => void 0);
+    if (job.cleanupSource) await fs17.rm(job.sourcePath, { force: true }).catch(() => void 0);
   }
 }
 function drain() {
@@ -24170,16 +25026,16 @@ function decodeFilename(filename) {
   }
   return filename;
 }
-var TEMP_DIR = path24.join(process.cwd(), "data", "temp");
-if (!fs17.existsSync(TEMP_DIR)) {
-  fs17.mkdirSync(TEMP_DIR, { recursive: true });
+var TEMP_DIR = path25.join(process.cwd(), "data", "temp");
+if (!fs18.existsSync(TEMP_DIR)) {
+  fs18.mkdirSync(TEMP_DIR, { recursive: true });
 }
 var storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, TEMP_DIR);
   },
   filename: (_req, file, cb) => {
-    const ext = path24.extname(file.originalname);
+    const ext = path25.extname(file.originalname);
     const storedName = `${uuidv4()}${ext}`;
     cb(null, storedName);
   }
@@ -24199,7 +25055,7 @@ var handleUpload = async (req, res, source = "web") => {
   const originalName = decodeFilename(file.originalname);
   const mimeType = file.mimetype;
   const size = file.size;
-  const tempPath = path24.resolve(file.path);
+  const tempPath = path25.resolve(file.path);
   let storageLease = null;
   let target;
   try {
@@ -24225,7 +25081,7 @@ var handleUpload = async (req, res, source = "web") => {
       target = storageManager.getActiveTarget();
     }
   } catch (error) {
-    if (fs17.existsSync(tempPath)) fs17.unlinkSync(tempPath);
+    if (fs18.existsSync(tempPath)) fs18.unlinkSync(tempPath);
     return res.status(409).json({ error: error instanceof Error ? error.message : "\u4E0A\u4F20\u76EE\u6807\u65E0\u6548" });
   }
   const { provider, accountId: activeAccountId } = target;
@@ -24233,7 +25089,7 @@ var handleUpload = async (req, res, source = "web") => {
   try {
     requestedFolder = folder ? normalizeFolderPath(folder) : null;
   } catch (error) {
-    if (fs17.existsSync(tempPath)) fs17.unlinkSync(tempPath);
+    if (fs18.existsSync(tempPath)) fs18.unlinkSync(tempPath);
     return res.status(400).json({ error: error instanceof Error ? error.message : "\u6587\u4EF6\u5939\u8DEF\u5F84\u65E0\u6548" });
   }
   const storageRules = await getStoragePathRules();
@@ -24249,7 +25105,7 @@ var handleUpload = async (req, res, source = "web") => {
     if (duplicateMode === "skip") {
       const duplicate = await findDuplicateFile(originalName, storageFolder, size, activeAccountId);
       if (duplicate) {
-        if (fs17.existsSync(tempPath)) fs17.unlinkSync(tempPath);
+        if (fs18.existsSync(tempPath)) fs18.unlinkSync(tempPath);
         return res.json({
           success: true,
           skipped: true,
@@ -24299,8 +25155,8 @@ var handleUpload = async (req, res, source = "web") => {
         mimeType,
         cleanupSource: provider.name !== "local"
       });
-    } else if (fs17.existsSync(tempPath)) {
-      fs17.unlinkSync(tempPath);
+    } else if (fs18.existsSync(tempPath)) {
+      fs18.unlinkSync(tempPath);
     }
     res.json({
       success: true,
@@ -24320,7 +25176,7 @@ var handleUpload = async (req, res, source = "web") => {
     });
   } catch (error) {
     console.error("\u4E0A\u4F20\u5904\u7406\u5931\u8D25:", error);
-    if (fs17.existsSync(tempPath)) fs17.unlinkSync(tempPath);
+    if (fs18.existsSync(tempPath)) fs18.unlinkSync(tempPath);
     if (isStorageCooldownError(error)) {
       return sendStorageCooldownHttpError(res, error);
     }
@@ -24346,9 +25202,9 @@ import { Router as Router5 } from "express";
 import checkDiskSpaceModule2 from "check-disk-space";
 init_settings();
 init_authSettings();
-import os3 from "os";
-import path25 from "path";
-import fs18 from "fs";
+import os4 from "os";
+import path26 from "path";
+import fs19 from "fs";
 import axios3 from "axios";
 import crypto25 from "crypto";
 import { rateLimit as rateLimit3 } from "express-rate-limit";
@@ -24818,7 +25674,7 @@ router5.get("/stats", requireAuth, async (_req, res) => {
     const provider = target.provider;
     const activeAccountId = target.accountId;
     const scope = buildStorageScopeForTarget({ providerName: provider.name, accountId: activeAccountId });
-    const diskPath = os3.platform() === "win32" ? "C:" : path25.resolve(UPLOAD_DIR5);
+    const diskPath = os4.platform() === "win32" ? "C:" : path26.resolve(UPLOAD_DIR5);
     const diskSpace = await checkDiskSpace2(diskPath);
     const result = await query(`
             SELECT COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size
@@ -25126,7 +25982,7 @@ router5.delete("/config/telegram-bot", requireAuth, async (req, res) => {
       await controls.stop();
       await deleteTelegramBotConfig();
       const sessionPath = getTelegramUserSessionFilePath();
-      if (fs18.existsSync(sessionPath)) fs18.rmSync(sessionPath, { force: true });
+      if (fs19.existsSync(sessionPath)) fs19.rmSync(sessionPath, { force: true });
       const effective = await applyEffectiveTelegramBotConfig();
       if (effective.source === "environment" && effective.enabled && effective.credentials) await controls.restart(effective.credentials);
     });
@@ -25896,9 +26752,9 @@ var storage_default = router5;
 init_db();
 import { Router as Router6 } from "express";
 import crypto28 from "node:crypto";
-import fs20 from "node:fs";
+import fs21 from "node:fs";
 import fsPromises2 from "node:fs/promises";
-import path27 from "node:path";
+import path28 from "node:path";
 import { pipeline as pipeline3 } from "node:stream/promises";
 import { rateLimit as rateLimit4 } from "express-rate-limit";
 import checkDiskSpaceModule3 from "check-disk-space";
@@ -26096,9 +26952,9 @@ async function compensateChunkCompletionFailure(input) {
 
 // src/services/chunkUploadSessions.ts
 import crypto27 from "node:crypto";
-import fs19 from "node:fs";
+import fs20 from "node:fs";
 import fsPromises from "node:fs/promises";
-import path26 from "node:path";
+import path27 from "node:path";
 import { pipeline as pipeline2 } from "node:stream/promises";
 var ChunkUploadProtocolError = class extends Error {
   constructor(name, message) {
@@ -26107,7 +26963,7 @@ var ChunkUploadProtocolError = class extends Error {
   }
 };
 async function writeChunkAtomically(input) {
-  await fsPromises.mkdir(path26.dirname(input.finalPath), { recursive: true });
+  await fsPromises.mkdir(path27.dirname(input.finalPath), { recursive: true });
   const committedPath = `${input.finalPath}.${crypto27.randomUUID()}.chunk`;
   const temporaryPath = `${committedPath}.part`;
   const lockPath = `${input.finalPath}.lock`;
@@ -26129,7 +26985,7 @@ async function writeChunkAtomically(input) {
     }
   });
   try {
-    await pipeline2(input.stream, counter, fs19.createWriteStream(temporaryPath, { flags: "wx" }));
+    await pipeline2(input.stream, counter, fs20.createWriteStream(temporaryPath, { flags: "wx" }));
     if (size !== input.expectedSize) throw new ChunkUploadProtocolError("ChunkSizeMismatchError", "\u5206\u5757\u5927\u5C0F\u4E0D\u5339\u914D");
     const sha2562 = hash2.digest("hex");
     if (sha2562 !== input.expectedSha256.toLowerCase()) throw new ChunkUploadProtocolError("ChunkHashMismatchError", "\u5206\u5757\u54C8\u5E0C\u4E0D\u5339\u914D");
@@ -26144,15 +27000,15 @@ async function writeChunkAtomically(input) {
   }
 }
 async function verifyChunkIntegrity(chunk, expectedDirectory, maxChunkBytes) {
-  const chunkPath = path26.resolve(chunk.path);
-  const directory = path26.resolve(expectedDirectory);
-  if (path26.dirname(chunkPath) !== directory) throw new ChunkUploadProtocolError("ChunkPathError", `\u5206\u5757 ${chunk.index} \u8DEF\u5F84\u65E0\u6548`);
+  const chunkPath = path27.resolve(chunk.path);
+  const directory = path27.resolve(expectedDirectory);
+  if (path27.dirname(chunkPath) !== directory) throw new ChunkUploadProtocolError("ChunkPathError", `\u5206\u5757 ${chunk.index} \u8DEF\u5F84\u65E0\u6548`);
   const stat = await fsPromises.stat(chunkPath);
   if (stat.size !== chunk.size || stat.size < 1 || stat.size > maxChunkBytes) {
     throw new ChunkUploadProtocolError("ChunkSizeMismatchError", `\u5206\u5757 ${chunk.index} \u5927\u5C0F\u65E0\u6548`);
   }
   const hash2 = crypto27.createHash("sha256");
-  await pipeline2(fs19.createReadStream(chunkPath), new (await import("node:stream")).Writable({
+  await pipeline2(fs20.createReadStream(chunkPath), new (await import("node:stream")).Writable({
     write(buffer, _encoding, callback) {
       hash2.update(buffer);
       callback();
@@ -26648,13 +27504,13 @@ var DISK_RESERVE_BYTES = Math.max(1024 ** 3, (parseInt(process.env.CHUNK_DISK_RE
 var MAX_TOTAL_CHUNKS = Math.max(1, parseInt(process.env.MAX_TOTAL_CHUNKS || "50000", 10) || 5e4);
 var SESSION_TTL_MS = Math.max(60 * 60 * 1e3, parseInt(process.env.CHUNK_SESSION_TTL_MS || String(24 * 60 * 60 * 1e3), 10));
 var COMPLETION_LEASE_MS = Math.max(6e4, parseInt(process.env.CHUNK_COMPLETION_LEASE_MS || String(30 * 60 * 1e3), 10));
-[UPLOAD_DIR6, THUMBNAIL_DIR5, CHUNK_DIR].forEach((dir) => fs20.mkdirSync(dir, { recursive: true }));
+[UPLOAD_DIR6, THUMBNAIL_DIR5, CHUNK_DIR].forEach((dir) => fs21.mkdirSync(dir, { recursive: true }));
 var chunkRepository = new PostgresChunkUploadSessionRepository(pool);
 var chunkStore = new ChunkUploadSessionStore(chunkRepository, {
   maxTotalBytes: MAX_TOTAL_BYTES,
   globalBudgetBytes: GLOBAL_BUDGET_BYTES,
   diskReserveBytes: DISK_RESERVE_BYTES,
-  getDiskFreeBytes: async () => (await checkDiskSpace3(path27.resolve(CHUNK_DIR))).free
+  getDiskFreeBytes: async () => (await checkDiskSpace3(path28.resolve(CHUNK_DIR))).free
 });
 var runChunkMaintenance = async () => {
   const reconciliationLease = crypto28.randomUUID();
@@ -26670,7 +27526,7 @@ var runChunkMaintenance = async () => {
   }
   const expiredIds = await chunkRepository.deleteExpiredSessions(100);
   await Promise.all(expiredIds.map(
-    (uploadId) => fsPromises2.rm(path27.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error(`\u6E05\u7406\u8FC7\u671F\u5206\u5757\u76EE\u5F55\u5931\u8D25: ${uploadId}`, error))
+    (uploadId) => fsPromises2.rm(path28.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error(`\u6E05\u7406\u8FC7\u671F\u5206\u5757\u76EE\u5F55\u5931\u8D25: ${uploadId}`, error))
   ));
   await chunkRepository.recoverExpiredCompletions(100);
 };
@@ -26707,7 +27563,7 @@ function decodeFilename2(filename) {
   return filename;
 }
 function safeChunkPath(uploadId, chunkIndex) {
-  return path27.join(path27.resolve(CHUNK_DIR), uploadId, `chunk_${chunkIndex}`);
+  return path28.join(path28.resolve(CHUNK_DIR), uploadId, `chunk_${chunkIndex}`);
 }
 function sendProtocolError(res, error) {
   if (error instanceof ChunkUploadProtocolError) {
@@ -26779,7 +27635,7 @@ router6.post("/init", async (req, res) => {
       createdAt: now,
       updatedAt: now
     };
-    uploadDirectory = path27.join(CHUNK_DIR, session.uploadId);
+    uploadDirectory = path28.join(CHUNK_DIR, session.uploadId);
     await fsPromises2.mkdir(uploadDirectory, { recursive: true });
     await chunkStore.reserve(session);
     res.json({
@@ -26849,16 +27705,16 @@ router6.post("/chunk", async (req, res) => {
 });
 async function mergeChunks(uploadId, chunks, targetPath, expectedBytes) {
   const temporary = `${targetPath}.${crypto28.randomUUID()}.part`;
-  await fsPromises2.mkdir(path27.dirname(targetPath), { recursive: true });
-  const output = fs20.createWriteStream(temporary, { flags: "wx" });
+  await fsPromises2.mkdir(path28.dirname(targetPath), { recursive: true });
+  const output = fs21.createWriteStream(temporary, { flags: "wx" });
   try {
     if (chunks.length === 0) throw new Error("\u5206\u5757\u4E0D\u5B8C\u6574");
     for (let index = 0; index < chunks.length; index++) {
       const chunk = chunks[index];
-      const expectedDirectory = path27.dirname(path27.resolve(safeChunkPath(uploadId, index)));
+      const expectedDirectory = path28.dirname(path28.resolve(safeChunkPath(uploadId, index)));
       if (chunk.index !== index) throw new Error(`\u5206\u5757 ${index} \u5143\u6570\u636E\u65E0\u6548`);
       const verifiedPath = await verifyChunkIntegrity(chunk, expectedDirectory, MAX_CHUNK_BYTES);
-      await pipeline3(fs20.createReadStream(verifiedPath), output, { end: false });
+      await pipeline3(fs21.createReadStream(verifiedPath), output, { end: false });
     }
     await new Promise((resolve, reject) => {
       output.end(resolve);
@@ -26929,13 +27785,13 @@ router6.post("/complete", async (req, res) => {
       fileName: session.filename
     }, await getStoragePathRules());
     const storedName = await getUniqueStoredName(session.filename, storageFolder, session.targetAccountId);
-    tempMergedPath = path27.join(path27.resolve(UPLOAD_DIR6), `${uploadId}-${storedName}`);
+    tempMergedPath = path28.join(path28.resolve(UPLOAD_DIR6), `${uploadId}-${storedName}`);
     await mergeChunks(uploadId, claim.chunks, tempMergedPath, session.totalSize);
     const duplicate = await getDuplicateMode() === "skip" ? await findDuplicateFile(session.filename, storageFolder, session.totalSize, session.targetAccountId) : null;
     if (duplicate) {
       await fsPromises2.rm(tempMergedPath, { force: true });
       if (!await chunkStore.complete(uploadId, owner, token, duplicate.id)) throw new Error("\u5B8C\u6210\u79DF\u7EA6\u5DF2\u5931\u6548");
-      await fsPromises2.rm(path27.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error("\u6E05\u7406\u5DF2\u5B8C\u6210\u91CD\u590D\u4E0A\u4F20\u7684\u5206\u5757\u5931\u8D25:", error));
+      await fsPromises2.rm(path28.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error("\u6E05\u7406\u5DF2\u5B8C\u6210\u91CD\u590D\u4E0A\u4F20\u7684\u5206\u5757\u5931\u8D25:", error));
       return res.json({
         success: true,
         skipped: true,
@@ -27028,7 +27884,7 @@ router6.post("/complete", async (req, res) => {
       await compensateAfterCompletionFailure(completionError);
       throw completionError;
     }
-    await fsPromises2.rm(path27.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error("\u6E05\u7406\u5DF2\u5B8C\u6210\u4E0A\u4F20\u7684\u5206\u5757\u5931\u8D25:", error));
+    await fsPromises2.rm(path28.join(CHUNK_DIR, uploadId), { recursive: true, force: true }).catch((error) => console.error("\u6E05\u7406\u5DF2\u5B8C\u6210\u4E0A\u4F20\u7684\u5206\u5757\u5931\u8D25:", error));
     if (derivativeStatus === "queued") {
       enqueueMediaDerivatives({
         fileId: String(file.id),
@@ -27111,7 +27967,7 @@ router6.delete("/:uploadId", async (req, res) => {
   try {
     const result = await chunkStore.cancel(req.params.uploadId, ownerId(req));
     if (result === "busy") return res.status(409).json({ error: "\u4E0A\u4F20\u6B63\u5728\u5B8C\u6210\uFF0C\u6682\u65F6\u4E0D\u80FD\u53D6\u6D88", status: result });
-    if (result === "cancelled") await fsPromises2.rm(path27.join(CHUNK_DIR, req.params.uploadId), { recursive: true, force: true });
+    if (result === "cancelled") await fsPromises2.rm(path28.join(CHUNK_DIR, req.params.uploadId), { recursive: true, force: true });
     res.status(result === "not_found" ? 404 : 200).json({ success: result !== "not_found", status: result });
   } catch (error) {
     sendProtocolError(res, error);
@@ -27145,8 +28001,8 @@ var chunkedUpload_default = router6;
 // src/routes/tasks.ts
 init_db();
 import { Router as Router7 } from "express";
-import fs21 from "node:fs/promises";
-import path28 from "node:path";
+import fs22 from "node:fs/promises";
+import path29 from "node:path";
 
 // src/services/taskCenterDismissals.ts
 init_db();
@@ -27505,7 +28361,7 @@ router7.post("/:sourceType/:id/:action", requireAuth, async (req, res) => {
         [id]
       );
       if ((result.rowCount || 0) === 0) return res.status(409).json({ error: "\u4E0A\u4F20\u6B63\u5728\u5B8C\u6210\u6216\u5DF2\u7ED3\u675F\uFF0C\u4E0D\u80FD\u53D6\u6D88" });
-      await fs21.rm(path28.join(CHUNK_DIR2, id), { recursive: true, force: true });
+      await fs22.rm(path29.join(CHUNK_DIR2, id), { recursive: true, force: true });
       return res.json({ success: true });
     }
     return res.status(400).json({ error: "\u8BE5\u4EFB\u52A1\u7C7B\u578B\u6682\u4E0D\u652F\u6301\u63A7\u5236" });
@@ -27790,364 +28646,10 @@ var subscriptions_default = router8;
 // src/routes/system.ts
 import { Router as Router9 } from "express";
 import { rateLimit as rateLimit5 } from "express-rate-limit";
-
-// src/services/dockerUpdater.ts
-import http from "node:http";
-import fs22 from "node:fs";
-import path29 from "node:path";
-import os4 from "node:os";
-import { createHash as createHash3, randomUUID as randomUUID4 } from "node:crypto";
-var SOCKET = "/var/run/docker.sock";
-var IMAGE = "containrrr/watchtower:1.7.1";
-var LABEL = "io.tg-vault.update-job";
-var DockerError = class extends Error {
-  constructor(status) {
-    super(`Docker API returned ${status}`);
-    this.status = status;
-  }
-  status;
-};
-var dockerRequest = (method, route, body, timeout = 1e4) => new Promise((resolve, reject) => {
-  const payload = body === void 0 ? void 0 : JSON.stringify(body);
-  const req = http.request({
-    socketPath: SOCKET,
-    path: route,
-    method,
-    headers: payload ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } : {}
-  }, (res) => {
-    const chunks = [];
-    let size = 0;
-    res.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > 8 * 1024 * 1024) {
-        req.destroy(new Error("Docker response too large"));
-        return;
-      }
-      chunks.push(chunk);
-    });
-    res.on("error", reject);
-    res.on("end", () => {
-      const status = res.statusCode || 500;
-      if (status < 200 || status >= 300) reject(new DockerError(status));
-      else resolve(Buffer.concat(chunks).toString("utf8"));
-    });
-  });
-  const timer = setTimeout(() => req.destroy(new Error("Docker request timed out")), timeout);
-  req.on("close", () => clearTimeout(timer));
-  req.on("error", reject);
-  req.end(payload);
-});
-function readSummary(logs) {
-  for (const line of logs.split("\n").reverse()) {
-    try {
-      const row = JSON.parse(line);
-      if (row.msg !== "Session done") continue;
-      const values = [row.Scanned, row.Updated, row.Failed].map(Number);
-      if (!values.every((value) => Number.isInteger(value) && value >= 0)) return null;
-      return { scanned: values[0], updated: values[1], failed: values[2] };
-    } catch {
-    }
-  }
-  return null;
-}
-function createDockerUpdater(options = {}) {
-  const enabled = options.enabled ?? process.env.DOCKER_UPDATE_ENABLED === "true";
-  const stateFile = options.stateFile ?? "/data/docker-update.json";
-  const hostname = options.hostname ?? os4.hostname();
-  const request = options.request ?? dockerRequest;
-  let job = { phase: "idle" };
-  let corrupt = false;
-  let preparing = false;
-  let checking;
-  let lastError = "";
-  if (enabled && fs22.existsSync(stateFile)) {
-    try {
-      job = JSON.parse(fs22.readFileSync(stateFile, "utf8"));
-      if (!job || !["idle", "preparing", "running", "success", "unchanged", "failed"].includes(job.phase)) throw new Error("Invalid Docker update state");
-      if (["preparing", "running"].includes(job.phase) && (!job.id || !job.helper || !job.target || !job.image)) throw new Error("Incomplete Docker update state");
-    } catch {
-      corrupt = true;
-      job = { phase: "failed" };
-    }
-  }
-  const save = () => {
-    fs22.mkdirSync(path29.dirname(stateFile), { recursive: true });
-    fs22.writeFileSync(`${stateFile}.tmp`, JSON.stringify(job), { mode: 384 });
-    fs22.renameSync(`${stateFile}.tmp`, stateFile);
-  };
-  const inspect = async (name) => JSON.parse(await request("GET", `/containers/${encodeURIComponent(name)}/json`));
-  const busy = () => job.phase === "preparing" || job.phase === "running";
-  const self = async () => {
-    if (!/^[a-f0-9]{12,64}$/.test(hostname)) throw new Error("Default Docker hostname required");
-    let container;
-    try {
-      container = await inspect(hostname);
-    } catch (error) {
-      if (!(error instanceof DockerError) || error.status !== 404 || !job.target) throw error;
-      container = await inspect(job.target);
-    }
-    const recordedSelf = job.target && container.Name === `/${job.target}` && container.Config.Hostname === hostname;
-    if (!container.Id.startsWith(hostname) && !recordedSelf || !container.State.Running || !container.Name.startsWith("/")) throw new Error("Cannot identify this container");
-    if (container.Config.Image.includes("@sha256:") || container.Config.Image.startsWith("sha256:")) throw new Error("A mutable image tag is required");
-    if (!container.Mounts?.some((mount) => mount.Destination === "/data" && mount.RW)) throw new Error("Persistent /data required");
-    if (!container.Mounts?.some((mount) => mount.Destination === SOCKET && mount.Source === SOCKET)) throw new Error("Standard Docker socket mount required");
-    const labels = container.Config.Labels || {};
-    if (labels["com.docker.swarm.service.name"] || labels["com.centurylinklabs.watchtower.enable"] === "false" || labels["com.centurylinklabs.watchtower.monitor-only"] === "true") throw new Error("Container does not permit updates");
-    return container;
-  };
-  const reconcile = async () => {
-    if (preparing && busy() || !job.helper || !job.id) return;
-    let helper;
-    try {
-      helper = await inspect(job.helper);
-    } catch (error) {
-      if (error instanceof DockerError && error.status === 404) {
-        if (busy()) job.phase = "failed";
-        delete job.helper;
-        save();
-        return;
-      }
-      throw error;
-    }
-    if (helper.Config.Labels?.[LABEL] !== job.id) throw new Error("Updater identity mismatch");
-    if (helper.State.Running) return;
-    if (busy()) {
-      const logs = await request("GET", `/containers/${encodeURIComponent(job.helper)}/logs?stdout=1&stderr=1&tail=200`);
-      fs22.writeFileSync(path29.join(path29.dirname(stateFile), "docker-update.log"), logs.slice(-32768), { mode: 384 });
-      const summary = readSummary(logs);
-      if (helper.State.Status !== "exited" || helper.State.ExitCode !== 0 || !summary || summary.failed || summary.scanned !== 1) {
-        job.phase = "failed";
-      } else {
-        const target = await inspect(job.target);
-        if (!target.State.Running || target.State.Health?.Status === "unhealthy") job.phase = "failed";
-        else if (target.State.Health?.Status === "starting") return;
-        else if (target.State.Health?.Status !== "healthy") job.phase = "failed";
-        else if (summary.updated === 1 && target.Image !== job.image) job.phase = "success";
-        else if (summary.updated === 0 && target.Image === job.image) job.phase = "unchanged";
-        else job.phase = "failed";
-      }
-      save();
-    }
-    await request("DELETE", `/containers/${encodeURIComponent(job.helper)}`);
-    delete job.helper;
-    save();
-  };
-  const refresh = () => {
-    if (!checking) checking = reconcile().finally(() => {
-      checking = void 0;
-    });
-    return checking;
-  };
-  const status = async () => {
-    if (!enabled) return { enabled: false, available: false, phase: "idle" };
-    if (corrupt) return { enabled, available: false, phase: "failed" };
-    try {
-      await refresh();
-      await self();
-      lastError = "";
-      return { enabled, available: true, phase: job.phase, startedAt: job.startedAt };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message !== lastError) console.warn("Docker upgrade unavailable:", message);
-      lastError = message;
-      return { enabled, available: false, phase: job.phase, startedAt: job.startedAt };
-    }
-  };
-  const prepare = async (apiVersion, socket) => {
-    try {
-      try {
-        await request("GET", `/images/${encodeURIComponent(IMAGE)}/json`);
-      } catch (error) {
-        if (!(error instanceof DockerError) || error.status !== 404) throw error;
-        const pull = await request("POST", `/images/create?fromImage=${encodeURIComponent("containrrr/watchtower")}&tag=1.7.1`, void 0, 6e5);
-        for (const line of pull.split("\n").filter(Boolean)) {
-          const row = JSON.parse(line);
-          if (row.error || row.errorDetail) throw new Error("Updater image pull failed");
-        }
-      }
-      await request("POST", `/containers/create?name=${encodeURIComponent(job.helper)}`, {
-        Image: IMAGE,
-        Cmd: ["--run-once", "--log-format", "JSON", "--stop-timeout", "60s", job.target],
-        Env: [`DOCKER_API_VERSION=${apiVersion}`, `DOCKER_HOST=unix://${SOCKET}`],
-        Tty: true,
-        Labels: { [LABEL]: job.id, "com.centurylinklabs.watchtower.enable": "false" },
-        HostConfig: {
-          Binds: [`${socket}:${SOCKET}`],
-          RestartPolicy: { Name: "no" },
-          LogConfig: { Type: "json-file", Config: { "max-size": "1m", "max-file": "1" } }
-        }
-      });
-      job.phase = "running";
-      save();
-      await request("POST", `/containers/${encodeURIComponent(job.helper)}/start`);
-    } catch (error) {
-      console.error("Docker update preparation failed:", error);
-      if (job.phase !== "running") {
-        job.phase = "failed";
-        save();
-      }
-    } finally {
-      preparing = false;
-    }
-  };
-  const start = async () => {
-    if (!enabled) throw new DockerError(403);
-    if (corrupt) throw new DockerError(503);
-    if (preparing || busy()) throw new DockerError(409);
-    preparing = true;
-    try {
-      await refresh();
-      const target = await self();
-      const version2 = JSON.parse(await request("GET", "/version"));
-      if (!/^1\.\d+$/.test(version2.ApiVersion)) throw new Error("Invalid Docker API version");
-      const name = target.Name.slice(1);
-      job = {
-        phase: "preparing",
-        id: randomUUID4(),
-        target: name,
-        image: target.Image,
-        helper: `tg-vault-update-${createHash3("sha256").update(name).digest("hex").slice(0, 16)}`,
-        startedAt: (/* @__PURE__ */ new Date()).toISOString()
-      };
-      save();
-      void prepare(version2.ApiVersion, SOCKET).catch((error) => console.error("Could not persist Docker update result:", error));
-      return { enabled, available: true, phase: job.phase, startedAt: job.startedAt };
-    } catch (error) {
-      preparing = false;
-      throw error;
-    }
-  };
-  const hasRemoteUpdate = async () => {
-    if (!enabled) throw new DockerError(403);
-    if (corrupt) throw new DockerError(503);
-    const target = await self();
-    const image = target.Config.Image;
-    const local = JSON.parse(await request("GET", `/images/${encodeURIComponent(image)}/json`));
-    const remote = JSON.parse(await request("GET", `/distribution/${image.split("/").map(encodeURIComponent).join("/")}/json`, void 0, 3e4));
-    const digest = remote.Descriptor?.digest;
-    if (!digest || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error("Registry returned no image digest");
-    return !(local.RepoDigests || []).some((entry) => entry.endsWith(`@${digest}`));
-  };
-  const busyNow = () => preparing || busy();
-  const lastJob = () => ({ phase: job.phase, startedAt: job.startedAt });
-  const timer = enabled && options.monitor !== false ? setInterval(() => {
-    if (job.helper && !preparing) void refresh().catch(() => void 0);
-  }, 5e3) : void 0;
-  timer?.unref();
-  return { enabled, status, start, hasRemoteUpdate, isBusy: busyNow, lastJob, close: () => {
-    if (timer) clearInterval(timer);
-  } };
-}
-
-// src/services/dockerAutoUpdate.ts
-init_settings();
-var DOCKER_AUTO_UPDATE_INTERVALS = [5, 10, 15, 30, 60, 180, 360, 720, 1440];
-var DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL = 5;
-var ENABLED_KEY = "docker_auto_update_enabled";
-var INTERVAL_KEY = "docker_auto_update_interval_minutes";
-var RETRY_BACKOFF_MS = 60 * 6e4;
-function normalizeDockerAutoUpdateInterval(value) {
-  const minutes = Number(value);
-  if (!DOCKER_AUTO_UPDATE_INTERVALS.includes(minutes)) {
-    throw new Error(`Interval must be one of ${DOCKER_AUTO_UPDATE_INTERVALS.join("/")} minutes`);
-  }
-  return minutes;
-}
-var settingsDockerAutoUpdateStore = {
-  async load() {
-    const enabled = await getSetting(ENABLED_KEY, "false");
-    const interval = await getSetting(INTERVAL_KEY, String(DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL));
-    let intervalMinutes = DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL;
-    try {
-      intervalMinutes = normalizeDockerAutoUpdateInterval(interval);
-    } catch {
-    }
-    return { enabled: enabled === "true", intervalMinutes };
-  },
-  async save(config) {
-    await setSettings([[ENABLED_KEY, String(config.enabled)], [INTERVAL_KEY, String(config.intervalMinutes)]]);
-  }
-};
-function createDockerAutoUpdater(options) {
-  const { updater } = options;
-  const store = options.store ?? settingsDockerAutoUpdateStore;
-  const now = options.now ?? Date.now;
-  const log = options.log ?? console;
-  let config = null;
-  let lastCheckedAt;
-  let lastResult;
-  let running = null;
-  const getConfig = async () => {
-    if (!config) config = await store.load();
-    return config;
-  };
-  const check = async () => {
-    if (updater.isBusy()) return "busy";
-    const job = updater.lastJob();
-    const startedAt = job.startedAt ? Date.parse(job.startedAt) : NaN;
-    if ((job.phase === "failed" || job.phase === "unchanged") && now() - startedAt < RETRY_BACKOFF_MS) return "backoff";
-    if (!(await updater.status()).available) return "unavailable";
-    if (!await updater.hasRemoteUpdate()) return "latest";
-    log.log("[Docker auto update] New image found, starting upgrade");
-    await updater.start();
-    return "started";
-  };
-  const tick = () => {
-    if (running) return running;
-    running = (async () => {
-      if (!updater.enabled) return null;
-      const current3 = await getConfig();
-      if (!current3.enabled) return null;
-      if (lastCheckedAt !== void 0 && now() - lastCheckedAt < current3.intervalMinutes * 6e4) return null;
-      lastCheckedAt = now();
-      try {
-        lastResult = await check();
-      } catch (error) {
-        lastResult = "error";
-        log.warn("[Docker auto update] Check failed:", error instanceof Error ? error.message : error);
-      }
-      return lastResult;
-    })().finally(() => {
-      running = null;
-    });
-    return running;
-  };
-  const state = async () => {
-    const current3 = await getConfig();
-    const available = updater.enabled && (await updater.status()).available;
-    const next = current3.enabled && lastCheckedAt !== void 0 ? lastCheckedAt + current3.intervalMinutes * 6e4 : void 0;
-    return {
-      ...current3,
-      available,
-      intervals: DOCKER_AUTO_UPDATE_INTERVALS,
-      lastCheckedAt: lastCheckedAt === void 0 ? void 0 : new Date(lastCheckedAt).toISOString(),
-      lastResult,
-      nextCheckAt: next === void 0 ? void 0 : new Date(next).toISOString()
-    };
-  };
-  const configure = async (input) => {
-    if (typeof input.enabled !== "boolean") throw new Error("enabled must be a boolean");
-    const next = { enabled: input.enabled, intervalMinutes: normalizeDockerAutoUpdateInterval(input.intervalMinutes) };
-    await store.save(next);
-    config = next;
-    lastCheckedAt = void 0;
-    log.log(`[Docker auto update] ${next.enabled ? `enabled, every ${next.intervalMinutes} min` : "disabled"}`);
-    return state();
-  };
-  const timer = updater.enabled && options.monitor !== false ? setInterval(() => {
-    void tick().catch(() => void 0);
-  }, options.tickMs ?? 6e4) : void 0;
-  timer?.unref();
-  return { tick, state, configure, close: () => {
-    if (timer) clearInterval(timer);
-  } };
-}
-
-// src/routes/system.ts
 function createSystemRouter(checker) {
   const router9 = Router9();
-  const updater = createDockerUpdater();
-  const autoUpdater = createDockerAutoUpdater({ updater });
+  const updater2 = getDockerUpdater();
+  const autoUpdater2 = getDockerAutoUpdater();
   const manualCheckLimiter = rateLimit5({
     windowMs: 6e4,
     max: 3,
@@ -28176,7 +28678,7 @@ function createSystemRouter(checker) {
   });
   router9.get("/docker-update", requireAuth, async (_req, res) => {
     noStore2(res);
-    res.json(await updater.status());
+    res.json(await updater2.status());
   });
   router9.post("/docker-update", requireAuth, manualCheckLimiter, async (req, res) => {
     noStore2(res);
@@ -28184,7 +28686,7 @@ function createSystemRouter(checker) {
       return res.status(400).json({ code: "DOCKER_UPDATE_CONFIRM_REQUIRED" });
     }
     try {
-      res.status(202).json(await updater.start());
+      res.status(202).json(await updater2.start());
     } catch (error) {
       const status = error instanceof DockerError && [403, 409].includes(error.status) ? error.status : 503;
       res.status(status).json({ code: "DOCKER_UPDATE_UNAVAILABLE" });
@@ -28193,7 +28695,7 @@ function createSystemRouter(checker) {
   router9.get("/docker-update/auto", requireAuth, async (_req, res) => {
     noStore2(res);
     try {
-      res.json(await autoUpdater.state());
+      res.json(await autoUpdater2.state());
     } catch (error) {
       console.error("\u8BFB\u53D6\u81EA\u52A8\u66F4\u65B0\u8BBE\u7F6E\u5931\u8D25:", error);
       res.status(500).json({ code: "DOCKER_AUTO_UPDATE_UNAVAILABLE" });
@@ -28203,7 +28705,7 @@ function createSystemRouter(checker) {
     noStore2(res);
     if (!req.is("application/json")) return res.status(400).json({ code: "DOCKER_AUTO_UPDATE_INVALID" });
     try {
-      res.json(await autoUpdater.configure({ enabled: req.body?.enabled, intervalMinutes: req.body?.intervalMinutes }));
+      res.json(await autoUpdater2.configure({ enabled: req.body?.enabled, intervalMinutes: req.body?.intervalMinutes }));
     } catch (error) {
       res.status(400).json({ code: "DOCKER_AUTO_UPDATE_INVALID", error: error instanceof Error ? error.message : String(error) });
     }
@@ -28377,294 +28879,6 @@ function validateRuntimeConfig(env = process.env) {
 function logRuntimeConfigSummary(summary) {
   console.log(`[config] effective=${JSON.stringify(summary)}`);
 }
-
-// package.json
-var package_default = {
-  name: "tg-vault-backend",
-  version: "2.4.3",
-  type: "module",
-  scripts: {
-    dev: "tsx watch src/index.ts",
-    test: "tsx --test src/**/*.test.ts",
-    "test:queue": "tsx --test src/services/downloadTaskQueue.test.ts",
-    typecheck: "tsc --noEmit --pretty false",
-    build: "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --packages=external && esbuild src/scripts/login_telegram_user.ts --bundle --platform=node --format=esm --outfile=dist/scripts/login_telegram_user.js --packages=external && node scripts/sync_dist_schema.mjs && node scripts/sync_dist_schema.mjs --check",
-    start: "node dist/index.js",
-    "login:telegram-user": "node dist/scripts/login_telegram_user.js",
-    "schema:generate-init": "python3 scripts/generate_init_sql.py",
-    "schema:check": "python3 scripts/generate_init_sql.py --check",
-    "schema:check-dist": "node scripts/sync_dist_schema.mjs --check"
-  },
-  dependencies: {
-    "@aws-sdk/client-s3": "^3.1075.0",
-    "@aws-sdk/s3-request-presigner": "^3.1075.0",
-    "ali-oss": "^6.23.0",
-    axios: "^1.18.1",
-    "check-disk-space": "^3.4.0",
-    cors: "^2.8.5",
-    dotenv: "^16.4.7",
-    express: "^4.22.2",
-    "express-rate-limit": "^8.5.2",
-    "fluent-ffmpeg": "^2.1.3",
-    googleapis: "^171.4.0",
-    helmet: "^8.2.0",
-    input: "^1.0.1",
-    multer: "^1.4.5-lts.1",
-    otplib: "^13.4.1",
-    pg: "^8.22.0",
-    qrcode: "^1.5.4",
-    sharp: "^0.35.3",
-    telegram: "^2.26.22",
-    "ua-parser-js": "^2.0.10",
-    undici: "^7.29.0",
-    uuid: "^11.1.1",
-    webdav: "^5.10.0"
-  },
-  devDependencies: {
-    "@types/ali-oss": "^6.23.3",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.25",
-    "@types/fluent-ffmpeg": "^2.1.27",
-    "@types/multer": "^1.4.12",
-    "@types/node": "^22.10.5",
-    "@types/pg": "^8.11.10",
-    "@types/qrcode": "^1.5.6",
-    "@types/ua-parser-js": "^0.7.39",
-    "@types/uuid": "^10.0.0",
-    esbuild: "^0.28.1",
-    tsx: "^4.22.4",
-    typescript: "^6.0.3"
-  }
-};
-
-// src/services/updateChecker.ts
-init_db();
-var DEFAULT_UPDATE_REPOSITORY = "traceonx/tg_value";
-var UPDATE_STATE_KEY = "update_checker_state_v1";
-var MAX_RELEASE_NOTES_LENGTH = 600;
-var REQUEST_TIMEOUT_MS = 5e3;
-function normalizeVersion(input) {
-  const match = String(input || "").trim().match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
-  return match ? `${match[1]}.${match[2]}.${match[3]}` : null;
-}
-function compareVersions(left, right) {
-  const a = normalizeVersion(left);
-  const b = normalizeVersion(right);
-  if (!a || !b) throw new Error("invalid stable semantic version");
-  const leftParts = a.split(".").map(Number);
-  const rightParts = b.split(".").map(Number);
-  for (let index = 0; index < 3; index += 1) {
-    if (leftParts[index] > rightParts[index]) return 1;
-    if (leftParts[index] < rightParts[index]) return -1;
-  }
-  return 0;
-}
-function createPostgresUpdateCheckStore(runQuery = query) {
-  return {
-    async loadState() {
-      const result = await runQuery("SELECT value FROM system_settings WHERE key = $1", [UPDATE_STATE_KEY]);
-      if (!result.rows[0]?.value) return null;
-      try {
-        const parsed = JSON.parse(String(result.rows[0].value));
-        return {
-          repository: typeof parsed.repository === "string" ? parsed.repository : void 0,
-          etag: typeof parsed.etag === "string" ? parsed.etag : null,
-          checkedAt: typeof parsed.checkedAt === "string" ? parsed.checkedAt : null,
-          release: parsed.release && typeof parsed.release === "object" ? parsed.release : null
-        };
-      } catch {
-        return null;
-      }
-    },
-    async saveState(state) {
-      await runQuery(
-        `INSERT INTO system_settings (key, value) VALUES ($1, $2)
-                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-        [UPDATE_STATE_KEY, JSON.stringify(state)]
-      );
-    },
-    async listEligibleRecipients() {
-      const { getConfiguredTelegramAllowedUsers: getConfiguredTelegramAllowedUsers2 } = await Promise.resolve().then(() => (init_authSettings(), authSettings_exports));
-      const allowed = await getConfiguredTelegramAllowedUsers2();
-      if (allowed.length === 0) return [];
-      const result = await runQuery(
-        `SELECT user_id FROM telegram_auth
-                 WHERE user_id = ANY($1::bigint[])
-                 ORDER BY user_id`,
-        [allowed]
-      );
-      return result.rows.map((row) => Number(row.user_id)).filter((id) => Number.isSafeInteger(id) && id > 0);
-    },
-    async claimDelivery(version2, recipientId) {
-      const result = await runQuery(
-        `INSERT INTO update_notification_deliveries (version, channel, recipient_id, status, attempt_count, last_attempt_at, last_error)
-                 VALUES ($1, 'telegram', $2, 'sending', 1, NOW(), NULL)
-                 ON CONFLICT (version, channel, recipient_id) DO UPDATE SET
-                    status = 'sending', attempt_count = update_notification_deliveries.attempt_count + 1,
-                    last_attempt_at = NOW(), last_error = NULL
-                 WHERE update_notification_deliveries.status = 'failed'
-                    OR (update_notification_deliveries.status = 'sending' AND update_notification_deliveries.last_attempt_at < NOW() - INTERVAL '10 minutes')
-                 RETURNING recipient_id`,
-        [version2, String(recipientId)]
-      );
-      return Boolean(result.rowCount);
-    },
-    async markDeliverySucceeded(version2, recipientId) {
-      await runQuery(
-        `UPDATE update_notification_deliveries
-                 SET status = 'delivered', delivered_at = NOW(), last_error = NULL
-                 WHERE version = $1 AND channel = 'telegram' AND recipient_id = $2`,
-        [version2, String(recipientId)]
-      );
-    },
-    async markDeliveryFailed(version2, recipientId, error) {
-      await runQuery(
-        `UPDATE update_notification_deliveries
-                 SET status = 'failed', last_error = $3
-                 WHERE version = $1 AND channel = 'telegram' AND recipient_id = $2`,
-        [version2, String(recipientId), error.slice(0, 500)]
-      );
-    }
-  };
-}
-function buildStatus(currentVersion, enabled, state, stale, error) {
-  const release = state?.release || null;
-  return {
-    enabled,
-    currentVersion,
-    latestVersion: release?.version || null,
-    updateAvailable: Boolean(release && compareVersions(release.version, currentVersion) > 0),
-    releaseName: release?.name || null,
-    releaseUrl: release?.url || null,
-    publishedAt: release?.publishedAt || null,
-    checkedAt: state?.checkedAt || null,
-    stale,
-    error
-  };
-}
-function parseRelease(payload) {
-  if (!payload || payload.draft === true || payload.prerelease === true) return null;
-  const version2 = normalizeVersion(payload.tag_name);
-  const url = typeof payload.html_url === "string" && /^https:\/\/github\.com\//.test(payload.html_url) ? payload.html_url : null;
-  if (!version2 || !url) return null;
-  return {
-    version: version2,
-    tag: String(payload.tag_name),
-    name: typeof payload.name === "string" && payload.name.trim() ? payload.name.trim().slice(0, 160) : `TG Vault v${version2}`,
-    url,
-    publishedAt: typeof payload.published_at === "string" ? payload.published_at : null,
-    notes: typeof payload.body === "string" && payload.body.trim() ? payload.body.trim().slice(0, MAX_RELEASE_NOTES_LENGTH) : null
-  };
-}
-function botMessage(currentVersion, release) {
-  const published = release.publishedAt ? `
-\u53D1\u5E03\u65F6\u95F4\uFF1A${release.publishedAt.slice(0, 10)}` : "";
-  const notes = release.notes ? `
-
-${release.notes}` : "";
-  return `\u{1F195} **TG Vault \u65B0\u7248\u672C\u5DF2\u53D1\u5E03**
-
-\u5F53\u524D\u7248\u672C\uFF1Av${currentVersion}
-\u6700\u65B0\u7248\u672C\uFF1Av${release.version}${published}${notes}
-
-\u67E5\u770B\u53D1\u5E03\u8BF4\u660E\uFF1A
-${release.url}`;
-}
-function createUpdateChecker(options) {
-  const currentVersion = normalizeVersion(options.currentVersion);
-  if (!currentVersion) throw new Error(`invalid current version: ${options.currentVersion}`);
-  const repository = options.repository || DEFAULT_UPDATE_REPOSITORY;
-  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error("invalid GitHub repository");
-  const enabled = options.enabled ?? true;
-  const store = options.store || createPostgresUpdateCheckStore();
-  const request = options.fetch || globalThis.fetch;
-  const now = options.now || (() => /* @__PURE__ */ new Date());
-  let transientError = null;
-  let inFlight = null;
-  const loadState = async () => {
-    const state = await store.loadState();
-    return state?.repository === repository ? state : null;
-  };
-  const getStatus = async () => buildStatus(currentVersion, enabled, await loadState(), Boolean(transientError), transientError);
-  const deliverPendingBotNotifications = async () => {
-    if (!enabled || !options.sendBotMessage) return 0;
-    const state = await loadState();
-    if (!state?.release || compareVersions(state.release.version, currentVersion) <= 0) return 0;
-    let delivered = 0;
-    for (const recipient of await store.listEligibleRecipients()) {
-      if (!await store.claimDelivery(state.release.version, String(recipient))) continue;
-      try {
-        await options.sendBotMessage(recipient, botMessage(currentVersion, state.release));
-        await store.markDeliverySucceeded(state.release.version, String(recipient));
-        delivered += 1;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        await store.markDeliveryFailed(state.release.version, String(recipient), message);
-      }
-    }
-    return delivered;
-  };
-  const runCheck = async () => {
-    if (!enabled) return getStatus();
-    const previous = await loadState();
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-      timeout.unref?.();
-      let response;
-      try {
-        response = await request(`https://api.github.com/repos/${repository}/releases/latest`, {
-          signal: controller.signal,
-          headers: {
-            Accept: "application/vnd.github+json",
-            "User-Agent": `tg-vault/${currentVersion}`,
-            ...previous?.etag ? { "If-None-Match": previous.etag } : {}
-          }
-        });
-      } finally {
-        clearTimeout(timeout);
-      }
-      const checkedAt = now().toISOString();
-      let stateAfterCheck;
-      if (response.status === 404) {
-        stateAfterCheck = { repository, etag: null, checkedAt, release: null };
-      } else if (response.status === 304 && previous?.release) {
-        stateAfterCheck = { ...previous, checkedAt };
-      } else {
-        if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
-        const release = parseRelease(await response.json());
-        if (!release) throw new Error("latest release is not a valid stable release");
-        stateAfterCheck = { repository, etag: response.headers.get("etag"), checkedAt, release };
-      }
-      await store.saveState(stateAfterCheck);
-      transientError = null;
-      const status = buildStatus(currentVersion, enabled, stateAfterCheck, false, null);
-      await deliverPendingBotNotifications().catch((error) => {
-        console.warn("\u7248\u672C\u901A\u77E5\u6295\u9012\u5931\u8D25:", error instanceof Error ? error.message : String(error));
-      });
-      return status;
-    } catch (error) {
-      console.warn("\u7248\u672C\u68C0\u67E5\u5931\u8D25:", error instanceof Error ? error.message : String(error));
-      transientError = "\u6682\u65F6\u65E0\u6CD5\u68C0\u67E5\u65B0\u7248\u672C\uFF0C\u7EE7\u7EED\u663E\u793A\u4E0A\u6B21\u6210\u529F\u7ED3\u679C";
-      return getStatus();
-    }
-  };
-  return {
-    getStatus,
-    checkNow() {
-      if (!inFlight) inFlight = runCheck().finally(() => {
-        inFlight = null;
-      });
-      return inFlight;
-    },
-    deliverPendingBotNotifications
-  };
-}
-
-// src/services/appVersion.ts
-var packageVersion = normalizeVersion(package_default.version);
-if (!packageVersion) throw new Error(`backend/package.json contains an invalid release version: ${package_default.version}`);
-var APP_VERSION = packageVersion;
 
 // src/index.ts
 dotenv3.config();

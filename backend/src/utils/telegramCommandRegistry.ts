@@ -46,6 +46,7 @@ export const BOT_COMMANDS: BotCommandDefinition[] = [
     { command: 'download_workers', description: '单文件分片并发', helpDescription: '设置单文件分片下载并发', category: 'settings', aliases: ['workers'], help: true },
     { command: 'file_concurrency', description: '文件级下载并发', helpDescription: '设置 1 / 2 / 3 / 4 个文件并行，避免把分片并发和文件级并发混淆', category: 'settings', aliases: ['file_workers', 'download_files'], menu: false, help: true },
     { command: 'status', description: '系统诊断状态', helpDescription: '查看 Bot、账号下载器、存储、磁盘、队列、订阅和对账状态', category: 'settings', menu: true, help: true },
+    { command: 'update', description: '检查更新', helpDescription: '检查 Docker 新镜像，有更新时可一键升级', category: 'settings', aliases: ['upgrade'], menu: false, help: true },
     { command: 'notifications', description: '通知偏好', helpDescription: '设置成功/失败/订阅摘要、时区和安静时段；安全告警始终即时', category: 'settings', menu: true, help: true },
     { command: 'duplicate_mode', description: '重复文件处理', helpDescription: '设置重复文件处理策略', category: 'settings', aliases: ['duplicate', 'dup'], help: true },
     { command: 'cleanup_settings', description: '自动清理未索引临时文件', helpDescription: '设置自动清理未登记临时文件的开关', category: 'settings', aliases: ['cleanup'], help: true },

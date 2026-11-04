@@ -73,6 +73,11 @@ import { getEffectiveTelegramBotConfig, setTelegramBotIdentity, type TelegramBot
 import { getSetting, setSetting } from '../utils/settings.js';
 import { withTelegramOperationDeadline } from './telegramOperationDeadline.js';
 import { installTelegramConnectionWatchdog } from './telegramConnectionWatchdog.js';
+import { getDockerUpdater } from './dockerUpdateRuntime.js';
+import {
+    buildTelegramUpdateConfirmView, buildTelegramUpdateResultText, buildTelegramUpdateView, checkTelegramDockerUpdate,
+    parseTelegramUpdateAction, startTelegramDockerUpdate, type TelegramUpdateView,
+} from './telegramDockerUpdate.js';
 
 const TELEGRAM_BOT_COMMAND_MENU_FINGERPRINT_SETTING = 'telegram_bot_command_menu_fingerprint';
 const TELEGRAM_BOT_USER_ISOLATION_MIN_MS = 60_000;
@@ -206,6 +211,7 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
     if (command === 'list') return handleList(message, [], locale);
     if (command === 'find') return handleFind(message, [], locale);
     if (command === 'status') return handleStatus(message, locale);
+    if (command === 'update') return handleUpdateCheck(message, locale);
     if (command === 'notifications') return handleNotifications(message, [], locale);
     if (command === 'tasks') return handleTasks(message, locale);
     if (command === 'task_pause') return handlePauseTasks(message, []);
@@ -239,6 +245,84 @@ async function handleBotHomeCallback(update: Api.UpdateBotCallbackQuery, data: s
     await client!.sendMessage(update.peer, {
         message: definition ? t(locale, 'bot.home.followPrompt', { description: t(locale, `menu.${definition.command}`) }) : t(locale, 'bot.home.unavailable'),
     });
+}
+
+function updateViewKeyboard(view: TelegramUpdateView): Api.ReplyInlineMarkup | undefined {
+    if (!view.buttons.length) return undefined;
+    return new Api.ReplyInlineMarkup({ rows: view.buttons.map(row => new Api.KeyboardButtonRow({
+        buttons: row.map(([text, data]) => new Api.KeyboardButtonCallback({ text, data: Buffer.from(data) })),
+    })) });
+}
+
+async function handleUpdateCheck(message: Api.Message, locale: TelegramLocale): Promise<void> {
+    const pending = await message.reply({ message: t(locale, 'bot.update.checking') });
+    const view = buildTelegramUpdateView(await checkTelegramDockerUpdate(getDockerUpdater()), locale);
+    if (pending && client) {
+        await client.editMessage(pending.peerId, { message: pending.id, text: view.text, buttons: updateViewKeyboard(view) });
+    } else {
+        await message.reply({ message: view.text, buttons: updateViewKeyboard(view) });
+    }
+}
+
+const TELEGRAM_UPDATE_NOTIFY_SETTING = 'telegram_docker_update_notify_user';
+let updateResultWatcher: NodeJS.Timeout | null = null;
+
+/** Report the result of a Bot-started upgrade once it settles, including after the restart. */
+function watchTelegramUpdateResult(): void {
+    if (updateResultWatcher) return;
+    const deadline = Date.now() + 20 * 60_000;
+    const poll = async () => {
+        updateResultWatcher = null;
+        const userId = Number(await getSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, '0')) || 0;
+        if (!userId) return;
+        const status = await getDockerUpdater().status();
+        const locale = await getTelegramUserLocaleOrDefault(userId);
+        const text = status.phase === 'preparing' || status.phase === 'running' ? null : buildTelegramUpdateResultText(status.phase, locale);
+        if (!text) {
+            if (Date.now() < deadline) {
+                updateResultWatcher = setTimeout(() => void poll().catch(() => undefined), 15_000);
+                updateResultWatcher.unref?.();
+            } else {
+                await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, '');
+            }
+            return;
+        }
+        if (!client || !client.connected) {
+            updateResultWatcher = setTimeout(() => void poll().catch(() => undefined), 15_000);
+            updateResultWatcher.unref?.();
+            return;
+        }
+        await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, '');
+        await client.sendMessage(userId, { message: text });
+    };
+    updateResultWatcher = setTimeout(() => void poll().catch(error => console.warn('🤖 更新结果通知失败:', error)), 15_000);
+    updateResultWatcher.unref?.();
+}
+
+async function handleUpdateCallback(update: Api.UpdateBotCallbackQuery, data: string): Promise<void> {
+    const userId = update.userId.toJSNumber();
+    if (!(await isAuthenticatedAsync(userId))) {
+        await client!.invoke(new Api.messages.SetBotCallbackAnswer({ queryId: update.queryId, message: MSG.AUTH_REQUIRED, alert: true }));
+        return;
+    }
+    const action = parseTelegramUpdateAction(data);
+    const locale = await getTelegramUserLocaleOrDefault(userId);
+    await client!.invoke(new Api.messages.SetBotCallbackAnswer({
+        queryId: update.queryId, ...(action === 'check' ? { message: t(locale, 'bot.update.checking') } : {}),
+    }));
+    if (!action) return;
+    const show = (view: TelegramUpdateView) => client!.editMessage(update.peer, {
+        message: Number(update.msgId), text: view.text, buttons: updateViewKeyboard(view),
+    });
+    if (action === 'check') return void await show(buildTelegramUpdateView(await checkTelegramDockerUpdate(getDockerUpdater()), locale));
+    if (action === 'apply') return void await show(buildTelegramUpdateConfirmView(locale));
+    if (action === 'cancel') return void await show({ text: t(locale, 'bot.update.cancelled'), buttons: [] });
+    const result = await startTelegramDockerUpdate(getDockerUpdater(), locale);
+    await show(result.view);
+    if (result.started) {
+        await setSetting(TELEGRAM_UPDATE_NOTIFY_SETTING, String(userId));
+        watchTelegramUpdateResult();
+    }
 }
 
 // GramJS Client
@@ -2128,6 +2212,15 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                     return;
                 }
 
+                if (text === '/update' || text === '/upgrade') {
+                    if (!(await isAuthenticatedAsync(senderId))) {
+                        await message.reply({ message: MSG.AUTH_REQUIRED });
+                        return;
+                    }
+                    await handleUpdateCheck(message, await getTelegramUserLocaleOrDefault(senderId));
+                    return;
+                }
+
                 if (text === '/tasks' || text === '/task') {
                     if (!(await isAuthenticatedAsync(senderId))) {
                         await message.reply({ message: MSG.AUTH_REQUIRED });
@@ -2349,6 +2442,11 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
                     return;
                 }
 
+                if (data.startsWith('upd_')) {
+                    await handleUpdateCallback(callbackUpdate, data);
+                    return;
+                }
+
                 // 处理密码回调
                 if (data.startsWith('pwd_')) {
                     await handlePasswordCallback(callbackUpdate);
@@ -2479,6 +2577,8 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
             displayName: [me?.firstName, me?.lastName].filter(Boolean).join(' ') || null,
         });
         markTelegramBotReady();
+        // A Bot-started upgrade restarts this process; report its result once settled.
+        watchTelegramUpdateResult();
 
         digestTimer = setInterval(() => {
             if (!client) return;

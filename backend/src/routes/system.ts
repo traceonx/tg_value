@@ -2,13 +2,13 @@ import { Router, type Request, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { requireAuth } from './auth.js';
 import type { UpdateChecker } from '../services/updateChecker.js';
-import { createDockerUpdater, DockerError } from '../services/dockerUpdater.js';
-import { createDockerAutoUpdater } from '../services/dockerAutoUpdate.js';
+import { DockerError } from '../services/dockerUpdater.js';
+import { getDockerAutoUpdater, getDockerUpdater } from '../services/dockerUpdateRuntime.js';
 
 export function createSystemRouter(checker: UpdateChecker): Router {
     const router = Router();
-    const updater = createDockerUpdater();
-    const autoUpdater = createDockerAutoUpdater({ updater });
+    const updater = getDockerUpdater();
+    const autoUpdater = getDockerAutoUpdater();
     const manualCheckLimiter = rateLimit({
         windowMs: 60_000,
         max: 3,
