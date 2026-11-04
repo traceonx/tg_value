@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Folder, Settings, Menu, X, Star, LogOut, ListChecks, ListFilter, Monitor, Moon, Sun, UploadCloud, ExternalLink, Sparkles } from "lucide-react";
+import { Folder, Settings, Menu, X, Star, LogOut, ListChecks, ListFilter, Monitor, Moon, Sun, UploadCloud, ExternalLink, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "../ui/Button";
 import { cn } from "../../lib/utils";
 import { useTranslation } from "react-i18next";
@@ -124,6 +124,9 @@ export const AppLayout = ({ children, activeCategory, onCategoryChange, storageS
     };
 
     const navGroups = [
+        { id: "overview", label: t("sidebar.groups.overview"), items: [
+            { id: "dashboard", href: "/dashboard", icon: LayoutDashboard, label: t("sidebar.dashboard") },
+        ] },
         { id: "transfer", label: t("sidebar.groups.transfer"), items: [
             { id: "upload", href: "/", icon: UploadCloud, label: t("sidebar.uploadCenter") },
             { id: "tasks", href: "/tasks", icon: ListChecks, label: t("sidebar.tasks") },
@@ -139,7 +142,7 @@ export const AppLayout = ({ children, activeCategory, onCategoryChange, storageS
     ];
     const categories = navGroups.flatMap(group => group.items);
     // Phone bottom bar keeps the four most used destinations; the rest stay in the drawer.
-    const bottomNavIds = ["upload", "all", "tasks", "settings"];
+    const bottomNavIds = ["dashboard", "all", "tasks", "settings"];
 
     const renderSidebarContent = (mobile = false) => {
         const collapsed = !mobile && !isSidebarOpen;

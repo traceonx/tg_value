@@ -58,3 +58,8 @@ test('unknown paths canonicalize safely to the upload center', () => {
     assert.deepEqual(parseAppRoute({ pathname: '/missing', search: '?q=ignored' }), { kind: 'upload', needsReplace: true });
     assert.equal(appRouteHref(parseAppRoute({ pathname: '/missing', search: '' })), '/');
 });
+
+test('dashboard has its own stable path', () => {
+    assert.deepEqual(parseAppRoute({ pathname: '/dashboard', search: '' }), { kind: 'dashboard', needsReplace: false });
+    assert.equal(appRouteHref(routeForCategory('dashboard')), '/dashboard');
+});

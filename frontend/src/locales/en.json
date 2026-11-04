@@ -110,7 +110,8 @@
     "groups": {
       "transfer": "Transfers",
       "files": "Files",
-      "system": "System"
+      "system": "System",
+      "overview": "Overview"
     }
   },
   "file": {
@@ -457,6 +458,45 @@
       "action": "Task action failed",
       "preview": "Could not create deletion preview",
       "dismiss": "Could not delete task records"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Storage, tasks and Telegram at a glance.",
+    "loading": "Loading…",
+    "viewAll": "View all",
+    "storage": {
+      "title": "Storage"
+    },
+    "library": {
+      "title": "Library",
+      "files": "files",
+      "used": "{{size}} used"
+    },
+    "tasks": {
+      "title": "Active tasks",
+      "summary": "running · {{queued}} queued",
+      "issues": "{{count}} tasks need attention",
+      "noIssues": "Nothing needs attention"
+    },
+    "telegram": {
+      "botOnline": "Bot online",
+      "botOffline": "Bot offline",
+      "botMissing": "Bot not set up",
+      "accounts": "{{ready}}/{{total}} accounts ready",
+      "hint": "Set up the Bot and download accounts in Settings → Telegram"
+    },
+    "active": {
+      "title": "Downloading",
+      "empty": "No active tasks"
+    },
+    "subscriptions": {
+      "title": "Channel subscriptions",
+      "empty": "No subscriptions yet",
+      "syncing": "Syncing",
+      "paused": "Paused",
+      "error": "Needs attention",
+      "lastSync": "Last synced {{time}}"
     }
   }
 }

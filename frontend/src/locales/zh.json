@@ -110,7 +110,8 @@
     "groups": {
       "transfer": "传输",
       "files": "文件",
-      "system": "系统"
+      "system": "系统",
+      "overview": "概览"
     }
   },
   "file": {
@@ -457,6 +458,45 @@
       "action": "任务操作失败",
       "preview": "无法创建删除预览",
       "dismiss": "删除任务记录失败"
+    }
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "subtitle": "存储、任务和 Telegram 的运行概况。",
+    "loading": "正在加载…",
+    "viewAll": "查看全部",
+    "storage": {
+      "title": "存储用量"
+    },
+    "library": {
+      "title": "已入库文件",
+      "files": "个文件",
+      "used": "占用 {{size}}"
+    },
+    "tasks": {
+      "title": "进行中的任务",
+      "summary": "运行 · {{queued}} 排队",
+      "issues": "{{count}} 个任务需要处理",
+      "noIssues": "没有需要处理的任务"
+    },
+    "telegram": {
+      "botOnline": "Bot 在线",
+      "botOffline": "Bot 未连接",
+      "botMissing": "Bot 未配置",
+      "accounts": "账号 {{ready}}/{{total}} 可用",
+      "hint": "在设置 → Telegram 中配置 Bot 和下载账号"
+    },
+    "active": {
+      "title": "正在下载",
+      "empty": "当前没有进行中的任务"
+    },
+    "subscriptions": {
+      "title": "频道订阅",
+      "empty": "还没有频道订阅",
+      "syncing": "同步中",
+      "paused": "已暂停",
+      "error": "需处理",
+      "lastSync": "上次同步 {{time}}"
     }
   }
 }
