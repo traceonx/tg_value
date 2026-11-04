@@ -8,6 +8,7 @@ import { telegramAccountRepository } from './telegramAccountRepository.js';
 import { TelegramClient } from 'telegram';
 import { TelegramSession } from './telegramSession.js';
 import { installTelegramRequestGate } from './telegramRequestGate.js';
+import { installTelegramConnectionWatchdog } from './telegramConnectionWatchdog.js';
 import { decryptCredential } from '../utils/credentialCrypto.js';
 import { getTelegramProxy } from './telegramProxy.js';
 import { telegramAccountStopReason } from './telegramAccountSafety.js';
@@ -324,6 +325,8 @@ export const telegramUserClientPool = new TelegramUserClientPool<TelegramClient>
                 await telegramAccountRepository.markSessionExpired(accountId, message);
             }
         });
+        // Armed only after the first successful connect; stops on disconnect/destroy.
+        installTelegramConnectionWatchdog(client as any, { label: `Telegram account ${accountId}` });
         return client;
     },
     saveSession: client => client.session.save() as unknown as string,

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Api, TelegramClient } from 'telegram';
 import { TelegramSession } from './telegramSession.js';
 import { installTelegramRequestGate } from './telegramRequestGate.js';
+import { installTelegramConnectionWatchdog } from './telegramConnectionWatchdog.js';
 import { getEffectiveTelegramBotConfig } from './telegramBotConfig.js';
 import { TelegramUserWebLoginFlows, type TelegramUserLoginAccount, type TelegramUserLoginClient } from './telegramUserWebLogin.js';
 import { deleteSettings, getSetting, setSetting, setSettings } from '../utils/settings.js';
@@ -102,6 +103,8 @@ export async function initTelegramUserClient(credentials?: { apiId: number; apiH
         return;
     }
     const client = makeClient(sessionString, resolved);
+    // Login flows reuse makeClient; only the long-lived downloader is watched.
+    installTelegramConnectionWatchdog(client as any, { label: 'Telegram user client' });
     try {
         await client.connect();
         const me = await client.getMe();

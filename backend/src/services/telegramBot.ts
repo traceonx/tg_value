@@ -72,6 +72,7 @@ import {
 import { getEffectiveTelegramBotConfig, setTelegramBotIdentity, type TelegramBotCredentials } from './telegramBotConfig.js';
 import { getSetting, setSetting } from '../utils/settings.js';
 import { withTelegramOperationDeadline } from './telegramOperationDeadline.js';
+import { installTelegramConnectionWatchdog } from './telegramConnectionWatchdog.js';
 
 const TELEGRAM_BOT_COMMAND_MENU_FINGERPRINT_SETTING = 'telegram_bot_command_menu_fingerprint';
 const TELEGRAM_BOT_USER_ISOLATION_MIN_MS = 60_000;
@@ -1639,6 +1640,9 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
         await withTelegramOperationDeadline(client.getMe(), 10_000, 'Telegram Bot 身份读取超时，请稍后重试');
 
         console.log('🤖 Telegram Bot 已连接!');
+        // GramJS may stay disconnected forever after a failed reconnect; keep the
+        // Bot reachable without restarting the process.
+        installTelegramConnectionWatchdog(client as any, { label: 'Telegram Bot' });
 
         // Ensure database table exists
         try {
