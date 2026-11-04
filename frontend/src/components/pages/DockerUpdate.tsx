@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { systemClient, type DockerUpdateStatus } from '../../services/clients/systemClient';
+import { systemClient, type DockerAutoUpdateState, type DockerUpdateStatus } from '../../services/clients/systemClient';
+import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 
@@ -62,6 +63,7 @@ export function DockerUpdate() {
                 onClick={() => setIsConfirming(true)}>{t(isBusy || isSubmitting ? 'updates.docker.upgrading' : 'updates.docker.upgrade')}</Button>
         </div>
         {hasError && <p role="alert" className="text-sm text-destructive">{t('updates.docker.requestFailed')}</p>}
+        {status?.enabled && <DockerAutoUpdate />}
         <Dialog open={isConfirming} onClose={() => setIsConfirming(false)} labelledBy="docker-update-title" describedBy="docker-update-description" className="w-full max-w-md rounded-xl bg-card p-6 shadow-xl">
             <h3 id="docker-update-title" className="font-semibold">{t('updates.docker.confirmTitle')}</h3>
             <p id="docker-update-description" className="mt-3 text-sm text-muted-foreground">{t('updates.docker.confirm')}</p>
@@ -70,5 +72,55 @@ export function DockerUpdate() {
                 <Button onClick={() => void start()}>{t('updates.docker.upgrade')}</Button>
             </div>
         </Dialog>
+    </div>;
+}
+
+function DockerAutoUpdate() {
+    const { t, i18n } = useTranslation();
+    const [state, setState] = useState<DockerAutoUpdateState | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasError, setHasError] = useState(false);
+    useEffect(() => {
+        const controller = new AbortController();
+        systemClient.getDockerAutoUpdate(controller.signal)
+            .then(next => setState(next))
+            .catch(() => { if (!controller.signal.aborted) setHasError(true); });
+        return () => controller.abort();
+    }, []);
+    const save = async (next: { enabled: boolean; intervalMinutes: number }) => {
+        setIsSaving(true);
+        setHasError(false);
+        try { setState(await systemClient.setDockerAutoUpdate(next)); }
+        catch { setHasError(true); }
+        finally { setIsSaving(false); }
+    };
+    if (!state) return hasError ? <p role="alert" className="text-sm text-destructive">{t('updates.docker.auto.loadFailed')}</p> : null;
+    const disabled = isSaving || !state.available;
+    const formatTime = (value?: string) => value ? new Date(value).toLocaleString(i18n.language) : '';
+    const detail = !state.available ? t('updates.docker.auto.unavailable')
+        : !state.enabled ? t('updates.docker.auto.off')
+        : state.lastResult ? t(`updates.docker.auto.result.${state.lastResult}`, { time: formatTime(state.lastCheckedAt) })
+        : t('updates.docker.auto.pending');
+    return <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+        <div className="min-w-0 space-y-1">
+            <p className="text-sm font-medium">{t('updates.docker.auto.title')}</p>
+            <p className="text-xs text-muted-foreground" role="status">{detail}</p>
+            {hasError && <p role="alert" className="text-xs text-destructive">{t('updates.docker.auto.saveFailed')}</p>}
+        </div>
+        <div className="flex items-center gap-2">
+            <select aria-label={t('updates.docker.auto.interval')} className="h-9 rounded-lg border border-border bg-background px-2 text-sm"
+                value={state.intervalMinutes} disabled={disabled}
+                onChange={event => void save({ enabled: state.enabled, intervalMinutes: Number(event.target.value) })}>
+                {state.intervals.map(minutes => <option key={minutes} value={minutes}>{minutes < 60
+                    ? t('updates.docker.auto.minutes', { count: minutes })
+                    : t('updates.docker.auto.hours', { count: minutes / 60 })}</option>)}
+            </select>
+            <button type="button" role="switch" aria-checked={state.enabled} aria-label={t('updates.docker.auto.title')}
+                disabled={disabled} onClick={() => void save({ enabled: !state.enabled, intervalMinutes: state.intervalMinutes })}
+                className={cn('relative h-7 w-12 shrink-0 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50',
+                    state.enabled ? 'border-primary bg-primary' : 'border-border bg-muted')}>
+                <span className={cn('absolute left-0 top-0.5 h-[22px] w-[22px] rounded-full bg-white shadow-sm transition-transform', state.enabled ? 'translate-x-6' : 'translate-x-0.5')} />
+            </button>
+        </div>
     </div>;
 }

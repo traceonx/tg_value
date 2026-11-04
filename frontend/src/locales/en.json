@@ -202,7 +202,26 @@
       "reconnecting": "The service is restarting or temporarily unreachable. Reconnecting…",
       "requestFailed": "Unable to confirm upgrade status. Check again shortly; avoid starting repeated upgrades.",
       "confirmTitle": "Upgrade TG Vault?",
-      "confirm": "This updates the current image tag and restarts the service. Active uploads and downloads may be interrupted; let them finish first. Data mounts, ports and environment settings will be preserved."
+      "confirm": "This updates the current image tag and restarts the service. Active uploads and downloads may be interrupted; let them finish first. Data mounts, ports and environment settings will be preserved.",
+      "auto": {
+        "title": "Auto update",
+        "interval": "Check interval",
+        "minutes": "Every {{count}} min",
+        "hours": "Every {{count}} h",
+        "off": "Off. When on, Docker Hub is checked at the selected interval and a new image is upgraded automatically.",
+        "pending": "On. The first check will run shortly.",
+        "unavailable": "Docker upgrade is unavailable, so auto update cannot be enabled.",
+        "loadFailed": "Unable to load auto update settings.",
+        "saveFailed": "Could not save auto update settings. Try again.",
+        "result": {
+          "latest": "Checked {{time}}: already on the latest image.",
+          "started": "Checked {{time}}: new image found, upgrade started.",
+          "busy": "Checked {{time}}: an upgrade is already running.",
+          "backoff": "Checked {{time}}: the last upgrade did not succeed; retrying after 1 hour.",
+          "unavailable": "Checked {{time}}: Docker upgrade is unavailable.",
+          "error": "Check failed {{time}}: the registry was unreachable. Retrying next interval."
+        }
+      }
     },
     "bannerTitle": "TG Vault v{{latest}} is available",
     "bannerCurrent": "You are using v{{current}}",

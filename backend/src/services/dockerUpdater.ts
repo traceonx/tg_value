@@ -225,9 +225,28 @@ export function createDockerUpdater(options: {
             return { enabled, available: true, phase: job.phase, startedAt: job.startedAt } satisfies DockerUpdateStatus;
         } catch (error) { preparing = false; throw error; }
     };
+    /**
+     * Compare the registry digest of this container's image tag with the
+     * digests of the local image. Docker resolves the tag through the daemon,
+     * so registry mirrors and daemon proxy settings apply.
+     */
+    const hasRemoteUpdate = async (): Promise<boolean> => {
+        if (!enabled) throw new DockerError(403);
+        if (corrupt) throw new DockerError(503);
+        const target = await self();
+        const image = target.Config.Image;
+        const local = JSON.parse(await request('GET', `/images/${encodeURIComponent(image)}/json`)) as { RepoDigests?: string[] };
+        const remote = JSON.parse(await request('GET', `/distribution/${image.split('/').map(encodeURIComponent).join('/')}/json`, undefined, 30_000)) as
+            { Descriptor?: { digest?: string } };
+        const digest = remote.Descriptor?.digest;
+        if (!digest || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error('Registry returned no image digest');
+        return !(local.RepoDigests || []).some(entry => entry.endsWith(`@${digest}`));
+    };
+    const busyNow = () => preparing || busy();
+    const lastJob = () => ({ phase: job.phase, startedAt: job.startedAt });
     const timer = enabled && options.monitor !== false ? setInterval(() => {
         if (job.helper && !preparing) void refresh().catch(() => undefined);
     }, 5_000) : undefined;
     timer?.unref();
-    return { status, start, close: () => { if (timer) clearInterval(timer); } };
+    return { enabled, status, start, hasRemoteUpdate, isBusy: busyNow, lastJob, close: () => { if (timer) clearInterval(timer); } };
 }

@@ -4,7 +4,7 @@
 
 ## 网页一键升级 Docker 镜像
 
-设置 → 版本信息 → Docker 一键升级 → 一键升级。确认后，临时 Watchtower 自动拉取当前镜像标签（例如 `sunqz/tg-vault:latest`），保留容器配置并重建当前容器。无需常驻更新服务，不会定时自动升级，也不会升级其他容器。
+设置 → 版本信息 → Docker 一键升级 → 一键升级。确认后，临时 Watchtower 自动拉取当前镜像标签（例如 `sunqz/tg-vault:latest`），保留容器配置并重建当前容器。无需常驻更新服务，也不会升级其他容器。
 
 使用本目录的 Compose 模板时，运行：
 
@@ -24,6 +24,10 @@ volumes:
 首次启用需要手动拉取包含此功能的新镜像，并重新创建容器；普通 `docker restart` 不会应用新增挂载。后续可直接在网页升级。`UPDATE_CHECK_ENABLED` 是 GitHub 版本提示的独立开关，设为 `false` 不影响这里的一键升级。
 
 版本提示默认检查本项目 `traceonx/tg_value` 的 GitHub Release，并隔离其他仓库的旧缓存，避免原项目的发行版导致误报。Docker 镜像版本标签取自构建代码的 `backend/package.json`；分支提交也可更新镜像，是否存在新镜像以一键升级检查为准。`UPDATE_CHECK_REPOSITORY` 若有设置，应为 `traceonx/tg_value`，不要使用其他项目的发行来源。
+
+### 自动更新
+
+同一位置的“自动更新”开关默认关闭，检查间隔默认 5 分钟（可选 5/10/15/30 分钟或 1/3/6/12/24 小时）。开启后，后台按间隔通过 Docker 守护进程比对 Docker Hub 上当前镜像标签的摘要与本地镜像；只有摘要不同时才执行一键升级，因此推送到 `docker-hub` 分支、GitHub Actions 构建完成后，NAS 会在下一个检查间隔内自动升级。已有升级进行中时跳过；上次升级失败或未产生变化时，1 小时内不再自动重试。升级会重启服务，可能中断进行中的下载。匿名访问 Docker Hub 有拉取频率限制，检查只读取镜像清单摘要，不下载镜像。
 
 要求 Linux Docker、默认容器 hostname（不要自定义 `hostname`）、标准 Docker socket 和可写的持久化 `/data` 挂载。支持自定义 `container_name`，自动识别当前容器。使用可更新的标签；固定 digest、Swarm 服务或禁用 Watchtower 更新的标签不支持。镜像拉取使用 Docker 守护进程的网络配置；应用内的 Telegram 代理不等同于 Docker 镜像代理。私有仓库凭据暂不支持。
 

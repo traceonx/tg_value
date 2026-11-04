@@ -172,3 +172,22 @@ test('summary parser rejects incomplete or negative counts', () => {
     assert.equal(readSummary('{"msg":"Session done"}'), null);
     assert.equal(readSummary('{"msg":"Session done","Scanned":-1,"Updated":0,"Failed":0}'), null);
 });
+
+test('remote update check compares the registry digest with local image digests', async t => {
+    const digest = `sha256:${'a'.repeat(64)}`;
+    const routes: string[] = [];
+    let local = [`sunqz/tg-vault@${digest}`];
+    const base = fixture(t);
+    const request: DockerRequest = async (method, route, body, timeout) => {
+        routes.push(route);
+        if (route.startsWith('/images/sunqz%2Ftg-vault%3Alatest/json')) return JSON.stringify({ RepoDigests: local });
+        if (route.startsWith('/distribution/')) return JSON.stringify({ Descriptor: { digest } });
+        return base.options.request(method, route, body, timeout);
+    };
+    const updater = createDockerUpdater({ ...base.options, request });
+    assert.equal(await updater.hasRemoteUpdate(), false);
+    assert.ok(routes.includes('/distribution/sunqz/tg-vault%3Alatest/json'));
+    local = [`sunqz/tg-vault@sha256:${'b'.repeat(64)}`];
+    assert.equal(await updater.hasRemoteUpdate(), true);
+    await assert.rejects(createDockerUpdater({ enabled: false, request }).hasRemoteUpdate());
+});

@@ -202,7 +202,26 @@
       "reconnecting": "服务正在重启或暂时不可达，正在重新连接…",
       "requestFailed": "暂时无法确认升级状态，请稍后查看；请勿反复点击升级。",
       "confirmTitle": "升级 TG Vault？",
-      "confirm": "将更新当前镜像标签并重启服务，进行中的上传和下载可能中断。建议先等待任务完成。数据目录、端口和环境配置将保留。"
+      "confirm": "将更新当前镜像标签并重启服务，进行中的上传和下载可能中断。建议先等待任务完成。数据目录、端口和环境配置将保留。",
+      "auto": {
+        "title": "自动更新",
+        "interval": "检查间隔",
+        "minutes": "每 {{count}} 分钟",
+        "hours": "每 {{count}} 小时",
+        "off": "已关闭。开启后按设定间隔检查 Docker Hub，发现新镜像时自动执行一键升级。",
+        "pending": "已开启，即将进行第一次检查。",
+        "unavailable": "一键升级当前不可用，无法开启自动更新。",
+        "loadFailed": "无法读取自动更新设置。",
+        "saveFailed": "保存自动更新设置失败，请重试。",
+        "result": {
+          "latest": "{{time}} 检查：已是最新镜像。",
+          "started": "{{time}} 检查：发现新镜像，已开始升级。",
+          "busy": "{{time}} 检查：已有升级在进行中。",
+          "backoff": "{{time}} 检查：上次升级未成功，1 小时内不再自动重试。",
+          "unavailable": "{{time}} 检查：一键升级当前不可用。",
+          "error": "{{time}} 检查失败：无法访问镜像仓库，将在下个间隔重试。"
+        }
+      }
     },
     "bannerTitle": "TG Vault v{{latest}} 已发布",
     "bannerCurrent": "你当前使用 v{{current}}",

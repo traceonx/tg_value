@@ -28017,11 +28017,128 @@ function createDockerUpdater(options = {}) {
       throw error;
     }
   };
+  const hasRemoteUpdate = async () => {
+    if (!enabled) throw new DockerError(403);
+    if (corrupt) throw new DockerError(503);
+    const target = await self();
+    const image = target.Config.Image;
+    const local = JSON.parse(await request("GET", `/images/${encodeURIComponent(image)}/json`));
+    const remote = JSON.parse(await request("GET", `/distribution/${image.split("/").map(encodeURIComponent).join("/")}/json`, void 0, 3e4));
+    const digest = remote.Descriptor?.digest;
+    if (!digest || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error("Registry returned no image digest");
+    return !(local.RepoDigests || []).some((entry) => entry.endsWith(`@${digest}`));
+  };
+  const busyNow = () => preparing || busy();
+  const lastJob = () => ({ phase: job.phase, startedAt: job.startedAt });
   const timer = enabled && options.monitor !== false ? setInterval(() => {
     if (job.helper && !preparing) void refresh().catch(() => void 0);
   }, 5e3) : void 0;
   timer?.unref();
-  return { status, start, close: () => {
+  return { enabled, status, start, hasRemoteUpdate, isBusy: busyNow, lastJob, close: () => {
+    if (timer) clearInterval(timer);
+  } };
+}
+
+// src/services/dockerAutoUpdate.ts
+init_settings();
+var DOCKER_AUTO_UPDATE_INTERVALS = [5, 10, 15, 30, 60, 180, 360, 720, 1440];
+var DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL = 5;
+var ENABLED_KEY = "docker_auto_update_enabled";
+var INTERVAL_KEY = "docker_auto_update_interval_minutes";
+var RETRY_BACKOFF_MS = 60 * 6e4;
+function normalizeDockerAutoUpdateInterval(value) {
+  const minutes = Number(value);
+  if (!DOCKER_AUTO_UPDATE_INTERVALS.includes(minutes)) {
+    throw new Error(`Interval must be one of ${DOCKER_AUTO_UPDATE_INTERVALS.join("/")} minutes`);
+  }
+  return minutes;
+}
+var settingsDockerAutoUpdateStore = {
+  async load() {
+    const enabled = await getSetting(ENABLED_KEY, "false");
+    const interval = await getSetting(INTERVAL_KEY, String(DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL));
+    let intervalMinutes = DEFAULT_DOCKER_AUTO_UPDATE_INTERVAL;
+    try {
+      intervalMinutes = normalizeDockerAutoUpdateInterval(interval);
+    } catch {
+    }
+    return { enabled: enabled === "true", intervalMinutes };
+  },
+  async save(config) {
+    await setSettings([[ENABLED_KEY, String(config.enabled)], [INTERVAL_KEY, String(config.intervalMinutes)]]);
+  }
+};
+function createDockerAutoUpdater(options) {
+  const { updater } = options;
+  const store = options.store ?? settingsDockerAutoUpdateStore;
+  const now = options.now ?? Date.now;
+  const log = options.log ?? console;
+  let config = null;
+  let lastCheckedAt;
+  let lastResult;
+  let running = null;
+  const getConfig = async () => {
+    if (!config) config = await store.load();
+    return config;
+  };
+  const check = async () => {
+    if (updater.isBusy()) return "busy";
+    const job = updater.lastJob();
+    const startedAt = job.startedAt ? Date.parse(job.startedAt) : NaN;
+    if ((job.phase === "failed" || job.phase === "unchanged") && now() - startedAt < RETRY_BACKOFF_MS) return "backoff";
+    if (!(await updater.status()).available) return "unavailable";
+    if (!await updater.hasRemoteUpdate()) return "latest";
+    log.log("[Docker auto update] New image found, starting upgrade");
+    await updater.start();
+    return "started";
+  };
+  const tick = () => {
+    if (running) return running;
+    running = (async () => {
+      if (!updater.enabled) return null;
+      const current3 = await getConfig();
+      if (!current3.enabled) return null;
+      if (lastCheckedAt !== void 0 && now() - lastCheckedAt < current3.intervalMinutes * 6e4) return null;
+      lastCheckedAt = now();
+      try {
+        lastResult = await check();
+      } catch (error) {
+        lastResult = "error";
+        log.warn("[Docker auto update] Check failed:", error instanceof Error ? error.message : error);
+      }
+      return lastResult;
+    })().finally(() => {
+      running = null;
+    });
+    return running;
+  };
+  const state = async () => {
+    const current3 = await getConfig();
+    const available = updater.enabled && (await updater.status()).available;
+    const next = current3.enabled && lastCheckedAt !== void 0 ? lastCheckedAt + current3.intervalMinutes * 6e4 : void 0;
+    return {
+      ...current3,
+      available,
+      intervals: DOCKER_AUTO_UPDATE_INTERVALS,
+      lastCheckedAt: lastCheckedAt === void 0 ? void 0 : new Date(lastCheckedAt).toISOString(),
+      lastResult,
+      nextCheckAt: next === void 0 ? void 0 : new Date(next).toISOString()
+    };
+  };
+  const configure = async (input) => {
+    if (typeof input.enabled !== "boolean") throw new Error("enabled must be a boolean");
+    const next = { enabled: input.enabled, intervalMinutes: normalizeDockerAutoUpdateInterval(input.intervalMinutes) };
+    await store.save(next);
+    config = next;
+    lastCheckedAt = void 0;
+    log.log(`[Docker auto update] ${next.enabled ? `enabled, every ${next.intervalMinutes} min` : "disabled"}`);
+    return state();
+  };
+  const timer = updater.enabled && options.monitor !== false ? setInterval(() => {
+    void tick().catch(() => void 0);
+  }, options.tickMs ?? 6e4) : void 0;
+  timer?.unref();
+  return { tick, state, configure, close: () => {
     if (timer) clearInterval(timer);
   } };
 }
@@ -28030,6 +28147,7 @@ function createDockerUpdater(options = {}) {
 function createSystemRouter(checker) {
   const router9 = Router9();
   const updater = createDockerUpdater();
+  const autoUpdater = createDockerAutoUpdater({ updater });
   const manualCheckLimiter = rateLimit5({
     windowMs: 6e4,
     max: 3,
@@ -28070,6 +28188,24 @@ function createSystemRouter(checker) {
     } catch (error) {
       const status = error instanceof DockerError && [403, 409].includes(error.status) ? error.status : 503;
       res.status(status).json({ code: "DOCKER_UPDATE_UNAVAILABLE" });
+    }
+  });
+  router9.get("/docker-update/auto", requireAuth, async (_req, res) => {
+    noStore2(res);
+    try {
+      res.json(await autoUpdater.state());
+    } catch (error) {
+      console.error("\u8BFB\u53D6\u81EA\u52A8\u66F4\u65B0\u8BBE\u7F6E\u5931\u8D25:", error);
+      res.status(500).json({ code: "DOCKER_AUTO_UPDATE_UNAVAILABLE" });
+    }
+  });
+  router9.put("/docker-update/auto", requireAuth, async (req, res) => {
+    noStore2(res);
+    if (!req.is("application/json")) return res.status(400).json({ code: "DOCKER_AUTO_UPDATE_INVALID" });
+    try {
+      res.json(await autoUpdater.configure({ enabled: req.body?.enabled, intervalMinutes: req.body?.intervalMinutes }));
+    } catch (error) {
+      res.status(400).json({ code: "DOCKER_AUTO_UPDATE_INVALID", error: error instanceof Error ? error.message : String(error) });
     }
   });
   return router9;

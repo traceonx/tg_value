@@ -10,7 +10,34 @@ export interface DockerUpdateStatus {
     startedAt?: string;
 }
 
+export interface DockerAutoUpdateState {
+    enabled: boolean;
+    intervalMinutes: number;
+    available: boolean;
+    intervals: number[];
+    lastCheckedAt?: string;
+    lastResult?: 'latest' | 'started' | 'busy' | 'backoff' | 'unavailable' | 'error';
+    nextCheckAt?: string;
+}
+
 export class SystemClient {
+    async getDockerAutoUpdate(signal?: AbortSignal): Promise<DockerAutoUpdateState> {
+        const response = await apiRequest('/api/system/docker-update/auto', {
+            cache: 'no-store', headers: getApiHeaders(), signal,
+        });
+        return response.json();
+    }
+
+    async setDockerAutoUpdate(config: { enabled: boolean; intervalMinutes: number }): Promise<DockerAutoUpdateState> {
+        const response = await apiRequest('/api/system/docker-update/auto', {
+            method: 'PUT', cache: 'no-store',
+            headers: getApiHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(config),
+            fallback: tr('updates.docker.auto.saveFailed'),
+        });
+        return response.json();
+    }
+
     async getDockerUpdate(signal?: AbortSignal): Promise<DockerUpdateStatus> {
         const response = await apiRequest('/api/system/docker-update', {
             cache: 'no-store', headers: getApiHeaders(), signal,

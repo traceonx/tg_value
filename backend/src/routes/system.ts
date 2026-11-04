@@ -3,10 +3,12 @@ import { rateLimit } from 'express-rate-limit';
 import { requireAuth } from './auth.js';
 import type { UpdateChecker } from '../services/updateChecker.js';
 import { createDockerUpdater, DockerError } from '../services/dockerUpdater.js';
+import { createDockerAutoUpdater } from '../services/dockerAutoUpdate.js';
 
 export function createSystemRouter(checker: UpdateChecker): Router {
     const router = Router();
     const updater = createDockerUpdater();
+    const autoUpdater = createDockerAutoUpdater({ updater });
     const manualCheckLimiter = rateLimit({
         windowMs: 60_000,
         max: 3,
@@ -50,6 +52,24 @@ export function createSystemRouter(checker: UpdateChecker): Router {
         } catch (error) {
             const status = error instanceof DockerError && [403, 409].includes(error.status) ? error.status : 503;
             res.status(status).json({ code: 'DOCKER_UPDATE_UNAVAILABLE' });
+        }
+    });
+    router.get('/docker-update/auto', requireAuth, async (_req: Request, res: Response) => {
+        noStore(res);
+        try {
+            res.json(await autoUpdater.state());
+        } catch (error) {
+            console.error('读取自动更新设置失败:', error);
+            res.status(500).json({ code: 'DOCKER_AUTO_UPDATE_UNAVAILABLE' });
+        }
+    });
+    router.put('/docker-update/auto', requireAuth, async (req: Request, res: Response) => {
+        noStore(res);
+        if (!req.is('application/json')) return res.status(400).json({ code: 'DOCKER_AUTO_UPDATE_INVALID' });
+        try {
+            res.json(await autoUpdater.configure({ enabled: req.body?.enabled, intervalMinutes: req.body?.intervalMinutes }));
+        } catch (error) {
+            res.status(400).json({ code: 'DOCKER_AUTO_UPDATE_INVALID', error: error instanceof Error ? error.message : String(error) });
         }
     });
     return router;

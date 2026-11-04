@@ -21,8 +21,17 @@ const { systemClient } = await import('../../services/clients/systemClient');
 const { DockerUpdate } = await import('./DockerUpdate');
 const originalGet = systemClient.getDockerUpdate;
 const originalStart = systemClient.startDockerUpdate;
-afterEach(() => { cleanup(); systemClient.getDockerUpdate = originalGet; systemClient.startDockerUpdate = originalStart; });
+const originalGetAuto = systemClient.getDockerAutoUpdate;
+const originalSetAuto = systemClient.setDockerAutoUpdate;
+const autoState = (overrides = {}) => ({ enabled: false, intervalMinutes: 5, available: true, intervals: [5, 10, 60], ...overrides });
+systemClient.getDockerAutoUpdate = async () => autoState();
+afterEach(() => {
+    cleanup();
+    systemClient.getDockerUpdate = originalGet; systemClient.startDockerUpdate = originalStart;
+    systemClient.getDockerAutoUpdate = async () => autoState(); systemClient.setDockerAutoUpdate = originalSetAuto;
+});
 after(() => {
+    systemClient.getDockerAutoUpdate = originalGetAuto;
     dom.window.close();
     for (const [name, descriptor] of originals) {
         if (descriptor) Object.defineProperty(globalThis, name, descriptor);
@@ -58,4 +67,34 @@ test('disabled deployment cannot start an upgrade', async () => {
     render(<DockerUpdate />);
     await screen.findByText(i18n.t('updates.docker.disabled'));
     assert.equal((screen.getByRole('button', { name: i18n.t('updates.docker.upgrade') }) as HTMLButtonElement).disabled, true);
+});
+
+for (const locale of ['zh-CN', 'en']) {
+    test(`${locale}: auto update defaults to every 5 minutes and can be switched on`, async () => {
+        await i18n.changeLanguage(locale);
+        const saves: unknown[] = [];
+        systemClient.getDockerUpdate = async () => ({ enabled: true, available: true, phase: 'idle' });
+        systemClient.setDockerAutoUpdate = async config => { saves.push(config); return autoState({ ...config }); };
+        const user = userEvent.setup({ document: dom.window.document });
+        render(<DockerUpdate />);
+        const toggle = await screen.findByRole('switch', { name: i18n.t('updates.docker.auto.title') });
+        const interval = screen.getByRole('combobox', { name: i18n.t('updates.docker.auto.interval') }) as HTMLSelectElement;
+        assert.equal(interval.value, '5');
+        assert.equal(toggle.getAttribute('aria-checked'), 'false');
+        await user.click(toggle);
+        assert.deepEqual(saves, [{ enabled: true, intervalMinutes: 5 }]);
+        await waitFor(() => assert.equal(toggle.getAttribute('aria-checked'), 'true'));
+        await screen.findByText(i18n.t('updates.docker.auto.pending'));
+        await user.selectOptions(interval, '60');
+        assert.deepEqual(saves[1], { enabled: true, intervalMinutes: 60 });
+        assert.doesNotMatch(document.body.textContent || '', /updates\.docker\./);
+    });
+}
+
+test('auto update is hidden when Docker upgrades are not enabled', async () => {
+    await i18n.changeLanguage('en');
+    systemClient.getDockerUpdate = async () => ({ enabled: false, available: false, phase: 'idle' });
+    render(<DockerUpdate />);
+    await screen.findByText(i18n.t('updates.docker.disabled'));
+    assert.equal(screen.queryByRole('switch'), null);
 });
