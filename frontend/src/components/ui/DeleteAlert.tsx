@@ -55,7 +55,7 @@ export const DeleteAlert = ({
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 10 }}
                     transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                    className="w-full overflow-hidden rounded-xl border border-border bg-background shadow-2xl"
+                    className="w-full overflow-hidden rounded-lg bg-card shadow-2xl"
                 >
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-muted/30">
                         <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">

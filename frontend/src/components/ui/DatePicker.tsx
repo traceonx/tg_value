@@ -113,7 +113,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="absolute z-50 mt-2 w-[320px] rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl ring-1 ring-black/5 dark:ring-white/10"
+            className="absolute z-50 mt-2 w-[320px] rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-2xl ring-1 ring-black/5 dark:ring-white/10"
         >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">

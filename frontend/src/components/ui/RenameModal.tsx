@@ -105,7 +105,7 @@ export const RenameModal = ({ isOpen, onClose, onConfirm, currentName, type }: R
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ duration: 0.15 }}
-                        className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-border overflow-hidden"
+                        className="w-full overflow-hidden rounded-lg bg-card shadow-2xl"
                     >
                         {/* Header */}
                         <div className="flex items-center gap-3 px-6 pt-6 pb-2">

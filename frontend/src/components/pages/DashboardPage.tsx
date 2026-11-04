@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState, type ElementType, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock3, HardDrive, ListChecks, Rss, Send, Database } from 'lucide-react';
 import fileApi from '../../services/api';
 import { tasksClient } from '../../services/clients/tasksClient';
 import { formatBytes } from '../../services/formatBytes';
 import type { StorageStats, TelegramBotPublicConfig, TelegramSubscription, TelegramUserAccountsOverview, UnifiedTask } from '../../services/apiTypes';
-import { cn } from '../../lib/utils';
+import { Card, CardHeader } from '../ui/Card';
+import { Chip, type Tone } from '../ui/Chip';
+import { ProgressBar } from '../ui/ProgressBar';
+import { StatCard } from '../ui/StatCard';
 
 const ACTIVE_STATUSES = ['running', 'pending', 'waiting', 'paused'];
 const ISSUE_STATUSES = ['failed', 'interrupted', 'retry_required'];
@@ -15,41 +18,6 @@ export interface DashboardData {
     subscriptions: TelegramSubscription[] | null;
     bot: TelegramBotPublicConfig | null;
     accounts: TelegramUserAccountsOverview | null;
-}
-
-type Tone = 'primary' | 'info' | 'warning' | 'success' | 'danger' | 'neutral';
-const TONES: Record<Tone, string> = {
-    primary: 'bg-accent text-accent-foreground',
-    info: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200',
-    warning: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200',
-    success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200',
-    danger: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-200',
-    neutral: 'bg-muted text-muted-foreground',
-};
-
-function Chip({ tone, children }: { tone: Tone; children: ReactNode }) {
-    return <span className={cn('inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium', TONES[tone])}>{children}</span>;
-}
-
-function StatCard({ icon: Icon, tone, label, children }: { icon: ElementType; tone: Tone; label: string; children: ReactNode }) {
-    return (
-        <section className="flex flex-col gap-3 rounded-lg bg-card p-5 shadow-card" aria-label={label}>
-            <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-normal text-muted-foreground">{label}</h3>
-                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', TONES[tone])}><Icon className="h-5 w-5" aria-hidden="true" /></span>
-            </div>
-            {children}
-        </section>
-    );
-}
-
-function Meter({ percent, label }: { percent: number; label: string }) {
-    const value = Math.max(0, Math.min(100, Math.round(percent)));
-    return (
-        <div role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} className="h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${value}%` }} />
-        </div>
-    );
 }
 
 export async function loadDashboardData(): Promise<DashboardData> {
@@ -110,7 +78,7 @@ export function DashboardPage({ storageStats, onNavigate, load = loadDashboardDa
                 <StatCard icon={HardDrive} tone="primary" label={t('dashboard.storage.title')}>
                     {quota ? <>
                         <p className="text-2xl font-semibold">{formatBytes(quota.usedBytes)} <span className="text-sm font-normal text-muted-foreground">/ {formatBytes(quota.totalBytes)}</span></p>
-                        <Meter percent={quota.usedPercent} label={t('dashboard.storage.title')} />
+                        <ProgressBar value={quota.usedPercent} label={t('dashboard.storage.title')} />
                     </> : <p className="text-sm text-muted-foreground">{t('dashboard.loading')}</p>}
                 </StatCard>
                 <StatCard icon={Database} tone="info" label={t('dashboard.library.title')}>
@@ -133,12 +101,9 @@ export function DashboardPage({ storageStats, onNavigate, load = loadDashboardDa
             </div>
 
             <div className="flex flex-wrap items-start gap-6">
-                <section className="min-w-0 flex-[999_1_520px] overflow-hidden rounded-lg bg-card shadow-card">
-                    <header className="flex items-center gap-3 border-b border-border px-5 py-4">
-                        <ListChecks className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                        <h3 className="flex-1 text-lg font-semibold">{t('dashboard.active.title')}</h3>
-                        <button type="button" onClick={() => onNavigate('tasks')} className="text-sm font-medium text-primary hover:underline">{t('dashboard.viewAll')}</button>
-                    </header>
+                <Card className="min-w-0 flex-[999_1_520px]">
+                    <CardHeader icon={ListChecks} title={t('dashboard.active.title')}
+                        action={<button type="button" onClick={() => onNavigate('tasks')} className="text-sm font-medium text-primary hover:underline">{t('dashboard.viewAll')}</button>} />
                     {activeTasks.length === 0
                         ? <p className="px-5 py-10 text-center text-sm text-muted-foreground">{data?.tasks ? t('dashboard.active.empty') : t('dashboard.loading')}</p>
                         : <ul className="divide-y divide-border">
@@ -151,18 +116,15 @@ export function DashboardPage({ storageStats, onNavigate, load = loadDashboardDa
                                             {task.bytes.total > 0 ? ` · ${formatBytes(task.bytes.transferred)} / ${formatBytes(task.bytes.total)}` : ''}
                                         </span>
                                     </div>
-                                    <Meter percent={task.progress} label={task.title} />
+                                    <ProgressBar value={task.progress} label={task.title} />
                                 </li>
                             ))}
                         </ul>}
-                </section>
+                </Card>
 
-                <section className="min-w-0 flex-[1_1_320px] overflow-hidden rounded-lg bg-card shadow-card">
-                    <header className="flex items-center gap-3 border-b border-border px-5 py-4">
-                        <Rss className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                        <h3 className="flex-1 text-lg font-semibold">{t('dashboard.subscriptions.title')}</h3>
-                        <button type="button" onClick={() => onNavigate('subscriptions')} className="text-sm font-medium text-primary hover:underline">{t('dashboard.viewAll')}</button>
-                    </header>
+                <Card className="min-w-0 flex-[1_1_320px]">
+                    <CardHeader icon={Rss} title={t('dashboard.subscriptions.title')}
+                        action={<button type="button" onClick={() => onNavigate('subscriptions')} className="text-sm font-medium text-primary hover:underline">{t('dashboard.viewAll')}</button>} />
                     {!data?.subscriptions?.length
                         ? <p className="px-5 py-10 text-center text-sm text-muted-foreground">{data?.subscriptions ? t('dashboard.subscriptions.empty') : t('dashboard.loading')}</p>
                         : <ul className="divide-y divide-border">
@@ -182,7 +144,7 @@ export function DashboardPage({ storageStats, onNavigate, load = loadDashboardDa
                                 );
                             })}
                         </ul>}
-                </section>
+                </Card>
             </div>
         </div>
     );

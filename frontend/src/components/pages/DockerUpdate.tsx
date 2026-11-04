@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { systemClient, type DockerAutoUpdateState, type DockerUpdateStatus } from '../../services/clients/systemClient';
-import { cn } from '../../lib/utils';
+import { Switch } from '../ui/Switch';
+import { FIELD_CLASS } from '../ui/Tabs';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 
@@ -108,19 +109,15 @@ function DockerAutoUpdate() {
             {hasError && <p role="alert" className="text-xs text-destructive">{t('updates.docker.auto.saveFailed')}</p>}
         </div>
         <div className="flex items-center gap-2">
-            <select aria-label={t('updates.docker.auto.interval')} className="h-9 rounded-lg border border-border bg-background px-2 text-sm"
+            <select aria-label={t('updates.docker.auto.interval')} className={FIELD_CLASS}
                 value={state.intervalMinutes} disabled={disabled}
                 onChange={event => void save({ enabled: state.enabled, intervalMinutes: Number(event.target.value) })}>
                 {state.intervals.map(minutes => <option key={minutes} value={minutes}>{minutes < 60
                     ? t('updates.docker.auto.minutes', { count: minutes })
                     : t('updates.docker.auto.hours', { count: minutes / 60 })}</option>)}
             </select>
-            <button type="button" role="switch" aria-checked={state.enabled} aria-label={t('updates.docker.auto.title')}
-                disabled={disabled} onClick={() => void save({ enabled: !state.enabled, intervalMinutes: state.intervalMinutes })}
-                className={cn('relative h-7 w-12 shrink-0 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50',
-                    state.enabled ? 'border-primary bg-primary' : 'border-border bg-muted')}>
-                <span className={cn('absolute left-0 top-0.5 h-[22px] w-[22px] rounded-full bg-white shadow-sm transition-transform', state.enabled ? 'translate-x-6' : 'translate-x-0.5')} />
-            </button>
+            <Switch checked={state.enabled} label={t('updates.docker.auto.title')} disabled={disabled}
+                onChange={enabled => void save({ enabled, intervalMinutes: state.intervalMinutes })} />
         </div>
     </div>;
 }

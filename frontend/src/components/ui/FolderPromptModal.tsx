@@ -42,7 +42,7 @@ export const FolderPromptModal = ({ isOpen, onClose, onConfirm, onCancel, onRoot
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 10 }}
                     transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                    className="w-full overflow-hidden rounded-xl border border-border bg-background shadow-2xl"
+                    className="w-full overflow-hidden rounded-lg bg-card shadow-2xl"
                 >
                     {/* Header */}
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-muted/30">

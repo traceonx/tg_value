@@ -232,7 +232,7 @@ function LoginDialog({
     const complete = login?.status === 'complete';
     return (
         <Dialog open={open} onClose={close} labelledBy="telegram-account-login-title" describedBy="telegram-account-login-description" closeOnEscape={!busy} closeOnBackdrop={!busy} className="w-full max-w-xl">
-            <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+            <div className="overflow-hidden rounded-lg bg-card shadow-2xl">
                 <div className="flex items-start gap-3 border-b border-border bg-muted/30 px-5 py-4 sm:px-6">
                     <div className="rounded-full bg-primary/10 p-2 text-primary"><UserRound className="h-5 w-5" /></div>
                     <div className="min-w-0 flex-1">
@@ -390,10 +390,10 @@ export function TelegramUserAccountsPanel({
             {loadError && <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"><span>{loadError}</span><Button variant="outline" size="sm" onClick={() => void reload()}>{t('management.telegramAccounts.retry')}</Button></div>}
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.enabled')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{overview.summary.enabled}<span className="ml-1 text-sm font-normal text-muted-foreground">/ {overview.summary.total}</span></p></div>
-                <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.ready')}</p><p className="mt-1 text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{overview.summary.ready}</p></div>
-                <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.cooldown')}</p><p className="mt-1 text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-300">{overview.summary.coolingDown}</p></div>
-                <div className="rounded-xl border border-border bg-background p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.permissions')}</p><div className="mt-1"><PermissionSummary summary={overview.summary.permissions} compact /></div></div>
+                <div className="rounded-lg bg-muted/60 p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.enabled')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{overview.summary.enabled}<span className="ml-1 text-sm font-normal text-muted-foreground">/ {overview.summary.total}</span></p></div>
+                <div className="rounded-lg bg-muted/60 p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.ready')}</p><p className="mt-1 text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{overview.summary.ready}</p></div>
+                <div className="rounded-lg bg-muted/60 p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.cooldown')}</p><p className="mt-1 text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-300">{overview.summary.coolingDown}</p></div>
+                <div className="rounded-lg bg-muted/60 p-3"><p className="text-xs text-muted-foreground">{t('management.telegramAccounts.summary.permissions')}</p><div className="mt-1"><PermissionSummary summary={overview.summary.permissions} compact /></div></div>
             </div>
 
             <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
@@ -405,7 +405,7 @@ export function TelegramUserAccountsPanel({
                 {overview.accounts.map(account => {
                     const status = statusView(account, t);
                     const busy = busyAccountId === account.id;
-                    return <article key={account.id} className="rounded-xl border border-border bg-background p-4">
+                    return <article key={account.id} className="rounded-lg border border-border bg-background p-4">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2">

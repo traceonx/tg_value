@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, Ban, Check, CheckCircle2, Filter, ListFilter, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Chip, TONE_CLASSES, type Tone } from '../ui/Chip';
+import { StatCard } from '../ui/StatCard';
+import { FIELD_CLASS, Tabs } from '../ui/Tabs';
 import fileApi from '../../services/api';
 import type {
     TelegramAdDecision,
@@ -36,16 +39,16 @@ function dateLabel(value: string | null, locale: string, emptyLabel: string): st
     return new Intl.DateTimeFormat(locale, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 }
 
-function modeTone(mode: TelegramAdFilterMode): string {
-    if (mode === 'conservative') return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/35 dark:text-emerald-300';
-    if (mode === 'aggressive') return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/35 dark:text-amber-300';
-    return 'border-border bg-muted text-muted-foreground';
+function modeTone(mode: TelegramAdFilterMode): Tone {
+    if (mode === 'conservative') return 'success';
+    if (mode === 'aggressive') return 'warning';
+    return 'neutral';
 }
 
-function decisionTone(decision: TelegramAdDecision['decision']): string {
-    if (decision === 'blocked') return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/35 dark:text-red-300';
-    if (decision === 'review') return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/35 dark:text-amber-300';
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/35 dark:text-emerald-300';
+function decisionTone(decision: TelegramAdDecision['decision']): Tone {
+    if (decision === 'blocked') return 'danger';
+    if (decision === 'review') return 'warning';
+    return 'success';
 }
 
 export function SubscriptionCenter({ onUnauthorized }: SubscriptionCenterProps) {
@@ -185,19 +188,19 @@ export function SubscriptionCenter({ onUnauthorized }: SubscriptionCenterProps) 
                 </Button>
             </header>
 
-            <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <section className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
                 {[
                     [t('subscriptionCenter.summary.enabled'), summary.enabled, t('subscriptionCenter.summary.enabledDetail')], [t('subscriptionCenter.summary.protected'), summary.protected, t('subscriptionCenter.summary.protectedDetail')],
                     [t('subscriptionCenter.summary.blocked'), summary.blocked, t('subscriptionCenter.summary.blockedDetail')], [t('subscriptionCenter.summary.review'), summary.review, t('subscriptionCenter.summary.reviewDetail')],
-                ].map(([label, value, detail]) => <div key={String(label)} className="rounded-lg bg-card p-4 shadow-card"><p className="text-xs font-medium text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-bold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>)}
+                ].map(([label, value, detail]) => <StatCard key={String(label)} label={String(label)} value={value} className="p-4"><p className="text-xs text-muted-foreground">{detail}</p></StatCard>)}
             </section>
 
-            {error && <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/35 dark:text-red-300"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
+            {error && <div className={cn('flex items-start gap-2 rounded-lg px-4 py-3 text-sm', TONE_CLASSES.danger)}><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
 
-            <div className="inline-flex rounded-lg border bg-muted/50 p-1">
-                <button type="button" onClick={() => setTab('subscriptions')} className={cn('rounded-md px-4 py-2 text-sm font-medium transition-colors', tab === 'subscriptions' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{t('subscriptionCenter.tabs.subscriptions')}</button>
-                <button type="button" onClick={() => setTab('records')} className={cn('rounded-md px-4 py-2 text-sm font-medium transition-colors', tab === 'records' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{t('subscriptionCenter.tabs.records')}</button>
-            </div>
+            <Tabs label={t('subscriptionCenter.title')} value={tab} onChange={setTab} items={[
+                { value: 'subscriptions', label: t('subscriptionCenter.tabs.subscriptions') },
+                { value: 'records', label: t('subscriptionCenter.tabs.records') },
+            ]} />
 
             {tab === 'subscriptions' ? (
                 subscriptions.length === 0 ? <div className="flex flex-col items-center justify-center rounded-lg bg-card shadow-card py-20 text-center"><ListFilter className="h-12 w-12 text-muted-foreground/50" /><h3 className="mt-4 text-lg font-semibold">{t('subscriptionCenter.empty.title')}</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">{t('subscriptionCenter.empty.description')}</p></div> :
@@ -205,8 +208,8 @@ export function SubscriptionCenter({ onUnauthorized }: SubscriptionCenterProps) 
                     <aside className="overflow-hidden rounded-lg bg-card shadow-card">
                         <div className="max-h-[640px] space-y-2 overflow-y-auto p-2">
                         {subscriptions.map(item => (
-                            <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={cn('w-full rounded-lg border px-3 py-3 text-left transition-colors', selectedId === item.id ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-muted/60')}>
-                                <div className="flex items-start justify-between gap-2"><span className="truncate text-sm font-semibold">{item.title || item.source}</span><span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-medium', modeTone(item.ad_filter_mode))}>{t(MODES.find(mode => mode.value === item.ad_filter_mode)?.labelKey || 'subscriptionCenter.filterModes.off.label')}</span></div>
+                            <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={cn('w-full rounded-lg border px-3 py-3 text-left transition-colors', selectedId === item.id ? 'border-transparent bg-accent' : 'border-transparent hover:bg-muted/60')}>
+                                <div className="flex items-start justify-between gap-2"><span className="truncate text-sm font-semibold">{item.title || item.source}</span><Chip tone={modeTone(item.ad_filter_mode)}>{t(MODES.find(mode => mode.value === item.ad_filter_mode)?.labelKey || 'subscriptionCenter.filterModes.off.label')}</Chip></div>
                                 <p className="mt-1 truncate text-xs text-muted-foreground">{item.source_original || item.source}</p>
                                 <div className="mt-2 flex gap-3 text-[11px] text-muted-foreground"><span>{t('subscriptionCenter.subscription.syncing')}</span><span>{t('subscriptionCenter.subscription.blocked', { count: item.ad_stats?.blocked_count || 0 })}</span><span>{t('subscriptionCenter.subscription.review', { count: item.ad_stats?.review_count || 0 })}</span></div>
                             </button>
@@ -223,9 +226,9 @@ export function SubscriptionCenter({ onUnauthorized }: SubscriptionCenterProps) 
                             <div className="flex items-center gap-2"><Filter className="h-4 w-4 text-primary" /><h3 className="font-semibold">{t('subscriptionCenter.rules.title')}</h3></div>
                             <p className="mt-1 text-sm text-muted-foreground">{t('subscriptionCenter.rules.description')}</p>
                             <div className="mt-4 grid gap-2 sm:grid-cols-[130px_130px_minmax(0,1fr)_auto]">
-                                <select value={ruleAction} onChange={event => setRuleAction(event.target.value as TelegramAdRuleAction)} className="h-10 rounded-md border bg-background px-3 text-sm"><option value="block">{t('subscriptionCenter.rules.actions.block')}</option><option value="allow">{t('subscriptionCenter.rules.actions.alwaysAllow')}</option></select>
-                                <select value={ruleKind} onChange={event => setRuleKind(event.target.value as TelegramAdRuleKind)} className="h-10 rounded-md border bg-background px-3 text-sm">{RULE_KINDS.map(kind => <option key={kind.value} value={kind.value}>{t(kind.labelKey)}</option>)}</select>
-                                <input value={rulePattern} onChange={event => setRulePattern(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void addRule(); }} placeholder={t(RULE_KINDS.find(kind => kind.value === ruleKind)?.placeholderKey || 'subscriptionCenter.ruleKinds.domain.placeholder')} className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                                <select value={ruleAction} onChange={event => setRuleAction(event.target.value as TelegramAdRuleAction)} className={FIELD_CLASS}><option value="block">{t('subscriptionCenter.rules.actions.block')}</option><option value="allow">{t('subscriptionCenter.rules.actions.alwaysAllow')}</option></select>
+                                <select value={ruleKind} onChange={event => setRuleKind(event.target.value as TelegramAdRuleKind)} className={FIELD_CLASS}>{RULE_KINDS.map(kind => <option key={kind.value} value={kind.value}>{t(kind.labelKey)}</option>)}</select>
+                                <input value={rulePattern} onChange={event => setRulePattern(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void addRule(); }} placeholder={t(RULE_KINDS.find(kind => kind.value === ruleKind)?.placeholderKey || 'subscriptionCenter.ruleKinds.domain.placeholder')} className={FIELD_CLASS} />
                                 <Button disabled={saving || !rulePattern.trim()} className="gap-2" onClick={() => void addRule()}><Plus className="h-4 w-4" />{t('subscriptionCenter.rules.add')}</Button>
                             </div>
                             <div className="mt-4 divide-y rounded-lg border">{rules.length === 0 ? <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t('subscriptionCenter.rules.empty')}</p> : rules.map(rule => <div key={rule.id} className="flex items-center gap-3 px-4 py-3"><button type="button" disabled={saving} onClick={() => void toggleRule(rule)} className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded border', rule.enabled ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-background')}>{rule.enabled && <Check className="h-3.5 w-3.5" />}</button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', rule.action === 'allow' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300')}>{t(rule.action === 'allow' ? 'subscriptionCenter.rules.actions.allow' : 'subscriptionCenter.rules.actions.block')}</span><span className="text-xs text-muted-foreground">{t(RULE_KINDS.find(kind => kind.value === rule.kind)?.labelKey || (rule.kind === 'template' ? 'subscriptionCenter.ruleKinds.template.label' : 'subscriptionCenter.ruleKinds.other.label'), { kind: rule.kind })}</span></div><p className="mt-1 truncate text-sm font-medium">{rule.label || rule.pattern}</p></div><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={saving} onClick={() => void removeRule(rule)} aria-label={t('subscriptionCenter.rules.deleteAria')}><Trash2 className="h-4 w-4" /></Button></div>)}</div>
@@ -234,8 +237,8 @@ export function SubscriptionCenter({ onUnauthorized }: SubscriptionCenterProps) 
                 </div>
             ) : (
                 <section className="space-y-4">
-                    <div className="flex flex-col gap-3 rounded-lg bg-card p-4 shadow-card sm:flex-row sm:items-center sm:justify-between"><div><h3 className="font-semibold">{t('subscriptionCenter.records.title')}</h3><p className="mt-1 text-sm text-muted-foreground">{t('subscriptionCenter.records.description')}</p></div><select value={decisionFilter} onChange={event => setDecisionFilter(event.target.value as typeof decisionFilter)} className="h-10 rounded-md border bg-background px-3 text-sm"><option value="">{t('subscriptionCenter.records.filters.all')}</option><option value="blocked">{t('subscriptionCenter.records.filters.blocked')}</option><option value="review">{t('subscriptionCenter.records.filters.review')}</option><option value="allow">{t('subscriptionCenter.records.filters.allow')}</option></select></div>
-                    {decisions.length === 0 ? <div className="flex flex-col items-center justify-center rounded-lg bg-card shadow-card py-20 text-center"><Ban className="h-12 w-12 text-muted-foreground/50" /><h3 className="mt-4 text-lg font-semibold">{t('subscriptionCenter.records.emptyTitle')}</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">{t('subscriptionCenter.records.emptyDescription')}</p></div> : <div className="overflow-hidden rounded-lg bg-card shadow-card"><div className="max-h-[720px] space-y-3 overflow-y-auto p-3">{decisions.map(item => <article key={item.id} className="rounded-xl border bg-background p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-semibold', decisionTone(item.decision))}>{t(`subscriptionCenter.records.decisions.${item.decision}`)} · {t('subscriptionCenter.records.score', { score: item.score })}</span><span className="text-xs text-muted-foreground">{item.subscription_title || item.subscription_source} · #{item.message_id} · {dateLabel(item.created_at, locale, t('subscriptionCenter.dateUnavailable'))}</span>{item.manual_label && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{t(item.manual_label === 'ad' ? 'subscriptionCenter.records.confirmedAd' : 'subscriptionCenter.records.confirmedNormal')}</span>}</div><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{item.text_excerpt || t('subscriptionCenter.records.noText')}</p><div className="mt-3 flex flex-wrap gap-2">{(item.reasons || []).map((reason, index) => <span key={`${reason.code}-${index}`} className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{reason.label}{reason.score > 0 ? ` +${reason.score}` : ` ${reason.score}`}</span>)}</div>{(item.domains?.length || item.usernames?.length) > 0 && <p className="mt-3 break-all text-xs text-muted-foreground">{[...(item.domains || []), ...(item.usernames || [])].join(' · ')}</p>}</div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" disabled={saving} onClick={() => void review(item, 'normal')}><CheckCircle2 className="mr-1 h-4 w-4" />{t('subscriptionCenter.records.markNormal')}</Button><Button size="sm" variant="outline" disabled={saving} onClick={() => void review(item, 'ad')}><Ban className="mr-1 h-4 w-4" />{t('subscriptionCenter.records.markAd')}</Button></div></div></article>)}</div><Pagination page={decisionPage} pages={decisionPages} total={decisionTotal} onChange={setDecisionPage} /></div>}
+                    <div className="flex flex-col gap-3 rounded-lg bg-card p-4 shadow-card sm:flex-row sm:items-center sm:justify-between"><div><h3 className="font-semibold">{t('subscriptionCenter.records.title')}</h3><p className="mt-1 text-sm text-muted-foreground">{t('subscriptionCenter.records.description')}</p></div><select value={decisionFilter} onChange={event => setDecisionFilter(event.target.value as typeof decisionFilter)} className={FIELD_CLASS}><option value="">{t('subscriptionCenter.records.filters.all')}</option><option value="blocked">{t('subscriptionCenter.records.filters.blocked')}</option><option value="review">{t('subscriptionCenter.records.filters.review')}</option><option value="allow">{t('subscriptionCenter.records.filters.allow')}</option></select></div>
+                    {decisions.length === 0 ? <div className="flex flex-col items-center justify-center rounded-lg bg-card shadow-card py-20 text-center"><Ban className="h-12 w-12 text-muted-foreground/50" /><h3 className="mt-4 text-lg font-semibold">{t('subscriptionCenter.records.emptyTitle')}</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">{t('subscriptionCenter.records.emptyDescription')}</p></div> : <div className="overflow-hidden rounded-lg bg-card shadow-card"><div className="max-h-[720px] space-y-3 overflow-y-auto p-3">{decisions.map(item => <article key={item.id} className="rounded-lg border border-border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Chip tone={decisionTone(item.decision)}>{t(`subscriptionCenter.records.decisions.${item.decision}`)} · {t('subscriptionCenter.records.score', { score: item.score })}</Chip><span className="text-xs text-muted-foreground">{item.subscription_title || item.subscription_source} · #{item.message_id} · {dateLabel(item.created_at, locale, t('subscriptionCenter.dateUnavailable'))}</span>{item.manual_label && <span className="inline-flex h-6 items-center rounded-full bg-accent px-2.5 text-xs font-medium text-accent-foreground">{t(item.manual_label === 'ad' ? 'subscriptionCenter.records.confirmedAd' : 'subscriptionCenter.records.confirmedNormal')}</span>}</div><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{item.text_excerpt || t('subscriptionCenter.records.noText')}</p><div className="mt-3 flex flex-wrap gap-2">{(item.reasons || []).map((reason, index) => <span key={`${reason.code}-${index}`} className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{reason.label}{reason.score > 0 ? ` +${reason.score}` : ` ${reason.score}`}</span>)}</div>{(item.domains?.length || item.usernames?.length) > 0 && <p className="mt-3 break-all text-xs text-muted-foreground">{[...(item.domains || []), ...(item.usernames || [])].join(' · ')}</p>}</div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" disabled={saving} onClick={() => void review(item, 'normal')}><CheckCircle2 className="mr-1 h-4 w-4" />{t('subscriptionCenter.records.markNormal')}</Button><Button size="sm" variant="outline" disabled={saving} onClick={() => void review(item, 'ad')}><Ban className="mr-1 h-4 w-4" />{t('subscriptionCenter.records.markAd')}</Button></div></div></article>)}</div><Pagination page={decisionPage} pages={decisionPages} total={decisionTotal} onChange={setDecisionPage} /></div>}
                 </section>
             )}
         </div>

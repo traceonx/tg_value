@@ -159,7 +159,7 @@ export const BulkActionToolbar = ({
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="z-40 w-full"
                     >
-                        <div className="bg-white dark:bg-zinc-900 border border-primary/20 shadow-lg rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="bg-card shadow-lg rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="flex items-center gap-3 pl-1">
                                 <div className="bg-primary/10 p-1.5 rounded-lg">
                                     <CheckSquare className="h-4 w-4 text-primary" />

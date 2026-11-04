@@ -17,6 +17,8 @@ import { errorCode, errorMessage } from "../../services/unknownError";
 import { Dialog } from "../ui/Dialog";
 import { TelegramUserAccountsPanel } from "./TelegramUserAccountsPanel";
 import { DockerUpdate } from './DockerUpdate';
+import { Card, CardHeader } from '../ui/Card';
+import { underlineTabClass } from '../ui/Tabs';
 import { updateStatusKey } from '../../services/updateStatus';
 
 interface SettingsPageProps {
@@ -35,12 +37,12 @@ interface SettingsSectionProps {
 }
 
 const SettingsSection = ({ title, children, sectionId }: SettingsSectionProps & { sectionId?: string }) => (
-    <section className="overflow-hidden rounded-lg bg-card shadow-card" data-settings-section={sectionId}>
-        <h3 className="border-b border-border px-5 py-4 text-lg font-semibold tracking-tight text-foreground">{title}</h3>
+    <Card data-settings-section={sectionId}>
+        <CardHeader title={title} />
         <div>
             {children}
         </div>
-    </section>
+    </Card>
 );
 
 interface SettingsRowProps {
@@ -135,7 +137,7 @@ const ActionNotice = ({ state, onClose }: { state: ActionNoticeState; onClose: (
     >
         <div
             className={cn(
-                "pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border bg-background/95 px-4 py-3 shadow-xl backdrop-blur",
+                "pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-lg border bg-card px-4 py-3 shadow-xl",
                 state.tone === 'success' && "border-emerald-200",
                 state.tone === 'error' && "border-red-200",
                 state.tone === 'info' && "border-border",
@@ -169,7 +171,7 @@ const ActionDialog = ({ state, input, onInput, onCancel, onConfirm }: {
             <motion.div
                 initial={{ opacity: 0, y: 12, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={cn("w-full overflow-hidden rounded-2xl border bg-background shadow-2xl", danger ? "border-destructive/40" : "border-border")}
+                className={cn("w-full overflow-hidden rounded-lg border bg-card shadow-2xl", danger ? "border-destructive/40" : "border-border")}
             >
                 <div className={cn("flex items-start gap-3 border-b px-5 py-4 sm:px-6", danger ? "border-destructive/20 bg-destructive/10" : "border-border bg-muted/30")}>
                     <div className={cn("mt-0.5 rounded-full p-2", danger ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary")}>
@@ -1086,12 +1088,7 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                     <button
                         key={section.id}
                         type="button"
-                        className={cn(
-                            "-mb-px h-12 shrink-0 border-b-2 px-4 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring max-[420px]:flex-1 max-[420px]:px-2",
-                            activeSection === section.id
-                                ? "border-primary font-semibold text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground",
-                        )}
+                        className={underlineTabClass(activeSection === section.id, "max-[420px]:flex-1 max-[420px]:px-2")}
                         onClick={() => onSectionChange(section.id)}
                         aria-current={activeSection === section.id ? 'page' : undefined}
                     >

@@ -115,7 +115,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
     };
 
     return (
-        <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+        <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
             <div className="absolute right-4 top-4">
                 <LanguageToggle />
             </div>
@@ -141,7 +141,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                             width="80"
                             height="80"
                             decoding="async"
-                            className="w-20 h-20 rounded-2xl shadow-lg shadow-black/10"
+                            className="w-20 h-20 rounded-2xl shadow-card"
                         />
                     </motion.div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">TG Vault</h1>
@@ -158,7 +158,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             onSubmit={handlePasswordSubmit}
-                            className="bg-card border border-border rounded-2xl p-6 shadow-xl shadow-black/5"
+                            className="bg-card rounded-lg p-6 shadow-card sm:p-8"
                         >
                             {/* Error Message */}
                             {error && (
@@ -184,7 +184,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder={setupRequired ? t('login.adminPasswordPlaceholder') : t('login.passwordPlaceholder')}
-                                        className="w-full h-12 px-4 pr-12 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                        className="w-full h-12 px-4 pr-12 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-all"
                                         autoFocus
                                         autoComplete={setupRequired ? 'new-password' : 'current-password'}
                                         disabled={loading}
@@ -214,7 +214,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                             placeholder={t('login.confirmPasswordPlaceholder')}
                                             autoComplete="new-password"
-                                            className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                            className="w-full h-12 px-4 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-all"
                                             disabled={loading}
                                         />
                                     </div>
@@ -232,7 +232,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                             value={telegramPin}
                                             onChange={(e) => setTelegramPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                                             placeholder="0000"
-                                            className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                            className="w-full h-12 px-4 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-all"
                                             disabled={loading}
                                         />
                                         <p className="text-xs text-muted-foreground">{t('login.telegramPinHint')}</p>
@@ -245,7 +245,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                 disabled={loading}
                                 whileHover={{ scale: loading ? 1 : 1.01 }}
                                 whileTap={{ scale: loading ? 1 : 0.99 }}
-                                className="w-full h-12 mt-6 rounded-xl bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full h-12 mt-6 rounded-md bg-primary text-primary-foreground font-medium shadow-primary flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? (
                                     <IndeterminateSpinner label={setupRequired ? t('login.creating') : t('login.signingIn')} size="md" tone="current" />
@@ -264,7 +264,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             onSubmit={handleTOTPSubmit}
-                            className="bg-card border border-border rounded-2xl p-6 shadow-xl shadow-black/5"
+                            className="bg-card rounded-lg p-6 shadow-card sm:p-8"
                         >
                             <button
                                 type="button"
@@ -303,7 +303,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                     value={totpToken}
                                     onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ''))}
                                     placeholder="000000"
-                                    className="w-full h-14 text-center text-2xl font-bold tracking-[0.5em] px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    className="w-full h-14 text-center text-2xl font-bold tracking-[0.5em] px-4 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-all"
                                     autoFocus
                                     disabled={loading}
                                 />
@@ -314,7 +314,7 @@ export const LoginPage = ({ onLogin, setupRequired = false, telegramPinRequired 
                                 disabled={loading || totpToken.length !== 6}
                                 whileHover={{ scale: loading || totpToken.length !== 6 ? 1 : 1.01 }}
                                 whileTap={{ scale: loading || totpToken.length !== 6 ? 1 : 0.99 }}
-                                className="w-full h-12 mt-6 rounded-xl bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full h-12 mt-6 rounded-md bg-primary text-primary-foreground font-medium shadow-primary flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? (
                                     <IndeterminateSpinner label={t('login.verifying')} size="md" tone="current" />
