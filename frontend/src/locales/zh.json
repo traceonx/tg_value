@@ -105,6 +105,12 @@
     "storage": {
       "used": "已用 {{used}} GB / 共 {{total}} GB",
       "uc": "存储空间"
+    },
+    "navigation": "主导航",
+    "groups": {
+      "transfer": "传输",
+      "files": "文件",
+      "system": "系统"
     }
   },
   "file": {

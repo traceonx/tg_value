@@ -35,12 +35,12 @@ interface SettingsSectionProps {
 }
 
 const SettingsSection = ({ title, children, sectionId }: SettingsSectionProps & { sectionId?: string }) => (
-    <div className="space-y-4" data-settings-section={sectionId}>
-        <h3 className="text-lg font-medium tracking-tight text-foreground">{title}</h3>
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <section className="overflow-hidden rounded-lg bg-card shadow-card" data-settings-section={sectionId}>
+        <h3 className="border-b border-border px-5 py-4 text-lg font-semibold tracking-tight text-foreground">{title}</h3>
+        <div>
             {children}
         </div>
-    </div>
+    </section>
 );
 
 interface SettingsRowProps {
@@ -1068,8 +1068,8 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
                 />
             )}
             <div className="flex min-w-0 items-start gap-3 sm:items-center">
-                <div className="shrink-0 rounded-xl bg-secondary p-3">
-                    <Palette className="h-6 w-6 text-foreground" />
+                <div className="shrink-0 rounded-lg bg-accent p-3 text-accent-foreground">
+                    <Palette className="h-6 w-6" />
                 </div>
                 <div className="min-w-0">
                     <h2 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h2>
@@ -1079,20 +1079,24 @@ export const SettingsPage = ({ storageStats, onSignedOut, onOpenTasksForAccount,
 
             <nav
                 data-testid="settings-tabs"
-                className="sticky top-0 z-20 -mx-1 flex w-full max-w-full flex-wrap gap-2 overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-background/95 p-2 shadow-sm backdrop-blur touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-nowrap"
+                className="sticky top-0 z-20 flex w-full max-w-full gap-1 overflow-x-auto overscroll-x-contain border-b border-border bg-background/95 backdrop-blur touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 aria-label={t('settings.title')}
             >
                 {SETTINGS_SECTIONS.map(section => (
-                    <Button
+                    <button
                         key={section.id}
-                        size="sm"
-                        variant={activeSection === section.id ? 'default' : 'ghost'}
-                        className="min-h-10 shrink-0 max-[420px]:flex-1"
+                        type="button"
+                        className={cn(
+                            "-mb-px h-12 shrink-0 border-b-2 px-4 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring max-[420px]:flex-1 max-[420px]:px-2",
+                            activeSection === section.id
+                                ? "border-primary font-semibold text-primary"
+                                : "border-transparent text-muted-foreground hover:text-foreground",
+                        )}
                         onClick={() => onSectionChange(section.id)}
                         aria-current={activeSection === section.id ? 'page' : undefined}
                     >
                         {t(section.labelKey)}
-                    </Button>
+                    </button>
                 ))}
             </nav>
 

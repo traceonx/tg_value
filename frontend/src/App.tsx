@@ -1525,7 +1525,7 @@ function App() {
                                 />
                               ) : (
                                 <div
-                                  className={`flex min-h-[64px] items-center gap-4 p-3 rounded-xl border ${selectedFileIds.includes(file.id) ? 'border-primary bg-primary/5' : 'border-border bg-card'} shadow-sm cursor-pointer group hover:bg-muted/50 transition-colors touch-manipulation`}
+                                  className={`flex min-h-[64px] items-center gap-4 p-3 rounded-lg border ${selectedFileIds.includes(file.id) ? 'border-primary bg-primary/5' : 'border-transparent bg-card shadow-card'} cursor-pointer group hover:bg-muted/50 transition-colors touch-manipulation`}
                                   role="button"
                                   tabIndex={0}
                                   onClick={() => isSelectionMode ? toggleFileSelection(file.id) : setSelectedFile(file)}
@@ -1636,7 +1636,7 @@ function App() {
                                   />
                                 ) : (
                                   <div
-                                    className={`flex min-h-[64px] items-center gap-4 p-3 rounded-xl border ${selectedFileIds.includes(file.id) ? 'border-primary bg-primary/5' : 'border-border bg-card'} shadow-sm cursor-pointer group hover:bg-muted/50 transition-colors touch-manipulation`}
+                                    className={`flex min-h-[64px] items-center gap-4 p-3 rounded-lg border ${selectedFileIds.includes(file.id) ? 'border-primary bg-primary/5' : 'border-transparent bg-card shadow-card'} cursor-pointer group hover:bg-muted/50 transition-colors touch-manipulation`}
                                     role="button"
                                     tabIndex={0}
                                     onClick={() => isSelectionMode ? toggleFileSelection(file.id) : setSelectedFile(file)}

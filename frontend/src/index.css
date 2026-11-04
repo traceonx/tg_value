@@ -4,47 +4,53 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* MoviePilot-style palette: soft lavender-grey page, white cards, violet accent. */
+    --background: 230 37% 97%;
+    --foreground: 265 10% 23%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 265 10% 23%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%; /* Dark neutral */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%; /* Light gray */
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.75rem; /* More rounded for modern feel */
+    --popover-foreground: 265 10% 23%;
+    --primary: 261 85% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 255 14% 95%;
+    --secondary-foreground: 265 10% 23%;
+    --muted: 255 14% 95%;
+    --muted-foreground: 262 7% 44%;
+    --accent: 261 100% 96%;
+    --accent-foreground: 261 68% 52%;
+    --destructive: 358 68% 53%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 255 9% 91%;
+    --input: 255 7% 86%;
+    --ring: 261 85% 61%;
+    --radius: 0.5rem;
+    --shadow-card: 0 2px 10px rgba(58, 53, 65, 0.1);
+    --shadow-primary: 0 4px 10px rgba(129, 70, 240, 0.35);
   }
  
   .dark {
-    /* Not actively using dark mode yet as per requirement "Bright", but good to have prepared */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --background: 250 26% 19%;
+    --foreground: 250 81% 94%;
+    --card: 248 25% 24%;
+    --card-foreground: 250 81% 94%;
+    --popover: 248 25% 24%;
+    --popover-foreground: 250 81% 94%;
+    --primary: 260 100% 82%;
+    --primary-foreground: 250 30% 14%;
+    --secondary: 249 22% 28%;
+    --secondary-foreground: 250 81% 94%;
+    --muted: 249 22% 28%;
+    --muted-foreground: 249 21% 76%;
+    --accent: 251 31% 30%;
+    --accent-foreground: 258 100% 88%;
+    --destructive: 358 75% 62%;
+    --destructive-foreground: 250 30% 14%;
+    --border: 248 18% 32%;
+    --input: 248 18% 36%;
+    --ring: 260 100% 82%;
+    --shadow-card: 0 2px 10px rgba(12, 10, 24, 0.35);
+    --shadow-primary: 0 4px 10px rgba(12, 10, 24, 0.45);
   }
 }
  

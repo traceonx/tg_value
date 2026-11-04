@@ -105,6 +105,12 @@
     "storage": {
       "used": "{{used}} GB of {{total}} GB used",
       "uc": "Storage"
+    },
+    "navigation": "Main navigation",
+    "groups": {
+      "transfer": "Transfers",
+      "files": "Files",
+      "system": "System"
     }
   },
   "file": {

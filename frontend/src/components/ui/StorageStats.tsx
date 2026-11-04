@@ -51,7 +51,7 @@ export const StorageStats = ({ stats, compact = false }: StorageStatsProps) => {
     }
 
     return (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="rounded-lg bg-card shadow-card p-4 space-y-4">
             <h4 className="font-semibold text-sm flex items-center gap-2">
                 <HardDrive className="h-4 w-4 text-primary" />
                 {t('files.ui.storage.title')}

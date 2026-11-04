@@ -45,6 +45,10 @@ export default {
           foreground: "hsl(var(--destructive-foreground))",
         },
       },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        primary: "var(--shadow-primary)",
+      },
       borderRadius: {
         lg: `var(--radius)`,
         md: `calc(var(--radius) - 2px)`,

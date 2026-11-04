@@ -114,7 +114,7 @@ export const FolderCard = ({
                 aria-label={t(isSelectionMode ? 'files.ui.cards.selectFolder' : 'files.ui.cards.openFolder', { name: folder.displayName || folder.name })}
                 onKeyDown={handleCardKeyDown}
                 whileHover={{ y: isSelectionMode ? 0 : -4, transition: { duration: 0.2 } }}
-                className={`group relative flex flex-col rounded-2xl border ${isSelected ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border/50 bg-card'} overflow-hidden shadow-sm transition-all touch-manipulation select-none ${!isSelectionMode ? 'hover:shadow-lg hover:border-primary/30 cursor-pointer active:scale-[0.99]' : 'cursor-pointer active:scale-[0.99]'}`}
+                className={`group relative flex flex-col rounded-lg border ${isSelected ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-transparent bg-card shadow-card'} overflow-hidden transition-all touch-manipulation select-none ${!isSelectionMode ? 'hover:shadow-lg hover:border-primary/30 cursor-pointer active:scale-[0.99]' : 'cursor-pointer active:scale-[0.99]'}`}
                 {...(!isSelectionMode ? longPressHandlers : { onClick: handleCardClick })}
                 onContextMenu={handleContextMenu}
             >
