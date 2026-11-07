@@ -1,5 +1,6 @@
 import { Api } from 'telegram';
 import { withTelegramOperationDeadline } from './telegramOperationDeadline.js';
+import './telegramRecvLoopGuard.js';
 
 /*
  * GramJS 2.26 can strand a client after a failed reconnect: MTProtoSender
@@ -44,6 +45,20 @@ export interface TelegramConnectionWatchdogOptions {
     clearInterval?: (handle: unknown) => void;
     /** Builds the request that makes Telegram resume pushing updates. */
     resumeRequest?: () => unknown;
+    now?: () => number;
+    /**
+     * End-to-end liveness probe while the client reports "connected". A client
+     * can look connected yet never read a reply (see telegramRecvLoopGuard);
+     * after `failures` consecutive failed probes `onStuck` rebuilds it.
+     */
+    probe?: {
+        intervalMs?: number;
+        failures?: number;
+        timeoutMs?: number;
+        /** Errors that say nothing about the connection (e.g. a flood wait). */
+        isIgnorable?: (error: unknown) => boolean;
+        onStuck: () => void | Promise<void>;
+    };
 }
 
 export interface TelegramConnectionWatchdog {
@@ -69,6 +84,13 @@ export function installTelegramConnectionWatchdog(
     const schedule = options.setInterval ?? ((callback, ms) => setInterval(callback, ms));
     const cancel = options.clearInterval ?? (handle => clearInterval(handle as ReturnType<typeof setInterval>));
     const resumeRequest = options.resumeRequest ?? (() => new Api.updates.GetState());
+    const now = options.now ?? Date.now;
+    const probe = options.probe;
+    const probeIntervalMs = probe?.intervalMs ?? 120_000;
+    const probeFailuresAllowed = Math.max(1, probe?.failures ?? 3);
+    const probeTimeoutMs = probe?.timeoutMs ?? 20_000;
+    let lastProbeAt = 0;
+    let probeFailures = 0;
 
     let armed = false;
     let stopped = false;
@@ -120,6 +142,24 @@ export function installTelegramConnectionWatchdog(
         log.log(`[TelegramWatchdog] ${options.label}: connection restored`);
     };
 
+    const runProbe = async () => {
+        if (!probe || now() - lastProbeAt < probeIntervalMs) return;
+        lastProbeAt = now();
+        try {
+            await withTelegramOperationDeadline(client.invoke(resumeRequest()), probeTimeoutMs, `${options.label} liveness probe timed out`);
+            if (probeFailures > 0) log.log(`[TelegramWatchdog] ${options.label}: liveness probe recovered`);
+            probeFailures = 0;
+        } catch (error) {
+            if (probe.isIgnorable?.(error)) return;
+            probeFailures += 1;
+            log.warn(`[TelegramWatchdog] ${options.label}: liveness probe failed (${probeFailures}/${probeFailuresAllowed}):`, error instanceof Error ? error.message : error);
+            if (probeFailures < probeFailuresAllowed) return;
+            probeFailures = 0;
+            log.warn(`[TelegramWatchdog] ${options.label}: connected but Telegram does not answer; rebuilding the client`);
+            await probe.onStuck();
+        }
+    };
+
     const sample = async () => {
         if (stopped) return;
         if (client._destroyed) { stop(); return; }
@@ -129,6 +169,7 @@ export function installTelegramConnectionWatchdog(
         if (healthy) {
             armed = true;
             unhealthy = 0;
+            await runProbe();
             return;
         }
         // Never act before the owner finished its first successful connect.

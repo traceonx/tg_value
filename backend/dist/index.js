@@ -6695,6 +6695,26 @@ async function withTelegramOperationDeadline(operation, timeoutMs2, message) {
   }
 }
 
+// src/services/telegramRecvLoopGuard.ts
+import { MTProtoSender } from "telegram/network/index.js";
+var PATCHED = /* @__PURE__ */ Symbol.for("tgvault.recvLoopGuard");
+function installTelegramRecvLoopGuard(prototype = MTProtoSender.prototype) {
+  const target = prototype;
+  if (target[PATCHED]) return;
+  const original = target._recvLoop;
+  target._recvLoop = async function(...args) {
+    const run = {};
+    this.__tgvaultRecvLoopRun = run;
+    try {
+      return await original.apply(this, args);
+    } finally {
+      if (this.__tgvaultRecvLoopRun === run) this._recvLoopHandle = void 0;
+    }
+  };
+  target[PATCHED] = true;
+}
+installTelegramRecvLoopGuard();
+
 // src/services/telegramConnectionWatchdog.ts
 var installed2 = /* @__PURE__ */ new WeakMap();
 function installTelegramConnectionWatchdog(client2, options) {
@@ -6708,6 +6728,13 @@ function installTelegramConnectionWatchdog(client2, options) {
   const schedule = options.setInterval ?? ((callback, ms) => setInterval(callback, ms));
   const cancel = options.clearInterval ?? ((handle2) => clearInterval(handle2));
   const resumeRequest = options.resumeRequest ?? (() => new Api3.updates.GetState());
+  const now = options.now ?? Date.now;
+  const probe = options.probe;
+  const probeIntervalMs = probe?.intervalMs ?? 12e4;
+  const probeFailuresAllowed = Math.max(1, probe?.failures ?? 3);
+  const probeTimeoutMs = probe?.timeoutMs ?? 2e4;
+  let lastProbeAt = 0;
+  let probeFailures = 0;
   let armed = false;
   let stopped = false;
   let unhealthy = 0;
@@ -6763,6 +6790,23 @@ function installTelegramConnectionWatchdog(client2, options) {
     }
     log.log(`[TelegramWatchdog] ${options.label}: connection restored`);
   };
+  const runProbe = async () => {
+    if (!probe || now() - lastProbeAt < probeIntervalMs) return;
+    lastProbeAt = now();
+    try {
+      await withTelegramOperationDeadline(client2.invoke(resumeRequest()), probeTimeoutMs, `${options.label} liveness probe timed out`);
+      if (probeFailures > 0) log.log(`[TelegramWatchdog] ${options.label}: liveness probe recovered`);
+      probeFailures = 0;
+    } catch (error) {
+      if (probe.isIgnorable?.(error)) return;
+      probeFailures += 1;
+      log.warn(`[TelegramWatchdog] ${options.label}: liveness probe failed (${probeFailures}/${probeFailuresAllowed}):`, error instanceof Error ? error.message : error);
+      if (probeFailures < probeFailuresAllowed) return;
+      probeFailures = 0;
+      log.warn(`[TelegramWatchdog] ${options.label}: connected but Telegram does not answer; rebuilding the client`);
+      await probe.onStuck();
+    }
+  };
   const sample = async () => {
     if (stopped) return;
     if (client2._destroyed) {
@@ -6775,6 +6819,7 @@ function installTelegramConnectionWatchdog(client2, options) {
     if (healthy) {
       armed = true;
       unhealthy = 0;
+      await runProbe();
       return;
     }
     if (!armed) return;
@@ -21224,6 +21269,7 @@ async function handleLinkFolderChoice(update, data) {
 }
 var digestTimer = null;
 var botLifecycle = Promise.resolve();
+var botGeneration = 0;
 function buildTelegramDownloadModeKeyboard(locale = DEFAULT_LOCALE) {
   return new Api16.ReplyInlineMarkup({
     rows: [
@@ -22261,7 +22307,8 @@ async function initTelegramBot(credentialsOverride) {
     client = new TelegramClient7(new TelegramSession(""), apiId, apiHash, {
       proxy: getTelegramProxy(),
       connectionRetries: 5,
-      reconnectRetries: 5,
+      // Keep GramJS' default (unlimited): a finite cap strands the receive
+      // loop after a burst of failed reconnects (see telegramRecvLoopGuard).
       retryDelay: 1e3,
       autoReconnect: true,
       useWSS: false,
@@ -22285,7 +22332,15 @@ async function initTelegramBot(credentialsOverride) {
     await withTelegramOperationDeadline(client.start({ botAuthToken: botToken }), startupTimeoutMs, "Telegram Bot \u542F\u52A8\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
     await withTelegramOperationDeadline(client.getMe(), 1e4, "Telegram Bot \u8EAB\u4EFD\u8BFB\u53D6\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
     console.log("\u{1F916} Telegram Bot \u5DF2\u8FDE\u63A5!");
-    installTelegramConnectionWatchdog(client, { label: "Telegram Bot" });
+    installTelegramConnectionWatchdog(client, {
+      label: "Telegram Bot",
+      probe: {
+        isIgnorable: (error) => telegramAccountStopReason(error)?.kind === "cooldown",
+        onStuck: () => {
+          void rebuildStuckTelegramBot();
+        }
+      }
+    });
     try {
       await query(`
                 CREATE TABLE IF NOT EXISTS telegram_auth (
@@ -23081,9 +23136,35 @@ function withTelegramBotLifecycle(operation) {
       scheduleTelegramBotPostStartup(async () => void 0);
     }
   };
+  botGeneration += 1;
   const result = botLifecycle.catch(() => void 0).then(() => operation(controls));
   botLifecycle = result.then(() => void 0, () => void 0);
   return result;
+}
+var stuckRebuildRunning = false;
+async function rebuildStuckTelegramBot() {
+  if (stuckRebuildRunning) return;
+  stuckRebuildRunning = true;
+  try {
+    for (let attempt = 1; attempt <= 30; attempt++) {
+      const generation = botGeneration;
+      try {
+        console.warn(`\u{1F916} Telegram Bot \u5DF2\u8FDE\u63A5\u4F46\u65E0\u54CD\u5E94\uFF0C\u6B63\u5728\u91CD\u5EFA\u5BA2\u6237\u7AEF\uFF08\u7B2C ${attempt} \u6B21\uFF09`);
+        await restartTelegramBot();
+        console.log("\u{1F916} Telegram Bot \u5BA2\u6237\u7AEF\u5DF2\u91CD\u5EFA");
+        return;
+      } catch (error) {
+        console.error("\u{1F916} Telegram Bot \u91CD\u5EFA\u5931\u8D25\uFF0C\u7A0D\u540E\u91CD\u8BD5:", error instanceof Error ? error.message : error);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 6e4).unref?.());
+      if (botGeneration !== generation + 1 || client) return;
+    }
+  } finally {
+    stuckRebuildRunning = false;
+  }
+}
+async function restartTelegramBot(credentialsOverride) {
+  return withTelegramBotLifecycle((controls) => controls.restart(credentialsOverride));
 }
 async function sendUpdateNotificationToUser(userId, message) {
   if (!client || !client.connected || getTelegramBotStatus().status !== "ready") {

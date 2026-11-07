@@ -456,6 +456,7 @@ async function handleLinkFolderChoice(update: Api.UpdateBotCallbackQuery, data: 
 }
 let digestTimer: NodeJS.Timeout | null = null;
 let botLifecycle: Promise<void> = Promise.resolve();
+let botGeneration = 0;
 
 type TelegramWizardKind = 'tg_sub_manage' | 'tg_download' | 'tg_date' | 'tg_tag';
 type TelegramWizardStep = 'mode' | 'source' | 'path' | 'start_date' | 'end_date' | 'tag' | 'confirm';
@@ -1697,7 +1698,8 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
         client = new TelegramClient(new TelegramSession(''), apiId, apiHash, {
             proxy: getTelegramProxy(),
             connectionRetries: 5,
-            reconnectRetries: 5,
+            // Keep GramJS' default (unlimited): a finite cap strands the receive
+            // loop after a burst of failed reconnects (see telegramRecvLoopGuard).
             retryDelay: 1000,
             autoReconnect: true,
             useWSS: false,
@@ -1726,7 +1728,13 @@ export async function initTelegramBot(credentialsOverride?: TelegramBotCredentia
         console.log('🤖 Telegram Bot 已连接!');
         // GramJS may stay disconnected forever after a failed reconnect; keep the
         // Bot reachable without restarting the process.
-        installTelegramConnectionWatchdog(client as any, { label: 'Telegram Bot' });
+        installTelegramConnectionWatchdog(client as any, {
+            label: 'Telegram Bot',
+            probe: {
+                isIgnorable: error => telegramAccountStopReason(error)?.kind === 'cooldown',
+                onStuck: () => { void rebuildStuckTelegramBot(); },
+            },
+        });
 
         // Ensure database table exists
         try {
@@ -2649,9 +2657,39 @@ export function withTelegramBotLifecycle<T>(operation: (controls: TelegramBotLif
             scheduleTelegramBotPostStartup(async () => undefined);
         },
     };
+    botGeneration += 1;
     const result = botLifecycle.catch(() => undefined).then(() => operation(controls));
     botLifecycle = result.then(() => undefined, () => undefined);
     return result;
+}
+
+let stuckRebuildRunning = false;
+/**
+ * Rebuild a Bot client that is connected but gets no replies. A rebuild during
+ * an outage fails, so retry until it succeeds or someone else stops/replaces
+ * the Bot (the generation check), instead of leaving the Bot offline.
+ */
+async function rebuildStuckTelegramBot(): Promise<void> {
+    if (stuckRebuildRunning) return;
+    stuckRebuildRunning = true;
+    try {
+        for (let attempt = 1; attempt <= 30; attempt++) {
+            const generation = botGeneration;
+            try {
+                console.warn(`🤖 Telegram Bot 已连接但无响应，正在重建客户端（第 ${attempt} 次）`);
+                await restartTelegramBot();
+                console.log('🤖 Telegram Bot 客户端已重建');
+                return;
+            } catch (error) {
+                console.error('🤖 Telegram Bot 重建失败，稍后重试:', error instanceof Error ? error.message : error);
+            }
+            await new Promise(resolve => setTimeout(resolve, 60_000).unref?.());
+            // Someone restarted or stopped the Bot meanwhile: their choice wins.
+            if (botGeneration !== generation + 1 || client) return;
+        }
+    } finally {
+        stuckRebuildRunning = false;
+    }
 }
 
 export async function stopTelegramBot(): Promise<void> {

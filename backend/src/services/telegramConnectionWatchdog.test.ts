@@ -118,3 +118,49 @@ test('installs once per client', () => {
     assert.equal(first.watchdog, second.watchdog);
     assert.equal(second.scheduled(), 0);
 });
+
+function probed(options: { failing?: () => boolean; ignorable?: boolean } = {}) {
+    let clock = 0;
+    let stuck = 0;
+    const { client, sender, calls } = fakeClient();
+    client.invoke = async (request: unknown) => {
+        calls.invoke.push(request);
+        if (options.failing?.()) throw Object.assign(new Error('TIMEOUT'), { flood: options.ignorable });
+        return {};
+    };
+    const watchdog = installTelegramConnectionWatchdog(client, {
+        label: 'probe', log: quiet, now: () => clock, resumeRequest: () => 'GetState',
+        setInterval: () => 1, clearInterval: () => undefined,
+        probe: { intervalMs: 1000, failures: 3, isIgnorable: error => Boolean((error as { flood?: boolean }).flood), onStuck: () => { stuck += 1; } },
+    });
+    sender.connected = true;
+    return { watchdog, calls, stuck: () => stuck, tick: async () => { clock += 1000; await watchdog.check(); } };
+}
+
+test('rebuilds a client that looks connected but never answers', async () => {
+    const f = probed({ failing: () => true });
+    await f.tick(); await f.tick();
+    assert.equal(f.stuck(), 0, 'two failures are tolerated');
+    await f.tick();
+    assert.equal(f.stuck(), 1);
+    assert.equal(f.calls.invoke.length, 3);
+});
+
+test('a successful probe resets the failure count, and probes respect the interval', async () => {
+    let fail = true;
+    const f = probed({ failing: () => fail });
+    await f.tick(); await f.tick();
+    fail = false;
+    await f.tick();
+    fail = true;
+    await f.tick(); await f.tick();
+    assert.equal(f.stuck(), 0);
+    await f.watchdog.check(); // same instant: no extra probe
+    assert.equal(f.calls.invoke.length, 5);
+});
+
+test('flood waits do not count as a dead connection', async () => {
+    const f = probed({ failing: () => true, ignorable: true });
+    for (let i = 0; i < 5; i++) await f.tick();
+    assert.equal(f.stuck(), 0);
+});
